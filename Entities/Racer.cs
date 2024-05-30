@@ -1,4 +1,4 @@
-﻿namespace Showdown4.Statemachine;
+﻿namespace Showdown4.Entities;
 
 public class Racer
 {
@@ -10,6 +10,4 @@ public class Racer
 
     public string SteamName { get; }
     public ulong SteamId { get; }
-
-    public double Result { get; set; }
 }

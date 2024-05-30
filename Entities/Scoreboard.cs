@@ -2,5 +2,7 @@
 
 public class Scoreboard
 {
-    
+    public void UpdateScoreBoard()
+    {
+    }
 }

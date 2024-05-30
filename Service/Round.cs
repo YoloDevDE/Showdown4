@@ -4,17 +4,28 @@ using System.Data;
 using System.Linq;
 using JetBrains.Annotations;
 using Showdown4.Entities;
-using ZeepSDK.External.FluentResults;
 
 namespace Showdown4.Service;
 
-public class Race
+public class Round
 {
-    public Dictionary<Racer, List<double>> RacerResults { get; private set; } = new Dictionary<Racer, List<double>>();
-
-    public Race()
+    public Round(Team teamA, Team teamB, int roundNumber)
     {
+        RacerRecords = new Dictionary<Racer, List<double>>
+        {
+            { teamA.RacerA, new List<double>() },
+            { teamA.RacerB, new List<double>() },
+            { teamB.RacerA, new List<double>() },
+            { teamB.RacerB, new List<double>() }
+        };
+        RoundNumber = roundNumber;
     }
+
+    public int RoundNumber { get; set; }
+
+    public RoundEvaluator RoundEvaluator { get; set; }
+
+    public Dictionary<Racer, List<double>> RacerRecords { get; }
 
     public void AddResult([NotNull] Racer racer, double result)
     {
@@ -25,7 +36,7 @@ public class Race
 
         if (result > 0)
         {
-            RacerResults[racer].Add(result);
+            RacerRecords[racer].Add(result);
         }
     }
 
@@ -36,8 +47,16 @@ public class Race
             throw new ArgumentNullException(nameof(racer));
         }
 
-        if (RacerResults.ContainsKey(racer))
-            return RacerResults[racer].Min();
+        if (RacerRecords.ContainsKey(racer))
+        {
+            if (RacerRecords[racer].Count > 0)
+            {
+                return RacerRecords[racer].Min();
+            }
+
+            return 0;
+        }
+
         throw new InvalidConstraintException();
     }
 }

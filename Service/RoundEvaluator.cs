@@ -1,27 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
 using Showdown4.Entities;
-using ZeepSDK.Chat;
+using ZeepkistClient;
 
 namespace Showdown4.Service;
 
-public class RaceEvaluator
+public class RoundEvaluator
 {
+    private readonly Round Round;
     private readonly Team TeamA;
     private readonly Team TeamB;
 
-    public RaceEvaluator(Team teamA, Team teamB)
+    public RoundEvaluator(Team teamA, Team teamB, Round round)
     {
         TeamA = teamA;
         TeamB = teamB;
+        Round = round;
     }
 
     public Team CurrentWinner { get; private set; }
     public Team CurrentLoser { get; private set; }
 
-    public List<Team> EvaluateCurrentTeams(Round round)
+    public List<Team> EvaluateCurrentTeams()
     {
-        List<Team> currentTeamsOrderedByWinner = CompareFinishers() ?? CompareTotalTime() ?? CompareIndividualPlacements(round) ?? SelectRandomWinner();
+        List<Team> currentTeamsOrderedByWinner = CompareFinishers() ?? CompareTotalTime() ?? CompareIndividualPlacements() ?? SelectRandomWinner();
         CurrentWinner = currentTeamsOrderedByWinner[0];
         CurrentLoser = currentTeamsOrderedByWinner[1];
         return currentTeamsOrderedByWinner;
@@ -29,10 +31,9 @@ public class RaceEvaluator
 
     private List<Team> CompareFinishers()
     {
-        int finishersA = TeamA.GetFinisherCount();
-        int finishersB = TeamB.GetFinisherCount();
+        int finishersA = GetFinisherCount(TeamA);
+        int finishersB = GetFinisherCount(TeamB);
 
-        ChatApi.SendMessage("CompareFinishers");
 
         if (finishersA > finishersB)
         {
@@ -49,9 +50,8 @@ public class RaceEvaluator
 
     private List<Team> CompareTotalTime()
     {
-        ChatApi.SendMessage("CompareTotalTime");
-        double timeA = TeamA.GetTotalTime();
-        double timeB = TeamB.GetTotalTime();
+        double timeA = GetTotalTime(TeamA);
+        double timeB = GetTotalTime(TeamB);
 
         if (timeA < timeB)
         {
@@ -66,11 +66,10 @@ public class RaceEvaluator
         return null;
     }
 
-    private List<Team> CompareIndividualPlacements(Round round)
+    private List<Team> CompareIndividualPlacements()
     {
-        ChatApi.SendMessage("CompareIndividualPlacements");
-        double bestResultA = Math.Min(round.GetPersonalBest(TeamA.RacerA), round.GetPersonalBest(TeamA.RacerB));
-        double bestResultB = Math.Min(round.GetPersonalBest(TeamB.RacerA), round.GetPersonalBest(TeamB.RacerB));
+        double bestResultA = Math.Min(Round.GetPersonalBest(TeamA.RacerA), Round.GetPersonalBest(TeamA.RacerB));
+        double bestResultB = Math.Min(Round.GetPersonalBest(TeamB.RacerA), Round.GetPersonalBest(TeamB.RacerB));
 
         if (bestResultA < bestResultB)
         {
@@ -87,7 +86,6 @@ public class RaceEvaluator
 
     private List<Team> SelectRandomWinner()
     {
-        ChatApi.SendMessage("SelectRandomWinner");
         Random random = new Random();
         if (random.Next(2) == 0)
         {
@@ -95,5 +93,64 @@ public class RaceEvaluator
         }
 
         return new List<Team> { TeamB, TeamA };
+    }
+
+    public double GetAverageTime(Team team)
+    {
+        return (Round.GetPersonalBest(team.RacerA) + Round.GetPersonalBest(team.RacerB)) * (HasValidResults(team) ? 0.5 : 1);
+    }
+
+    public int GetFinisherCount(Team team)
+    {
+        int count = 0;
+        if (Round.RacerRecords[team.RacerA].Count > 0)
+        {
+            count++;
+        }
+
+        if (Round.RacerRecords[team.RacerB].Count > 0)
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    public void UpdateResults(ZeepkistNetworkPlayer networkPlayer)
+    {
+        if (networkPlayer.CurrentResult == null || networkPlayer.CurrentResult.Time == 0)
+        {
+            return;
+        }
+
+        List<Racer> racers = new List<Racer> { TeamA.RacerA, TeamA.RacerB, TeamB.RacerA, TeamB.RacerB };
+        foreach (Racer racer in racers)
+        {
+            if (racer.SteamId == networkPlayer.SteamID && (networkPlayer.CurrentResult.Time <= Round.GetPersonalBest(racer) || Round.GetPersonalBest(racer) == 0))
+            {
+                Round.AddResult(racer, networkPlayer.CurrentResult.Time);
+            }
+        }
+    }
+
+    public double GetTotalTime(Team team)
+    {
+        double totalTime = 0;
+        if (Round.GetPersonalBest(team.RacerA) > 0)
+        {
+            totalTime += Round.GetPersonalBest(team.RacerA);
+        }
+
+        if (Round.GetPersonalBest(team.RacerB) > 0)
+        {
+            totalTime += Round.GetPersonalBest(team.RacerB);
+        }
+
+        return totalTime;
+    }
+
+    public bool HasValidResults(Team team)
+    {
+        return Round.RacerRecords[team.RacerA].Count > 0 && Round.RacerRecords[team.RacerB].Count > 0;
     }
 }

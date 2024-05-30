@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Showdown4.Service;
 
 namespace Showdown4.Utils;
 
-public static class FormattingUtils
+public static class MessageFormatter
 {
     private const int _keyMaxWidth = 30; // Max Länge des Teamnamens, anpassbar
     private const int _valueMaxWidth = 10; // Max Länge der Zeit, anpassbar
@@ -43,7 +41,9 @@ public static class FormattingUtils
 
     public static string PrintLine()
     {
-        return "<br>--------------------<br>";
+        string dash = "-";
+        int count = 16;
+        return string.Concat(Enumerable.Repeat(dash, count));
     }
 
     public static string PrintBreak()

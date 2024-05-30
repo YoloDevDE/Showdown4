@@ -1,6 +1,14 @@
-﻿namespace Showdown4.Entities;
+﻿using BepInEx;
+using ZeepSDK.Storage;
 
-public class ModStorage
+namespace Showdown4.Entities;
+
+public static class ModStorage
 {
-    
+    public static IModStorage Storage { get; private set; }
+
+    public static void Initialize(BaseUnityPlugin plugin)
+    {
+        Storage = StorageApi.CreateModStorage(plugin);
+    }
 }

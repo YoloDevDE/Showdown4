@@ -2,5 +2,6 @@
 
 public interface IState
 {
-    
+    void Enter(IStateMachine context);
+    void Exit();
 }

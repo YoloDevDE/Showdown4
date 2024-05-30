@@ -1,5 +1,10 @@
 ﻿using BepInEx;
 using HarmonyLib;
+using Showdown4.Commands;
+using Showdown4.Entities;
+using Showdown4.Statemachine;
+using UnityEngine;
+using ZeepSDK.ChatCommands;
 
 namespace Showdown4;
 
@@ -7,20 +12,41 @@ namespace Showdown4;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
+    private IStateMachine _matchStateMachine;
     private Harmony harmony;
 
     private void Awake()
     {
         harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         harmony.PatchAll();
-
         // Plugin startup logic
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+
+        // Initialize the CoroutineManager
+        InitializeCoroutineManager();
+
+        ModStorage.Initialize(this);
+
+        ChatCommandApi.RegisterLocalChatCommand<CommandSetTeam>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandStartMatch>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandStopMatch>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandLinkPlayerToTeam>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandHeads>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandTails>();
+
+        _matchStateMachine = new MatchStateMachine();
     }
 
     private void OnDestroy()
     {
         harmony?.UnpatchSelf();
         harmony = null;
+    }
+
+    private void InitializeCoroutineManager()
+    {
+        GameObject obj = new GameObject("CoroutineManager");
+        obj.AddComponent<CoroutineManager>();
+        DontDestroyOnLoad(obj);
     }
 }
