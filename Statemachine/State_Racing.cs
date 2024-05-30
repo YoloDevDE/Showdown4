@@ -26,6 +26,19 @@ public class State_Racing : IState
         _roundEvaluator = new RoundEvaluator(_teamA, _teamB, _context.CurrentMatch.Rounds.Last());
         _context.CurrentMatch.CurrentRound.RoundEvaluator = _roundEvaluator;
         ChatApi.SendMessage("/settime 300");
+        ChatApi.SendMessage(new ChatMessage.Builder().ClearChat()
+            .DashedLine().NewLine()
+            .CenterTextLine($"Round {_context.CurrentMatch.RoundCounter} started").NewLine()
+            .DashedLine().NewLine()
+            .CenterTextLine($"{_teamA.GetTag()}").NewLine()
+            .CenterTextLine($"{_teamA.RacerA.SteamName} | {_teamA.RacerB.SteamName}").NewLine()
+            .CenterTextLine("vs").NewLine()
+            .CenterTextLine($"{_teamB.RacerA.SteamName} | {_teamB.RacerB.SteamName}").NewLine()
+            .CenterTextLine($"{_teamB.GetTag()}").NewLine()
+            .DashedLine()
+            .NewLine()
+            .TextLine("Good Luck, Have Fun! :smile:").Build().Message
+        );
         MyLobbyManager.SetServerMessage(
             ServerMessageColor.green,
             new ChatMessage.Builder()

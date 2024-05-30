@@ -1,4 +1,6 @@
-﻿using Showdown4.Utils;
+﻿using Showdown4.Entities;
+using Showdown4.Service;
+using Showdown4.Utils;
 using ZeepSDK.Chat;
 
 namespace Showdown4.Statemachine;
@@ -6,10 +8,15 @@ namespace Showdown4.Statemachine;
 internal class State_RaceEvaluation : IState
 {
     private MatchStateMachine _context;
+    private Round _round;
 
     public void Enter(IStateMachine context)
     {
         _context = (MatchStateMachine)context;
+        _round = _context.CurrentMatch.CurrentRound;
+
+        Team winner = _round.RoundEvaluator.CurrentWinner;
+        Team loser = _round.RoundEvaluator.CurrentLoser;
         if (_context.CurrentMatch.EvaluateMatchWinner() != null)
         {
             ChatApi.SendMessage($"/servermessage green 0 {_context.CurrentMatch.MatchWinner.GetNameWithTag()} has won! :party:");
@@ -20,12 +27,23 @@ internal class State_RaceEvaluation : IState
         else
         {
             ChatApi.SendMessage(
-                MessageFormatter.ClearChat() +
-                MessageFormatter.PrintLine() +
-                $"{_context.CurrentMatch.CurrentRoundWinner.GetNameWithTag()} won last Round!" +
-                MessageFormatter.FormatRoundResult(_context.CurrentMatch.CurrentRound) +
-                MessageFormatter.PrintLine() +
-                $"Standings:<br>{_context.CurrentMatch.CurrentRoundWinner.GetTag()} {_context.CurrentMatch.CurrentRoundWinner.Wins}:{_context.CurrentMatch.CurrentRoundLoser.Wins} {_context.CurrentMatch.CurrentRoundLoser.GetTag()}");
+                new ChatMessage.Builder().NewLine()
+                    .DashedLine().NewLine()
+                    .TextLine($"{_context.CurrentMatch.CurrentRoundWinner.GetNameWithTag()} won Round {_context.CurrentMatch.CurrentRound.RoundNumber} :party:").NewLine()
+                    .DashedLine().NewLine()
+                    .TextLine("Results:").NewLine()
+                    .TextLine(TableFormatter.AlignTableColumns(
+                        [
+                            [winner.GetTag(), _round.RoundEvaluator.GetAverageTime(winner).GetFormattedTime(), ""],
+                            [
+                                loser.GetTag(),
+                                _round.RoundEvaluator.GetAverageTime(loser).GetFormattedTime(), MessageFormatter.FormatTimestampDifference(_round.RoundEvaluator.GetAverageTime(winner) - _round.RoundEvaluator.GetAverageTime(loser))
+                            ]
+                        ]
+                    )).NewLine()
+                    .TextLine("Standings:").NewLine()
+                    .TextLine($"{winner.GetTag()} {winner.Wins}:{loser.Wins} {loser.GetTag()}")
+                    .Build().Message);
             _context.TransitionTo(_context, new State_PreRacing());
         }
     }

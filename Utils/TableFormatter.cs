@@ -64,9 +64,9 @@ public static class TableFormatter
 
         foreach (List<string> row in table)
         {
-            result += FormatRow(row, columnWidths, delimiter) + "\n";
+            result += FormatRow(row, columnWidths, delimiter) + "<br>";
         }
 
-        return result.TrimEnd('\n');
+        return result.TrimEnd("<br>".ToCharArray());
     }
 }

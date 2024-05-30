@@ -47,18 +47,6 @@ public class State_PreRacing : IState
 
     private void OnLevelLoaded()
     {
-        ChatApi.SendMessage(new ChatMessage.Builder().ClearChat()
-            .DashedLine().NewLine()
-            .CenterTextLine($"Round {_context.CurrentMatch.RoundCounter} started").NewLine()
-            .DashedLine().NewLine()
-            .CenterTextLine($"{_teamA.GetTag()}").NewLine()
-            .CenterTextLine("vs").NewLine()
-            .CenterTextLine($"{_teamB.GetTag()}").NewLine()
-            .DashedLine()
-            .NewLine()
-            .TextLine("Good Luck, Have Fun! :smile:").Build().Message
-        );
-
         _context.TransitionTo(_context, new State_Racing());
     }
 }

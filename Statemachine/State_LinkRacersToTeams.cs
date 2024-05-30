@@ -77,7 +77,7 @@ public class State_LinkRacersToTeams : IState
             ChatApi.SendMessage(
                 new ChatMessage.Builder().NewLine()
                     .DashedLine().NewLine()
-                    .TextLine("Everyone is linked to their team. Waiting for Host for further instructions").NewLine()
+                    .TextLine("Everyone is linked to their teams. Waiting for Host for further instructions").NewLine()
                     .DashedLine()
                     .Build().Message);
             _context.TransitionTo(_context, new State_PreRacing());
