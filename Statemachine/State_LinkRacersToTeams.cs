@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Showdown4.Commands;
 using Showdown4.Entities;
 using Showdown4.Utils;
@@ -11,26 +10,34 @@ namespace Showdown4.Statemachine;
 
 public class State_LinkRacersToTeams : IState
 {
+    private MatchStateMachine _context;
     private bool _isTeamASet;
     private bool _isTeamBSet;
     private bool _setNextTeam;
-    private List<Team> _teams;
 
-
-    public MatchStateMachine Context { get; set; }
+    private Team _teamA, _teamB;
 
     public void Enter(IStateMachine context)
     {
         _setNextTeam = false;
-        Context = (MatchStateMachine)context;
+        _context = (MatchStateMachine)context;
+
+        _teamA = _context.CurrentMatch.TeamA;
+        _teamB = _context.CurrentMatch.TeamB;
+
         CommandLinkPlayerToTeam.CommandInvoked += OnLinkPlayerToTeam;
-        _teams = ModStorage.Storage.LoadFromJson<TeamJsonWrapper>("Teams").Teams;
         ChatApi.SendMessage(
             new ChatMessage.Builder().NewLine()
                 .DashedLine().NewLine()
-                .TextLine($"Match set to '{Context.CurrentMatch.TeamA.GetTag()} vs {Context.CurrentMatch.TeamB.GetTag()}'").NewLine()
-                .DashedLine().build().Message
+                .TextLine($"Match set to '{_context.CurrentMatch.TeamA.GetTag()} vs {_context.CurrentMatch.TeamB.GetTag()}'").NewLine()
+                .DashedLine().Build().Message
         );
+
+        MyLobbyManager.SetServerMessage(ServerMessageColor.orange,
+            new ChatMessage.Builder()
+                .TextLine($"Round {_context.CurrentMatch.RoundCounter}: Intermission").NewLine()
+                .TextLine($"{_teamA.GetTag()} {_teamA.Wins}:{_teamB.Wins} {_teamB.GetTag()}")
+                .Build().Message);
         CheckIfRacersAreLinked();
     }
 
@@ -47,18 +54,23 @@ public class State_LinkRacersToTeams : IState
             if (_isTeamASet && !_setNextTeam)
             {
                 _setNextTeam = true;
-                ChatApi.SendMessage(MessageFormatter.ClearChat() +
-                                    $"Team {Context.CurrentMatch.TeamA.GetTag()} is set!" +
-                                    MessageFormatter.PrintLine() +
-                                    $"{Context.CurrentMatch.TeamB.GetTag()}: It's your turn! Every player of your team needs to write #link in the chat." +
-                                    MessageFormatter.PrintLine());
+
+
+                ChatApi.SendMessage(
+                    new ChatMessage.Builder().NewLine()
+                        .DashedLine().NewLine()
+                        .TextLine($"Team {_context.CurrentMatch.TeamA.GetTag()} is set!").NewLine()
+                        .TextLine($"{_context.CurrentMatch.TeamB.GetTag()}: It's your turn! Every player of your team needs to write #link in the chat.").NewLine()
+                        .DashedLine().Build().Message
+                );
             }
 
-            string result = "/servermessage red 0 " +
-                            "Match Preparation" +
-                            MessageFormatter.PrintBreak() +
-                            $"{Context.CurrentMatch.TeamA.GetNameWithTag()} ({Context.CurrentMatch.TeamA.GetLinkedRacersToString()}) VS '{Context.CurrentMatch.TeamB.GetNameWithTag()}' ({Context.CurrentMatch.TeamB.GetLinkedRacersToString()}) ";
-            ChatApi.SendMessage(result);
+            MyLobbyManager.SetServerMessage(ServerMessageColor.orange,
+                new ChatMessage.Builder()
+                    .TextLine("Match Preparation").NewLine()
+                    .TextLine($"{_teamA.GetNameWithTag()} ({_teamA.GetLinkedRacersToString()}) vs '{_teamB.GetNameWithTag()}' ({_teamB.GetLinkedRacersToString()})")
+                    .Build().Message
+            );
         }
         else
         {
@@ -67,8 +79,8 @@ public class State_LinkRacersToTeams : IState
                     .DashedLine().NewLine()
                     .TextLine("Everyone is linked to their team. Waiting for Host for further instructions").NewLine()
                     .DashedLine()
-                    .build().Message);
-            Context.TransitionTo(Context, new State_PreRacing());
+                    .Build().Message);
+            _context.TransitionTo(_context, new State_PreRacing());
         }
     }
 
@@ -78,16 +90,16 @@ public class State_LinkRacersToTeams : IState
             ?.GetUserNameNoTag();
 
         string resultMessage;
-        Team team = !_isTeamASet ? Context.CurrentMatch.TeamA : Context.CurrentMatch.TeamB;
+        Team team = !_isTeamASet ? _context.CurrentMatch.TeamA : _context.CurrentMatch.TeamB;
         if (!_isTeamASet)
         {
-            resultMessage = Context.CurrentMatch.TeamA.AddRacer(steamName, steamId);
-            _isTeamASet = Context.CurrentMatch.TeamA.TeamCompleted;
+            resultMessage = _context.CurrentMatch.TeamA.AddRacer(steamName, steamId);
+            _isTeamASet = _context.CurrentMatch.TeamA.TeamCompleted;
         }
         else if (!_isTeamBSet)
         {
-            resultMessage = Context.CurrentMatch.TeamB.AddRacer(steamName, steamId);
-            _isTeamBSet = Context.CurrentMatch.TeamB.TeamCompleted;
+            resultMessage = _context.CurrentMatch.TeamB.AddRacer(steamName, steamId);
+            _isTeamBSet = _context.CurrentMatch.TeamB.TeamCompleted;
         }
         else
         {

@@ -64,7 +64,7 @@ public static class MessageFormatter
     public static string FormatTimestampDifference(double time)
     {
         // Überprüfen, ob die Zeit negativ ist und ein entsprechendes Vorzeichen setzen
-        char sign = time > 0 ? '-' : time < 0 ? '+' : ' ';
+        char sign = time > 0 ? '-' : time < 0 ? '+' : '\u00b1';
 
         // Umwandeln der Zeit in einen absoluten Wert, um das Vorzeichen bei der Formatierung zu ignorieren
         double absoluteTime = Math.Abs(time);

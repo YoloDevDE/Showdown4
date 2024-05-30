@@ -14,10 +14,10 @@ internal class State_PostRacing : IState
         RacingApi.LevelLoaded += OnLevelLoaded;
 
         ChatApi.SendMessage(
-            MessageFormatter.PrintBreak() +
-            MessageFormatter.PrintLine() +
-            $"Round {_context.CurrentMatch.CurrentRound.RoundNumber} over!!" +
-            MessageFormatter.PrintLine());
+            new ChatMessage.Builder().NewLine()
+                .DashedLine().NewLine()
+                .TextLine($"Round {_context.CurrentMatch.CurrentRound.RoundNumber} over!!").NewLine()
+                .DashedLine().Build().Message);
     }
 
     public void Exit()

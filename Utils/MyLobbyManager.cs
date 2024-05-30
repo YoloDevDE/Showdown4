@@ -2,7 +2,7 @@
 
 namespace Showdown4.Utils;
 
-public class ChatUtils
+public class MyLobbyManager
 {
     public static void SkipLevel()
     {
@@ -13,11 +13,6 @@ public class ChatUtils
     public static void SetServerMessage(ServerMessageColor serverMessageColor, string message)
     {
         ChatApi.SendMessage($"/servermessage {serverMessageColor.ToString()} 0 {message}");
-    }
-
-    public static void SetServerMessage(string serverMessageColor, string message)
-    {
-        ChatApi.SendMessage($"/servermessage {serverMessageColor} 0 {message}");
     }
 
     public static void SkipToLevel(int index)

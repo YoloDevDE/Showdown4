@@ -1,5 +1,7 @@
 ﻿using System.Linq;
+using Showdown4.Entities;
 using Showdown4.Service;
+using Showdown4.Utils;
 using ZeepkistClient;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
@@ -10,22 +12,27 @@ public class State_Racing : IState
 {
     private MatchStateMachine _context;
     private RoundEvaluator _roundEvaluator;
+    private Team _teamA, _teamB;
 
     public void Enter(IStateMachine context)
     {
         _context = (MatchStateMachine)context;
+        _teamA = _context.CurrentMatch.TeamA;
+        _teamB = _context.CurrentMatch.TeamB;
 
-        Round round = new Round(_context.CurrentMatch.TeamA, _context.CurrentMatch.TeamB, _context.CurrentMatch.RoundCounter);
+        Round round = new Round(_teamA, _teamB, _context.CurrentMatch.RoundCounter);
         _context.CurrentMatch.Rounds.Add(round);
-        _roundEvaluator = new RoundEvaluator(_context.CurrentMatch.TeamA, _context.CurrentMatch.TeamB, _context.CurrentMatch.Rounds.Last());
+
+        _roundEvaluator = new RoundEvaluator(_teamA, _teamB, _context.CurrentMatch.Rounds.Last());
         _context.CurrentMatch.CurrentRound.RoundEvaluator = _roundEvaluator;
-
-
-        ChatApi.SendMessage(
-            $"/servermessage yellow 0 Round {_context.CurrentMatch.RoundCounter}: LIVE" +
-            $"<br>{_context.CurrentMatch.TeamA.GetTag()} {_context.CurrentMatch.TeamA.Wins}:{_context.CurrentMatch.TeamB.Wins} {_context.CurrentMatch.TeamB.GetTag()}");
-
         ChatApi.SendMessage("/settime 300");
+        MyLobbyManager.SetServerMessage(
+            ServerMessageColor.green,
+            new ChatMessage.Builder()
+                .TextLine($"Round {_context.CurrentMatch.RoundCounter}: started!").NewLine()
+                .TextLine($"{_teamA.GetTag()} {_teamA.Wins}:{_teamB.Wins} {_teamB.GetTag()}").Build().Message);
+
+
         ZeepkistNetwork.PlayerResultsChanged += OnLeaderBoardUpdated;
         RacingApi.RoundEnded += OnRoundEnd;
     }

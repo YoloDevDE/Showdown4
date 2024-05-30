@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using ZeepSDK.Chat;
 
 namespace Showdown4.Utils;
 
@@ -11,14 +10,12 @@ public class ChatMessage
 
     public string Message { get; set; }
 
-    public void send()
-    {
-        ChatApi.SendMessage(Message);
-    }
 
     public class Builder
     {
         private readonly ChatMessage _chatMessage;
+
+        private int maxLineWidth = 16;
 
         public Builder()
         {
@@ -50,10 +47,38 @@ public class ChatMessage
         public Builder TextLine(string text)
         {
             _chatMessage.Message += text;
+            if (text.Length > maxLineWidth)
+            {
+                maxLineWidth = text.Length;
+            }
+
             return this;
         }
 
-        public ChatMessage build()
+        public Builder CenterTextLine(string text)
+        {
+            // Berechnung der Anzahl der Leerzeichen auf beiden Seiten
+            int padding = (maxLineWidth - text.Length) / 2;
+
+            // Falls die maxLineWidth kleiner als die Textlänge ist, wird kein Padding hinzugefügt
+            if (padding > 0)
+            {
+                _chatMessage.Message += new string(' ', padding) + text + new string(' ', padding);
+                // Wenn die Länge ungerade ist, ein zusätzliches Leerzeichen rechts hinzufügen
+                if ((maxLineWidth - text.Length) % 2 != 0)
+                {
+                    _chatMessage.Message += " ";
+                }
+            }
+            else
+            {
+                _chatMessage.Message += text;
+            }
+
+            return this;
+        }
+
+        public ChatMessage Build()
         {
             return _chatMessage;
         }

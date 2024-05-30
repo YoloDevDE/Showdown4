@@ -65,7 +65,7 @@ public class Match
 
         string result = TableFormatter.AlignTableColumns(new List<List<string>> { line1, line2 });
         ServerMessageColor color = ColorRangeConverter.ConvertHexToColorName(winningTeam.Color);
-        ChatUtils.SetServerMessage(color, result);
+        MyLobbyManager.SetServerMessage(color, result);
     }
 
     public void ResetResults()
