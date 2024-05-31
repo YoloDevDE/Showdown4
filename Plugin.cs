@@ -3,7 +3,6 @@ using HarmonyLib;
 using Showdown4.Commands;
 using Showdown4.Entities;
 using Showdown4.Statemachine;
-using UnityEngine;
 using ZeepSDK.ChatCommands;
 
 namespace Showdown4;
@@ -22,8 +21,6 @@ public class Plugin : BaseUnityPlugin
         // Plugin startup logic
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
 
-        // Initialize the CoroutineManager
-        InitializeCoroutineManager();
 
         ModStorage.Initialize(this);
 
@@ -41,12 +38,5 @@ public class Plugin : BaseUnityPlugin
     {
         harmony?.UnpatchSelf();
         harmony = null;
-    }
-
-    private void InitializeCoroutineManager()
-    {
-        GameObject obj = new GameObject("CoroutineManager");
-        obj.AddComponent<CoroutineManager>();
-        DontDestroyOnLoad(obj);
     }
 }

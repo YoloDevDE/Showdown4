@@ -1,4 +1,4 @@
-﻿using Showdown4.Entities;
+﻿using Showdown4.Tmp;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
@@ -18,9 +18,9 @@ public class State_PreRacing : IState
         _teamB = _context.CurrentMatch.TeamB;
 
         ChatApi.SendMessage("/settime 86400");
-        MyLobbyManager.SetServerMessage(ServerMessageColor.orange,
+        LobbyController.SetServerMessage(ServerMessageColor.orange,
             new ChatMessage.Builder()
-                .TextLine($"Round {_context.CurrentMatch.RoundCounter}: Intermission").NewLine()
+                .TextLine($"Round {_context.CurrentMatch.RoundCounter()}: Intermission").NewLine()
                 .TextLine($"{_teamA.GetTag()} {_teamA.Wins}:{_teamB.Wins} {_teamB.GetTag()}")
                 .Build().Message);
 
@@ -40,7 +40,7 @@ public class State_PreRacing : IState
         ChatApi.SendMessage(
             new ChatMessage.Builder().ClearChat()
                 .DashedLine().NewLine()
-                .CenterTextLine($"Starting Round {_context.CurrentMatch.RoundCounter}").NewLine()
+                .CenterTextLine($"Starting Round {_context.CurrentMatch.RoundCounter()}").NewLine()
                 .DashedLine().Build().Message
         );
     }

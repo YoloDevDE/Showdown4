@@ -47,16 +47,11 @@ public static class TableFormatter
         return result;
     }
 
-    public static string AlignTableColumns(List<List<string>> table, char delimiter = ' ')
+    public static string FormattingScoreboard(List<List<string>> table, char delimiter = ' ')
     {
         if (table == null || table.Count == 0)
         {
             return "";
-        }
-
-        for (int index = 0; index < table.Count; index++)
-        {
-            table[index].Insert(0, $"#{index + 1}:");
         }
 
         int[] columnWidths = CalculateColumnWidths(table);

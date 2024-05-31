@@ -1,8 +1,6 @@
-﻿using System.Linq;
-using Showdown4.Commands;
-using Showdown4.Entities;
+﻿using Showdown4.Commands;
+using Showdown4.Tmp;
 using Showdown4.Utils;
-using ZeepkistClient;
 using ZeepSDK.Chat;
 using ZeepSDK.Messaging;
 
@@ -10,12 +8,18 @@ namespace Showdown4.Statemachine;
 
 public class State_LinkRacersToTeams : IState
 {
+    private readonly TeamService _teamService = new TeamService();
+    private readonly ZeepkistNetworkService _zeepkistNetworkService = new ZeepkistNetworkService();
     private MatchStateMachine _context;
     private bool _isTeamASet;
     private bool _isTeamBSet;
+
+    private MatchService _matchService = new MatchService();
+    private RoundService _roundService = new RoundService();
     private bool _setNextTeam;
 
-    private Team _teamA, _teamB;
+    private Team _teamA, _teamB, _currentTeam;
+
 
     public void Enter(IStateMachine context)
     {
@@ -25,93 +29,60 @@ public class State_LinkRacersToTeams : IState
         _teamA = _context.CurrentMatch.TeamA;
         _teamB = _context.CurrentMatch.TeamB;
 
-        CommandLinkPlayerToTeam.CommandInvoked += OnLinkPlayerToTeam;
-        ChatApi.SendMessage(
-            new ChatMessage.Builder().NewLine()
-                .DashedLine().NewLine()
-                .TextLine($"Match set to '{_context.CurrentMatch.TeamA.GetTag()} vs {_context.CurrentMatch.TeamB.GetTag()}'").NewLine()
-                .DashedLine().Build().Message
-        );
+        CommandLinkPlayerToTeam.CommandInvoked += OnLinkRacerToTeam;
 
-        MyLobbyManager.SetServerMessage(ServerMessageColor.orange,
+        LobbyController.SetServerMessage(ServerMessageColor.orange,
             new ChatMessage.Builder()
-                .TextLine($"Round {_context.CurrentMatch.RoundCounter}: Intermission").NewLine()
-                .TextLine($"{_teamA.GetTag()} {_teamA.Wins}:{_teamB.Wins} {_teamB.GetTag()}")
+                .TextLine("Linking up Racers:").NewLine()
+                .TextLine($"{_teamA.GetNameWithTag()} vs {_teamB.GetNameWithTag()} {_teamB.GetTag()}")
                 .Build().Message);
+
         CheckIfRacersAreLinked();
     }
 
     public void Exit()
     {
         MessengerApi.Log("Match Preparation finished!");
-        CommandLinkPlayerToTeam.CommandInvoked -= OnLinkPlayerToTeam;
+        CommandLinkPlayerToTeam.CommandInvoked -= OnLinkRacerToTeam;
     }
 
-    private void CheckIfRacersAreLinked()
+    public void CheckIfRacersAreLinked()
     {
-        if (!_isTeamASet || !_isTeamBSet)
+        if (_teamA.Racers.Count < _teamA.MaxTeamSize)
         {
-            if (_isTeamASet && !_setNextTeam)
-            {
-                _setNextTeam = true;
-
-
-                ChatApi.SendMessage(
-                    new ChatMessage.Builder().NewLine()
-                        .DashedLine().NewLine()
-                        .TextLine($"Team {_context.CurrentMatch.TeamA.GetTag()} is set!").NewLine()
-                        .TextLine($"{_context.CurrentMatch.TeamB.GetTag()}: It's your turn! Every player of your team needs to write #link in the chat.").NewLine()
-                        .DashedLine().Build().Message
-                );
-            }
-
-            MyLobbyManager.SetServerMessage(ServerMessageColor.orange,
-                new ChatMessage.Builder()
-                    .TextLine("Match Preparation").NewLine()
-                    .TextLine($"{_teamA.GetNameWithTag()} ({_teamA.GetLinkedRacersToString()}) vs '{_teamB.GetNameWithTag()}' ({_teamB.GetLinkedRacersToString()})")
-                    .Build().Message
-            );
+            _currentTeam = _teamA;
+        }
+        else if (_teamB.Racers.Count < _teamB.MaxTeamSize)
+        {
+            _currentTeam = _teamB;
         }
         else
         {
-            ChatApi.SendMessage(
-                new ChatMessage.Builder().NewLine()
-                    .DashedLine().NewLine()
-                    .TextLine("Everyone is linked to their teams. Waiting for Host for further instructions").NewLine()
-                    .DashedLine()
-                    .Build().Message);
             _context.TransitionTo(_context, new State_PreRacing());
-        }
-    }
-
-    private void OnLinkPlayerToTeam(ulong steamId)
-    {
-        string steamName = ZeepkistNetwork.PlayerList.FirstOrDefault(player => player.SteamID == steamId)
-            ?.GetUserNameNoTag();
-
-        string resultMessage;
-        Team team = !_isTeamASet ? _context.CurrentMatch.TeamA : _context.CurrentMatch.TeamB;
-        if (!_isTeamASet)
-        {
-            resultMessage = _context.CurrentMatch.TeamA.AddRacer(steamName, steamId);
-            _isTeamASet = _context.CurrentMatch.TeamA.TeamCompleted;
-        }
-        else if (!_isTeamBSet)
-        {
-            resultMessage = _context.CurrentMatch.TeamB.AddRacer(steamName, steamId);
-            _isTeamBSet = _context.CurrentMatch.TeamB.TeamCompleted;
-        }
-        else
-        {
-            ChatApi.SendMessage("Both teams are already set.");
             return;
         }
 
-        resultMessage = "<br>" +
-                        resultMessage +
-                        "<br>" +
-                        $"Currently linked: {team.GetLinkedRacersToString()}";
-        ChatApi.SendMessage(resultMessage);
+        if (_currentTeam.Racers.Count < 1)
+        {
+            ChatApi.SendMessage(new ChatMessage.Builder().NewLine()
+                .TextLine($"{_currentTeam.GetNameWithTag()}: If you identify yourself with this team then please proceed to write #link in the chat :smile:").NewLine()
+                .DashedLine().Build().Message);
+        }
+    }
+
+    private void OnLinkRacerToTeam(ulong steamId)
+    {
+        string steamName = _zeepkistNetworkService.GetSteamNameFromSteamId(steamId);
+        Racer racer = new Racer(steamId, steamName);
+        // First fill teamA then fill teamB
+        _teamService.AddRacer(_currentTeam, racer);
+        ChatApi.SendMessage(
+            new ChatMessage.Builder().NewLine()
+                .DashedLine().NewLine()
+                .TextLine($"{steamName} has been linked to {_currentTeam.GetNameWithTag()}").NewLine()
+                .TextLine($"Currently linked Racers: {_currentTeam.GetLinkedRacersToString()}").NewLine()
+                .DashedLine().Build().Message
+        );
         CheckIfRacersAreLinked();
     }
 }

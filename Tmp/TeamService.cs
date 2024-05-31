@@ -1,11 +1,18 @@
 ﻿using System.Collections.Generic;
-using Showdown4.Entities;
 
-namespace Showdown4.Service;
+namespace Showdown4.Tmp;
 
 public class TeamService
 {
-    public static string GetFormattedTeams(List<Team> teams)
+    public void AddRacer(Team team, Racer racer)
+    {
+        if (team.Racers.Count < team.MaxTeamSize)
+        {
+            team.Racers.Add(racer);
+        }
+    }
+
+    public string GetFormattedTeams(List<Team> teams)
     {
         string result = "";
         for (int index = 0; index < teams.Count; index++)

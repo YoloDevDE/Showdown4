@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
-using Showdown4.Service;
 
 namespace Showdown4.Utils;
 
@@ -30,14 +29,14 @@ public static class MessageFormatter
         return string.Concat(Enumerable.Repeat(br, count));
     }
 
-    public static string FormatRoundResult(Round round)
-    {
-        RoundEvaluator roundEvaluator = round.RoundEvaluator;
-        string headline = $"Round {round.RoundNumber} Results:";
-        string line1 = AlignKeyValue("#1: " + roundEvaluator.CurrentWinner.GetTag(), 6, roundEvaluator.GetAverageTime(roundEvaluator.CurrentWinner).GetFormattedTime(), 10);
-        string line2 = AlignKeyValue("#2: " + roundEvaluator.CurrentLoser.GetTag(), 6, roundEvaluator.GetAverageTime(roundEvaluator.CurrentLoser).GetFormattedTime(), 10);
-        return PrintLine() + headline + "<br>" + line1 + "<br>" + line2;
-    }
+    // public static string FormatRoundResult(Round round)
+    // {
+    //     RoundEvaluator roundEvaluator = round.RoundEvaluator;
+    //     string headline = $"Round {round.RoundNumber} Results:";
+    //     string line1 = AlignKeyValue("#1: " + roundEvaluator.CurrentWinner.GetTag(), 6, roundEvaluator.GetAverageTime(roundEvaluator.CurrentWinner).GetFormattedTime(), 10);
+    //     string line2 = AlignKeyValue("#2: " + roundEvaluator.CurrentLoser.GetTag(), 6, roundEvaluator.GetAverageTime(roundEvaluator.CurrentLoser).GetFormattedTime(), 10);
+    //     return PrintLine() + headline + "<br>" + line1 + "<br>" + line2;
+    // }
 
     public static string PrintLine()
     {

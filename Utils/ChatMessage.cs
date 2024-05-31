@@ -13,14 +13,9 @@ public class ChatMessage
 
     public class Builder
     {
-        private readonly ChatMessage _chatMessage;
+        private readonly ChatMessage _chatMessage = new ChatMessage();
 
         private int maxLineWidth = 16;
-
-        public Builder()
-        {
-            _chatMessage = new ChatMessage();
-        }
 
         public Builder DashedLine()
         {

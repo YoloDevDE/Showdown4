@@ -16,7 +16,7 @@ internal class State_PostRacing : IState
         ChatApi.SendMessage(
             new ChatMessage.Builder().NewLine()
                 .DashedLine().NewLine()
-                .TextLine($"Round {_context.CurrentMatch.CurrentRound.RoundNumber} over!!").NewLine()
+                .TextLine($"Round {_context.CurrentMatch.RoundCounter()} over!!").NewLine()
                 .DashedLine().Build().Message);
     }
 
