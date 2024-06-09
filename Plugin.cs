@@ -1,8 +1,9 @@
 ﻿using BepInEx;
 using HarmonyLib;
 using Showdown4.Commands;
-using Showdown4.Entities;
-using Showdown4.Statemachine;
+using Showdown4.Domain.Entities;
+using Showdown4.Domain.States;
+using Showdown4.Tmp;
 using ZeepSDK.ChatCommands;
 
 namespace Showdown4;
@@ -24,13 +25,8 @@ public class Plugin : BaseUnityPlugin
 
         ModStorage.Initialize(this);
 
-        ChatCommandApi.RegisterLocalChatCommand<CommandSetTeam>();
-        ChatCommandApi.RegisterLocalChatCommand<CommandStartMatch>();
-        ChatCommandApi.RegisterLocalChatCommand<CommandStopMatch>();
-        ChatCommandApi.RegisterMixedChatCommand<CommandLinkPlayerToTeam>();
-        ChatCommandApi.RegisterMixedChatCommand<CommandHeads>();
-        ChatCommandApi.RegisterMixedChatCommand<CommandTails>();
-
+        RegisterCommands();
+        InitializeStates();
         _matchStateMachine = new MatchStateMachine();
     }
 
@@ -38,5 +34,22 @@ public class Plugin : BaseUnityPlugin
     {
         harmony?.UnpatchSelf();
         harmony = null;
+    }
+
+    private void InitializeStates()
+    {
+        Match match = new Match(null, null, 3);
+        State_SetTeams state_setTeams = new State_SetTeams();
+        state_setTeams.AddTransitionRule(), new State_LinkRacersToTeams()));
+    }
+
+    private static void RegisterCommands()
+    {
+        ChatCommandApi.RegisterLocalChatCommand<CommandSetTeam>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandStartMatch>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandStopMatch>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandLinkPlayerToTeam>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandHeads>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandTails>();
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Showdown4.Entities;
+﻿namespace Showdown4.Domain.Entities;
 
 public class Scoreboard
 {

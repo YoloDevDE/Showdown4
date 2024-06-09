@@ -1,7 +1,7 @@
 ﻿using BepInEx;
 using ZeepSDK.Storage;
 
-namespace Showdown4.Entities;
+namespace Showdown4.Domain.Entities;
 
 public static class ModStorage
 {

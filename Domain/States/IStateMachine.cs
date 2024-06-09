@@ -1,9 +1,9 @@
-namespace Showdown4.Statemachine;
+namespace Showdown4.Domain.States;
 
 public interface IStateMachine
 {
     public IState State { get; set; }
-    public void TransitionTo(IStateMachine context, IState newState);
+    public void TransitionTo(IState newState);
     public void StopStateMachine();
     public void StartStatMachine(IStateMachine context, IState initialState);
 }

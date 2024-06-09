@@ -1,22 +1,15 @@
-﻿using Showdown4.Commands;
-using Showdown4.Tmp;
+﻿using Showdown4.Tmp;
 using ZeepSDK.Messaging;
 
-namespace Showdown4.Statemachine;
+namespace Showdown4.Domain.States;
 
-public class MatchStateMachine : BaseStatemachine
-
+public class MatchStateMachine : BaseStateMachine<IState>
 {
     public Match CurrentMatch;
     public bool isRunning;
 
-    public MatchStateMachine()
-    {
-        CommandStartMatch.CommandInvoked += OnStartMatch;
-        CommandStopMatch.CommandInvoked += OnStopMatch;
-    }
 
-    public override IState State { get; set; }
+    public IState State { get; set; }
 
 
     private void OnStopMatch()
@@ -38,7 +31,6 @@ public class MatchStateMachine : BaseStatemachine
         {
             MessengerApi.Log("Showdown Match Started");
             isRunning = !isRunning;
-            StartStatMachine(this, new State_SetTeams());
         }
         else
         {
