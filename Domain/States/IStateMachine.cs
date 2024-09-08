@@ -1,9 +1,44 @@
+using System;
+using JetBrains.Annotations;
+
 namespace Showdown4.Domain.States;
 
 public interface IStateMachine
 {
-    public IState State { get; set; }
-    public void TransitionTo(IState newState);
-    public void StopStateMachine();
-    public void StartStatMachine(IStateMachine context, IState initialState);
+    IState CurrentState { get; set; }
+    [NotNull] IState InitialState { get; }
+    [NotNull] IState FinalState { get; }
+    event Action StateMachineFinished;
+
+    void TransitionTo([NotNull] IState nextState)
+    {
+        if (CurrentState != null)
+        {
+            CurrentState.SubStateMachine?.Dispose();
+            CurrentState.Exit();
+        }
+
+        CurrentState = nextState;
+        CurrentState.Enter();
+        CurrentState.Execute();
+        CurrentState.SubStateMachine?.Init();
+    }
+
+    void Dispose()
+    {
+        TransitionTo(FinalState);
+        CurrentState.Exit();
+    }
+
+    void StateMachineFinishedNotify()
+    {
+        InvokeFinish();
+    }
+
+    void Init()
+    {
+        TransitionTo(InitialState);
+    }
+
+    void InvokeFinish();
 }

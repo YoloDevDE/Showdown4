@@ -11,26 +11,23 @@ using Team = Showdown4.Tmp.Team;
 
 namespace Showdown4.Domain.States;
 
-public class State_SetTeams : State
+public class State_SetTeams : IState
 {
-    private MatchStateMachine _context;
     private List<Team> _teams;
 
-
-    public override void Exit()
+    public State_SetTeams(IStateMachine stateMachine)
     {
-        ChatApi.SendMessage(
-            new ChatMessage.Builder().NewLine()
-                .DashedLine().NewLine()
-                .TextLine($"Match set to '{_context.CurrentMatch.TeamA.GetTag()} vs {_context.CurrentMatch.TeamB.GetTag()}'").NewLine()
-                .DashedLine().Build().Message
-        );
-        CommandSetTeam.CommandInvoked -= OnSetTeam;
+        StateMachine = stateMachine;
     }
 
-    public override void Enter(IStateMachine context)
+    public ShowdownStateMachine ShowdownStateMachine => (ShowdownStateMachine)StateMachine;
+
+
+    public IStateMachine StateMachine { get; }
+
+
+    public void Enter()
     {
-        _context = (MatchStateMachine)context;
         TeamService teamService = new TeamService();
         CommandSetTeam.CommandInvoked += OnSetTeam;
 
@@ -40,6 +37,21 @@ public class State_SetTeams : State
         ChatApi.AddLocalMessage("Register Team ->'#set teams <teamtag>, <teamtag>'");
         ChatApi.AddLocalMessage(teamService.GetFormattedTeams(_teams));
         ChatApi.SendMessage("/settime 86400");
+    }
+
+    public void Execute()
+    {
+    }
+
+    public void Exit()
+    {
+        ChatApi.SendMessage(
+            new ChatMessage.Builder().NewLine()
+                .DashedLine().NewLine()
+                .TextLine($"Match set to '{ShowdownStateMachine.CurrentMatch.TeamA.GetTag()} vs {ShowdownStateMachine.CurrentMatch.TeamB.GetTag()}'").NewLine()
+                .DashedLine().Build().Message
+        );
+        CommandSetTeam.CommandInvoked -= OnSetTeam;
     }
 
     private void OnSetTeam(string arg)
@@ -62,7 +74,7 @@ public class State_SetTeams : State
             return;
         }
 
-        _context.CurrentMatch = new Match(teamA, teamB, 3);
-        _context.TransitionTo(new State_LinkRacersToTeams());
+        ShowdownStateMachine.CurrentMatch = new Match(teamA, teamB, 3);
+        StateMachine.TransitionTo(new State_LinkRacersToTeams(StateMachine));
     }
 }

@@ -7,11 +7,10 @@ using ZeepSDK.Messaging;
 
 namespace Showdown4.Domain.States;
 
-public class State_LinkRacersToTeams : State
+public class State_LinkRacersToTeams : IState
 {
     private readonly TeamService _teamService = new TeamService();
     private readonly ZeepkistNetworkService _zeepkistNetworkService = new ZeepkistNetworkService();
-    private MatchStateMachine _context;
     private bool _isTeamASet;
     private bool _isTeamBSet;
 
@@ -21,23 +20,29 @@ public class State_LinkRacersToTeams : State
 
     private Team _teamA, _teamB, _currentTeam;
 
+    public State_LinkRacersToTeams(IStateMachine stateMachine)
+    {
+        StateMachine = stateMachine;
+    }
 
-    public string Test { get; set; } = "LinkRacers";
+    private ShowdownStateMachine _context => (ShowdownStateMachine)StateMachine;
 
-    public override void Exit()
+
+    public IStateMachine StateMachine { get; }
+
+    public void Execute()
+    {
+    }
+
+    public void Exit()
     {
         MessengerApi.Log("Match Preparation finished!");
         CommandLinkPlayerToTeam.CommandInvoked -= OnLinkRacerToTeam;
     }
 
-
-    public event Action OnCompleted;
-
-    public override void Enter(IStateMachine context)
+    public void Enter()
     {
         _setNextTeam = false;
-        _context = (MatchStateMachine)context;
-
         _teamA = _context.CurrentMatch.TeamA;
         _teamB = _context.CurrentMatch.TeamB;
 
@@ -52,6 +57,9 @@ public class State_LinkRacersToTeams : State
         CheckIfRacersAreLinked();
     }
 
+
+    public event Action OnCompleted;
+
     public void CheckIfRacersAreLinked()
     {
         if (_teamA.Racers.Count < _teamA.MaxTeamSize)
@@ -64,6 +72,7 @@ public class State_LinkRacersToTeams : State
         }
         else
         {
+            StateMachine.TransitionTo(new State_PreRacing(StateMachine));
             return;
         }
 

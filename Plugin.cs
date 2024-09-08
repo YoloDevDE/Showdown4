@@ -3,7 +3,6 @@ using HarmonyLib;
 using Showdown4.Commands;
 using Showdown4.Domain.Entities;
 using Showdown4.Domain.States;
-using Showdown4.Tmp;
 using ZeepSDK.ChatCommands;
 
 namespace Showdown4;
@@ -12,8 +11,8 @@ namespace Showdown4;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
-    private IStateMachine _matchStateMachine;
     private Harmony harmony;
+    private IStateMachine MasterStateMachine;
 
     private void Awake()
     {
@@ -26,8 +25,8 @@ public class Plugin : BaseUnityPlugin
         ModStorage.Initialize(this);
 
         RegisterCommands();
-        InitializeStates();
-        _matchStateMachine = new MatchStateMachine();
+        MasterStateMachine = new MasterStateMachine();
+        MasterStateMachine.Init();
     }
 
     private void OnDestroy()
@@ -36,17 +35,13 @@ public class Plugin : BaseUnityPlugin
         harmony = null;
     }
 
-    private void InitializeStates()
-    {
-        Match match = new Match(null, null, 3);
-        State_SetTeams state_setTeams = new State_SetTeams();
-        state_setTeams.AddTransitionRule(), new State_LinkRacersToTeams()));
-    }
 
     private static void RegisterCommands()
     {
         ChatCommandApi.RegisterLocalChatCommand<CommandSetTeam>();
         ChatCommandApi.RegisterLocalChatCommand<CommandStartMatch>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStart>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStop>();
         ChatCommandApi.RegisterLocalChatCommand<CommandStopMatch>();
         ChatCommandApi.RegisterMixedChatCommand<CommandLinkPlayerToTeam>();
         ChatCommandApi.RegisterMixedChatCommand<CommandHeads>();
