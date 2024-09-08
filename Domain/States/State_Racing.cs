@@ -8,13 +8,14 @@ namespace Showdown4.Domain.States;
 
 public class State_Racing : IState
 {
-    private ShowdownStateMachine _showdownStateMachine => StateMachine as ShowdownStateMachine;
     private Team _teamA, _teamB;
 
     public State_Racing(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
+
+    private ShowdownStateMachine _showdownStateMachine => StateMachine as ShowdownStateMachine;
 
 
     public IStateMachine StateMachine { get; }
@@ -32,7 +33,6 @@ public class State_Racing : IState
 
     public void Enter()
     {
-
         _teamA = _showdownStateMachine.CurrentMatch.TeamA;
         _teamB = _showdownStateMachine.CurrentMatch.TeamB;
 
@@ -72,7 +72,7 @@ public class State_Racing : IState
 
     private void OnRoundEnd()
     {
-        StateMachine.TransitionTo( new State_PostRacing(StateMachine));
+        StateMachine.TransitionTo(new State_PostRacing(StateMachine));
     }
 
     private void OnLeaderBoardUpdated(ZeepkistNetworkPlayer netRacer)

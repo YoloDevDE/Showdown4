@@ -2,9 +2,8 @@
 
 namespace Showdown4.Domain.States;
 
- public class State_RaceEvaluation : IState
+public class State_RaceEvaluation : IState
 {
-    ShowdownStateMachine ShowdownStateMachine => StateMachine as ShowdownStateMachine;
     private Round _round;
 
     public State_RaceEvaluation(IStateMachine stateMachine)
@@ -12,10 +11,11 @@ namespace Showdown4.Domain.States;
         StateMachine = stateMachine;
     }
 
+    private ShowdownStateMachine ShowdownStateMachine => StateMachine as ShowdownStateMachine;
+
 
     public void Execute()
     {
-        
     }
 
     public void Exit()
@@ -26,7 +26,6 @@ namespace Showdown4.Domain.States;
 
     public void Enter()
     {
-
         // _round = ShowdownStateMachine.CurrentMatch.GetCurrentRound();
         //
         // Team winner = _round.RoundEvaluator.CurrentWinner;
@@ -62,4 +61,3 @@ namespace Showdown4.Domain.States;
         // }
     }
 }
-

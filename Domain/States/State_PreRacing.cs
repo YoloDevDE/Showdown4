@@ -17,7 +17,6 @@ public class State_PreRacing : IState
     private ShowdownStateMachine ShowdownStateMachine => (ShowdownStateMachine)StateMachine;
 
 
-
     public void Execute()
     {
     }

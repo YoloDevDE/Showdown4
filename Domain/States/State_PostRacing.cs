@@ -17,7 +17,6 @@ internal class State_PostRacing : IState
     public IStateMachine StateMachine { get; }
 
 
-
     public void Execute()
     {
     }
@@ -27,7 +26,7 @@ internal class State_PostRacing : IState
         RacingApi.LevelLoaded -= OnLevelLoaded;
     }
 
-    public void Enter( )
+    public void Enter()
     {
         RacingApi.LevelLoaded += OnLevelLoaded;
 
@@ -43,4 +42,3 @@ internal class State_PostRacing : IState
         StateMachine.TransitionTo(new State_RaceEvaluation(StateMachine));
     }
 }
-
