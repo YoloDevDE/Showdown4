@@ -2,7 +2,6 @@
 using Showdown4.Commands;
 using Showdown4.Service;
 using UnityEngine;
-using ZeepSDK.Racing;
 using Color = UnityEngine.Color;
 
 namespace Showdown4.Domain.States;
@@ -21,7 +20,6 @@ public class State_Master_Off : IState
     public void Enter()
     {
         CommandShowdownStart.CommandInvoked += OnShowdownStarted;
-        RacingApi.RoundStarted += OnShowdownStarted;
         CommandShowdownStop.CommandInvoked += OnShowdownStopped;
     }
 
@@ -32,7 +30,6 @@ public class State_Master_Off : IState
     public void Exit()
     {
         CommandShowdownStart.CommandInvoked -= OnShowdownStarted;
-        RacingApi.RoundStarted -= OnShowdownStarted;
         CommandShowdownStop.CommandInvoked -= OnShowdownStopped;
     }
 

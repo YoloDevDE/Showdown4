@@ -3,7 +3,6 @@ using Showdown4.Commands;
 using Showdown4.Domain.States.Showdown;
 using Showdown4.Tmp;
 using Showdown4.Utils;
-using ZeepSDK.Chat;
 using ZeepSDK.Messaging;
 
 namespace Showdown4.Domain.States;
@@ -26,13 +25,83 @@ public class State_LinkRacersToTeams : IState
         StateMachine = stateMachine;
     }
 
-    private ShowdownStateMachine _context => (ShowdownStateMachine)StateMachine;
+    private ShowdownStateMachine _Showdown => StateMachine as ShowdownStateMachine;
 
 
     public IStateMachine StateMachine { get; }
 
+    public void Enter()
+    {
+        _setNextTeam = false;
+        _teamA = _Showdown.CurrentMatch.TeamA;
+        _teamB = _Showdown.CurrentMatch.TeamB;
+
+        CommandLinkPlayerToTeam.CommandInvoked += OnLinkRacerToTeam;
+    }
+
     public void Execute()
     {
+        CheckIfRacersAreLinked();
+        new ServerMessage()
+            .ShowdownHeader()
+            .SetLineEffects(sle => sle
+                .FontSize(20)
+                .Italic()
+            )
+            .AddLine(l => l
+                .AddContent(c => c
+                    .AddText("Match set to:")
+                    .Italic()
+                ))
+            .SetLineEffects(sle => sle
+                .FontSize(20)
+                .Italic()
+            )
+            .AddLine(l => l
+                .AddContent(c => c
+                    .AddText($"{_Showdown.CurrentMatch.TeamA.GetNameWithTag()} ")
+                    .Color($"{_Showdown.CurrentMatch.TeamA.Color}")
+                )
+                .AddContent(c => c
+                    .AddText("VS ")
+                ).AddContent(c => c
+                    .AddText($"{_Showdown.CurrentMatch.TeamB.GetNameWithTag()} ")
+                    .Color($"{_Showdown.CurrentMatch.TeamB.Color}")
+                )
+            )
+            .AddSeparator() // Separator line with <br> in front if necessary
+            .AddLine(r => r
+                .AddContent(c => c
+                    .AddText("Linking Steam Accounts to Teams..."))
+            )
+            .AddSeparator()
+            .AddLine(r => r
+                .AddContent(c => c
+                    .AddText("Waiting for everyone in "))
+                .AddContent(c => c
+                    .AddText($"{_currentTeam.GetTag()} ")
+                    .Color($"{_currentTeam.Color}"))
+                .AddContent(c => c
+                    .AddText("to type <color=#ff0000>'!link'</color> in the chat"))
+            ).AddLine(r => r
+                .AddContent(c => c
+                    .AddText("Currently linked: ")
+                )
+            ).AddLine(r => r
+                .AddContent(c => c
+                    .AddText($"{_teamA.GetTag()} ")
+                    .Color(_teamA.Color))
+                .AddContent(c => c
+                    .AddText($"{_teamA.GetLinkedRacersToString()}"))
+            ).AddLine(r => r
+                .AddContent(c => c
+                    .AddText($"{_teamB.GetTag()} ")
+                    .Color(_teamB.Color)
+                )
+                .AddContent(c => c
+                    .AddText($"{_teamB.GetLinkedRacersToString()}"))
+            )
+            .Send(); // Send the message
     }
 
     public void Exit()
@@ -43,17 +112,6 @@ public class State_LinkRacersToTeams : IState
 
     public event Action Finished;
 
-    public void Enter()
-    {
-        _setNextTeam = false;
-        _teamA = _context.CurrentMatch.TeamA;
-        _teamB = _context.CurrentMatch.TeamB;
-
-        CommandLinkPlayerToTeam.CommandInvoked += OnLinkRacerToTeam;
-    }
-
-
-    public event Action OnCompleted;
 
     public void CheckIfRacersAreLinked()
     {
@@ -67,15 +125,102 @@ public class State_LinkRacersToTeams : IState
         }
         else
         {
+            FadeOut();
+        }
+    }
+
+    private void FadeOut()
+    {
+        _Showdown.ShowdownTimer.Stop();
+        _Showdown.ShowdownTimer.Start();
+        _Showdown.ShowdownTimer.Tick += OnTimerTick;
+    }
+
+    private void OnTimerTick()
+    {
+        if (_Showdown.ShowdownTimer.Ticks % 4 == 0)
+        {
+            new ServerMessage()
+                .ShowdownHeader()
+                .SetLineEffects(sle => sle
+                    .FontSize(20)
+                    .Italic()
+                )
+                .AddLine(l => l
+                    .AddContent(c => c
+                        .AddText("Match set to:")
+                        .Italic()
+                    ))
+                .SetLineEffects(sle => sle
+                    .FontSize(20)
+                    .Italic()
+                )
+                .AddLine(l => l
+                    .AddContent(c => c
+                        .AddText($"{_Showdown.CurrentMatch.TeamA.GetNameWithTag()} ")
+                        .Color($"{_Showdown.CurrentMatch.TeamA.Color}")
+                    )
+                    .AddContent(c => c
+                        .AddText("VS ")
+                    ).AddContent(c => c
+                        .AddText($"{_Showdown.CurrentMatch.TeamB.GetNameWithTag()} ")
+                        .Color($"{_Showdown.CurrentMatch.TeamB.Color}")
+                    )
+                )
+                .AddSeparator() // Separator line with <br> in front if necessary
+                .AddLine(r => r
+                    .AddContent(c => c
+                        .AddText("Linking Steam Accounts to Teams..."))
+                )
+                .AddSeparator()
+                .AddLine(r => r
+                    .AddContent(c => c
+                        .AddText("Waiting for everyone in "))
+                    .AddContent(c => c
+                        .AddText($"{_currentTeam.GetTag()} ")
+                        .Color($"{_currentTeam.Color}"))
+                    .AddContent(c => c
+                        .AddText("to type <color=#ff0000>'!link'</color> in the chat"))
+                ).AddLine(r => r
+                    .AddContent(c => c
+                        .AddText("Currently linked: ")
+                    )
+                ).SetLineEffects(line => line
+                    .Color(_teamA.Color)).AddLine(r => r
+                    .AddContent(c => c
+                        .AddText($"{_teamA.GetTag()} ")
+                        .Color(_teamA.Color))
+                    .AddContent(c => c
+                        .AddText($"{_teamA.GetLinkedRacersToString()}")
+                    )
+                )
+                .SetLineEffects(line => line
+                    .Color(_teamB.Color))
+                .AddLine(r => r
+                    .AddContent(c => c
+                        .AddText($"{_teamB.GetTag()} ")
+                    )
+                    .AddContent(c => c
+                        .AddText($"{_teamB.GetLinkedRacersToString()}")
+                    )
+                )
+                .AddSeparator()
+                .AddLine(r => r
+                    .AddContent(c => c
+                        .AddText($"All steam accounts are linked to their teams! Starting Draft Phase in: {5 - _Showdown.ShowdownTimer.Ticks / 4}")
+                        .Color("#00ff00"))
+                )
+                .Send(); // Send the message
+        }
+
+        if (_Showdown.ShowdownTimer.Ticks < 5 * 4)
+        {
             return;
         }
 
-        if (_currentTeam.Racers.Count < 1)
-        {
-            ChatApi.SendMessage(new ChatMessage.Builder().NewLine()
-                .TextLine($"{_currentTeam.GetNameWithTag()}: If you identify yourself with this team then please proceed to write #link in the chat :smile:").NewLine()
-                .DashedLine().Build().Message);
-        }
+        _Showdown.ShowdownTimer.Tick -= OnTimerTick;
+        _Showdown.ShowdownTimer.Stop();
+        Finished?.Invoke();
     }
 
     private void OnLinkRacerToTeam(ulong steamId)
@@ -84,13 +229,6 @@ public class State_LinkRacersToTeams : IState
         Racer racer = new Racer(steamId, steamName);
         // First fill teamA then fill teamB
         _teamService.AddRacer(_currentTeam, racer);
-        ChatApi.SendMessage(
-            new ChatMessage.Builder().NewLine()
-                .DashedLine().NewLine()
-                .TextLine($"{steamName} has been linked to {_currentTeam.GetNameWithTag()}").NewLine()
-                .TextLine($"Currently linked Racers: {_currentTeam.GetLinkedRacersToString()}").NewLine()
-                .DashedLine().Build().Message
-        );
-        CheckIfRacersAreLinked();
+        Execute();
     }
 }

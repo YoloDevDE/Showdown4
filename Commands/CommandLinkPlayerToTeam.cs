@@ -6,7 +6,7 @@ namespace Showdown4.Commands;
 
 public class CommandLinkPlayerToTeam : IMixedChatCommand
 {
-    public string Prefix => "#";
+    public string Prefix => "!";
     public string Command => "link";
     public string Description => "WIP";
 

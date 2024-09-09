@@ -40,7 +40,7 @@ public class Plugin : BaseUnityPlugin
 
     private void Start()
     {
-        ZeepkistNetwork.ConnectedToMasterServer += ConnectedToMasterServer;
+        // ZeepkistNetwork.ConnectedToMasterServer += ConnectedToMasterServer;
     }
 
     private void OnDestroy()
@@ -57,7 +57,7 @@ public class Plugin : BaseUnityPlugin
 
     private static void RegisterCommands()
     {
-        ChatCommandApi.RegisterLocalChatCommand<CommandSetTeam>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandSetupMatch>();
         ChatCommandApi.RegisterLocalChatCommand<CommandStartMatch>();
         ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStart>();
         ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStop>();

@@ -3,10 +3,10 @@ using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
 
-public class CommandSetTeam : ILocalChatCommand
+public class CommandSetupMatch : ILocalChatCommand
 {
-    public string Prefix => "#";
-    public string Command => "set teams";
+    public string Prefix => "/";
+    public string Command => "sd match";
     public string Description => "WIP";
 
     public void Handle(string arguments)

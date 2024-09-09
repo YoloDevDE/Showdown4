@@ -3,20 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Commands;
 using Showdown4.Domain.Entities;
-using Showdown4.Domain.States.Showdown;
 using Showdown4.Tmp;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
 using Match = Showdown4.Tmp.Match;
 using Team = Showdown4.Tmp.Team;
 
-namespace Showdown4.Domain.States;
+namespace Showdown4.Domain.States.Showdown;
 
-public class State_SetTeams : IState
+public class State_SetupMatch : IState
 {
     private List<Team> _teams;
 
-    public State_SetTeams(IStateMachine stateMachine)
+    public State_SetupMatch(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -32,12 +31,12 @@ public class State_SetTeams : IState
     public void Enter()
     {
         TeamService teamService = new TeamService();
-        CommandSetTeam.CommandInvoked += OnSetTeam;
+        CommandSetupMatch.CommandInvoked += OnSetTeam;
 
         _teams = ModStorage.Storage.LoadFromJson<TeamJsonWrapper>("Teams").Teams;
 
 
-        ChatApi.AddLocalMessage("Register Team ->'#set teams <teamtag>, <teamtag>'");
+        ChatApi.AddLocalMessage("Setup Match ->'/sd match <teamtag>,<teamtag>'");
         ChatApi.AddLocalMessage(teamService.GetFormattedTeams(_teams));
         ChatApi.SendMessage("/settime 86400");
         ShowdownStateMachine.ShowdownTimer.Tick += OnTimerTick;
@@ -50,51 +49,30 @@ public class State_SetTeams : IState
 
     public void Exit()
     {
-        ShowdownStateMachine.ShowdownTimer.Tick += OnTimerTick;
-        ChatApi.SendMessage(
-            new ChatMessage.Builder().NewLine()
-                .DashedLine().NewLine()
-                .TextLine($"Match set to '{ShowdownStateMachine.CurrentMatch.TeamA.GetTag()} vs {ShowdownStateMachine.CurrentMatch.TeamB.GetTag()}'").NewLine()
-                .DashedLine().Build().Message
-        );
-        CommandSetTeam.CommandInvoked -= OnSetTeam;
+        ShowdownStateMachine.ShowdownTimer.Tick -= OnTimerTick;
+        CommandSetupMatch.CommandInvoked -= OnSetTeam;
     }
 
     private void OnTimerTick()
     {
         new ServerMessage()
-            .AddHeadline(h => h
-                .AddContent(c => c
-                    .AddText("Showdown ")
-                    .Color("#ff0000")
-                    .Bold()
-                    .Underline()
-                    .AllCaps()
-                )
-                .AddContent(c => c
-                    .AddText("Season ")
-                    .Color("#ffffff")
-                    .Bold()
-                    .Underline()
-                    .AllCaps()
-                )
-                .AddContent(c => c
-                    .AddText("4")
-                    .Color("#ff8800")
-                    .Bold()
-                    .Underline()
-                    .AllCaps()
-                )
+            .ShowdownHeader()
+            .SetLineEffects(sle => sle
+                .FontSize(15)
+                .Italic()
             )
             .AddLine(l => l
                 .AddContent(c => c
-                    .AddText("Waiting for Host to initiate the Match-Procedure")
-                    .Color("#aaaaaa")
-                    .Italic()
+                    .AddText("Waiting for Host to setup the Match")
                 )
             )
             .AddSeparator() // Separator line with <br> in front if necessary
             .Send(); // Send the message
+
+        if ((ShowdownStateMachine.ShowdownTimer.Ticks + 1) % 4 * 5 == 0)
+        {
+            OnSetTeam("NIL,KBW");
+        }
     }
 
     private void OnSetTeam(string arg)

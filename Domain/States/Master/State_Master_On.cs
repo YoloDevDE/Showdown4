@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Showdown4.Commands;
 using Showdown4.Domain.States.Showdown;
 using Showdown4.Service;
@@ -12,17 +13,26 @@ public class State_Master_On : IState
     {
         StateMachine = stateMachine;
         SubStateMachine = new ShowdownStateMachine();
-        IState stateSetTeams = new State_SetTeams(SubStateMachine);
-        IState stateLinkRacersToTeams = new State_LinkRacersToTeams(SubStateMachine);
 
-        IState statePreRacing = new State_PreRacing(StateMachine);
+        // Define your states in a list
+        List<IState> states = new List<IState>
+        {
+            SubStateMachine.InitialState,
+            new State_SetupMatch(SubStateMachine),
+            new State_LinkRacersToTeams(SubStateMachine),
+            new State_Drafting(SubStateMachine),
+            new State_PreRacing(SubStateMachine)
+        };
 
-        SubStateMachine
-            .AddTransition(SubStateMachine.InitialState, stateSetTeams)
-            .AddTransition(stateSetTeams, stateLinkRacersToTeams)
-            .AddTransition(stateLinkRacersToTeams, statePreRacing)
-            ;
+        // Automatically add transitions between consecutive states
+
+
+        for (int i = 0; i < states.Count - 1; i++)
+        {
+            SubStateMachine.AddTransition(states[i], states[i + 1]);
+        }
     }
+
 
     private ShowdownStateMachine _showdownStateMachine => SubStateMachine as ShowdownStateMachine;
 

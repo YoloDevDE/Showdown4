@@ -5,24 +5,38 @@ namespace Showdown4.Utils;
 
 public class ServerMessage
 {
+    private readonly string prefix = "/servermessage white 0 " +
+                                     "<size=\"30%\">" +
+                                     "<align=\"left\">";
+
     private int lineCount; // To track the number of lines
+    private string lineEffects = ""; // Default line-wide effects
     private string message = "";
 
-    private readonly string prefix = "/servermessage white 0 " +
-                                     "<size=\"40%\">" +
-                                     "<align=\"left\">";
 
     public override string ToString()
     {
         return $"{message}";
     }
 
+    // Apply line-wide effects, but allow the lambda to override them
+    public ServerMessage SetLineEffects(Action<ContentBuilder> lineEffectCustomizer)
+    {
+        ContentBuilder contentBuilder = new ContentBuilder();
+        lineEffectCustomizer(contentBuilder);
+        lineEffects = contentBuilder.BuildInline(); // Store effects for this line
+        return this;
+    }
+
     // Add a content block with custom formatting
     public ServerMessage AddContent(Action<ContentBuilder> customizer)
     {
-        ContentBuilder contentBuilder = new ContentBuilder(); // Create a new content builder for this block
-        customizer(contentBuilder); // Apply custom formatting
-        message += contentBuilder.BuildInline(); // Append the content without adding a line break yet
+        ContentBuilder contentBuilder = new ContentBuilder();
+        customizer(contentBuilder);
+        string inlineContent = contentBuilder.BuildInline();
+
+        // Apply line-wide effects if there are any, but allow overriding
+        message += lineEffects + inlineContent;
         return this;
     }
 
@@ -40,6 +54,14 @@ public class ServerMessage
     public ServerMessage AddLine(Action<ServerMessage> lineContent)
     {
         lineContent(this); // Let the caller define the line content
+        message += "<br>"; // Add line break after the line is complete
+        lineCount++; // Increment line count after adding a line
+        PrependBreaksIfNeeded(); // Prepend <br> if there are more than 2 lines
+        return this;
+    }
+
+    public ServerMessage AddLine()
+    {
         message += "<br>"; // Add line break after the line is complete
         lineCount++; // Increment line count after adding a line
         PrependBreaksIfNeeded(); // Prepend <br> if there are more than 2 lines
@@ -65,11 +87,39 @@ public class ServerMessage
         }
     }
 
+    public ServerMessage ShowdownHeader()
+    {
+        return new ServerMessage()
+            .AddHeadline(h => h
+                .AddContent(c => c
+                    .AddText("Showdown ")
+                    .Color("#ff0000")
+                    .Underline()
+                    .Bold()
+                    .AllCaps().FontSize(40)
+                )
+                .AddContent(c => c
+                    .AddText("Season ")
+                    .Color("#ffffff")
+                    .Underline()
+                    .Bold()
+                    .AllCaps().FontSize(40)
+                )
+                .AddContent(c => c
+                    .AddText("4")
+                    .Color("#ff8800")
+                    .Underline()
+                    .Bold()
+                    .AllCaps().FontSize(40)
+                )
+            );
+    }
+
     public void Send()
     {
         message = prefix + message;
         // Simulating sending a message
-        Console.WriteLine(message);
+        // Console.WriteLine(message);
         ChatApi.SendMessage(message);
     }
 
@@ -91,15 +141,33 @@ public class ServerMessage
             return this;
         }
 
+        public ContentBuilder Italic()
+        {
+            content = $"<i>{content}</i>";
+            return this;
+        }
+
         public ContentBuilder Underline()
         {
             content = $"<u>{content}</u>";
             return this;
         }
 
-        public ContentBuilder Italic()
+        public ContentBuilder Strikethrough()
         {
-            content = $"<i>{content}</i>";
+            content = $"<s>{content}</s>";
+            return this;
+        }
+
+        public ContentBuilder Superscript()
+        {
+            content = $"<sup>{content}</sup>";
+            return this;
+        }
+
+        public ContentBuilder Subscript()
+        {
+            content = $"<sub>{content}</sub>";
             return this;
         }
 
@@ -109,15 +177,76 @@ public class ServerMessage
             return this;
         }
 
+        public ContentBuilder SmallCaps()
+        {
+            content = $"<smallcaps>{content}</smallcaps>";
+            return this;
+        }
+
         public ContentBuilder Color(string color)
         {
             content = $"<color={color}>{content}</color>";
             return this;
         }
 
+        public ContentBuilder FontSize(int size)
+        {
+            content = $"<size=\"{size}%\">{content}</size>";
+            return this;
+        }
+
+        public ContentBuilder MarginLeft(int value)
+        {
+            content = $"<margin-left=\"{value}\">{content}</margin-left>";
+            return this;
+        }
+
+        public ContentBuilder MarginRight(int value)
+        {
+            content = $"<margin-right=\"{value}\">{content}</margin-right>";
+            return this;
+        }
+
+        // Neue Methoden für die Ausrichtung (alignment)
+        public ContentBuilder Center()
+        {
+            content = $"<align=\"center\">{content}</align>";
+            return this;
+        }
+
+        public ContentBuilder Left()
+        {
+            content = $"<align=\"left\">{content}</align>";
+            return this;
+        }
+
+        public ContentBuilder Right()
+        {
+            content = $"<align=\"right\">{content}</align>";
+            return this;
+        }
+
+        public ContentBuilder Indent()
+        {
+            content = $"<indent>{content}</indent>";
+            return this;
+        }
+
+        public ContentBuilder NoParsing()
+        {
+            content = $"<noparse>{content}</noparse>";
+            return this;
+        }
+
+        public ContentBuilder FontWeight(int weight)
+        {
+            content = $"<font-weight=\"{weight}\">{content}</font-weight>";
+            return this;
+        }
+
         public string BuildInline()
         {
-            return content; // Return content without appending to the message (for inline use)
+            return content; // Rückgabe des formatierten Inhalts
         }
     }
 }
