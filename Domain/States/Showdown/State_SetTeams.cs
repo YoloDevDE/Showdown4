@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Commands;
 using Showdown4.Domain.Entities;
+using Showdown4.Domain.States.Showdown;
 using Showdown4.Tmp;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
@@ -26,6 +27,8 @@ public class State_SetTeams : IState
     public IStateMachine StateMachine { get; }
 
 
+    public event Action Finished;
+
     public void Enter()
     {
         TeamService teamService = new TeamService();
@@ -37,14 +40,17 @@ public class State_SetTeams : IState
         ChatApi.AddLocalMessage("Register Team ->'#set teams <teamtag>, <teamtag>'");
         ChatApi.AddLocalMessage(teamService.GetFormattedTeams(_teams));
         ChatApi.SendMessage("/settime 86400");
+        ShowdownStateMachine.ShowdownTimer.Tick += OnTimerTick;
     }
 
     public void Execute()
     {
+        OnTimerTick();
     }
 
     public void Exit()
     {
+        ShowdownStateMachine.ShowdownTimer.Tick += OnTimerTick;
         ChatApi.SendMessage(
             new ChatMessage.Builder().NewLine()
                 .DashedLine().NewLine()
@@ -52,6 +58,43 @@ public class State_SetTeams : IState
                 .DashedLine().Build().Message
         );
         CommandSetTeam.CommandInvoked -= OnSetTeam;
+    }
+
+    private void OnTimerTick()
+    {
+        new ServerMessage()
+            .AddHeadline(h => h
+                .AddContent(c => c
+                    .AddText("Showdown ")
+                    .Color("#ff0000")
+                    .Bold()
+                    .Underline()
+                    .AllCaps()
+                )
+                .AddContent(c => c
+                    .AddText("Season ")
+                    .Color("#ffffff")
+                    .Bold()
+                    .Underline()
+                    .AllCaps()
+                )
+                .AddContent(c => c
+                    .AddText("4")
+                    .Color("#ff8800")
+                    .Bold()
+                    .Underline()
+                    .AllCaps()
+                )
+            )
+            .AddLine(l => l
+                .AddContent(c => c
+                    .AddText("Waiting for Host to initiate the Match-Procedure")
+                    .Color("#aaaaaa")
+                    .Italic()
+                )
+            )
+            .AddSeparator() // Separator line with <br> in front if necessary
+            .Send(); // Send the message
     }
 
     private void OnSetTeam(string arg)
@@ -75,6 +118,6 @@ public class State_SetTeams : IState
         }
 
         ShowdownStateMachine.CurrentMatch = new Match(teamA, teamB, 3);
-        StateMachine.TransitionTo(new State_LinkRacersToTeams(StateMachine));
+        Finished?.Invoke();
     }
 }

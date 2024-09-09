@@ -3,6 +3,7 @@ using HarmonyLib;
 using Showdown4.Commands;
 using Showdown4.Domain.Entities;
 using Showdown4.Domain.States;
+using ZeepkistClient;
 using ZeepSDK.ChatCommands;
 
 namespace Showdown4;
@@ -12,6 +13,8 @@ namespace Showdown4;
 public class Plugin : BaseUnityPlugin
 {
     private Harmony harmony;
+
+    private double margin;
     private IStateMachine MasterStateMachine;
 
     private void Awake()
@@ -26,7 +29,18 @@ public class Plugin : BaseUnityPlugin
 
         RegisterCommands();
         MasterStateMachine = new MasterStateMachine();
+        IState stateMasterOff = MasterStateMachine.InitialState;
+        IState stateMasterOn = new State_Master_On(MasterStateMachine);
+        MasterStateMachine
+            .AddTransition(stateMasterOff, stateMasterOn)
+            .AddTransition(stateMasterOn, stateMasterOff)
+            ;
         MasterStateMachine.Init();
+    }
+
+    private void Start()
+    {
+        ZeepkistNetwork.ConnectedToMasterServer += ConnectedToMasterServer;
     }
 
     private void OnDestroy()
@@ -35,6 +49,11 @@ public class Plugin : BaseUnityPlugin
         harmony = null;
     }
 
+    private void ConnectedToMasterServer()
+    {
+        ZeepkistNetwork.ConnectedToMasterServer -= ConnectedToMasterServer;
+        ZeepkistNetwork.CreateLobby("test", 64, false);
+    }
 
     private static void RegisterCommands()
     {

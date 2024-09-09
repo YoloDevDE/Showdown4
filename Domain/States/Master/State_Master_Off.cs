@@ -1,5 +1,8 @@
-﻿using Showdown4.Commands;
+﻿using System;
+using Showdown4.Commands;
 using Showdown4.Service;
+using UnityEngine;
+using ZeepSDK.Racing;
 using Color = UnityEngine.Color;
 
 namespace Showdown4.Domain.States;
@@ -13,9 +16,12 @@ public class State_Master_Off : IState
 
     public IStateMachine StateMachine { get; }
 
+    public event Action Finished;
+
     public void Enter()
     {
         CommandShowdownStart.CommandInvoked += OnShowdownStarted;
+        RacingApi.RoundStarted += OnShowdownStarted;
         CommandShowdownStop.CommandInvoked += OnShowdownStopped;
     }
 
@@ -26,6 +32,7 @@ public class State_Master_Off : IState
     public void Exit()
     {
         CommandShowdownStart.CommandInvoked -= OnShowdownStarted;
+        RacingApi.RoundStarted -= OnShowdownStarted;
         CommandShowdownStop.CommandInvoked -= OnShowdownStopped;
     }
 
@@ -36,7 +43,16 @@ public class State_Master_Off : IState
 
     private void OnShowdownStarted()
     {
-        Messenger.LogCustomColors("started", Color.white, Color.magenta);
-        StateMachine.TransitionTo(new State_Master_On(StateMachine));
+        if (Finished != null)
+        {
+            Debug.Log("Invoking Finished event");
+            Finished.Invoke();
+        }
+        else
+        {
+            Debug.LogError("Finished event is null, no subscribers");
+        }
+
+        Messenger.Log("started", Color.white, Color.magenta);
     }
 }

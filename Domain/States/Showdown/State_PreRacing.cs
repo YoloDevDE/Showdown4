@@ -1,4 +1,6 @@
-﻿using Showdown4.Tmp;
+﻿using System;
+using Showdown4.Domain.States.Showdown;
+using Showdown4.Tmp;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
@@ -29,6 +31,8 @@ public class State_PreRacing : IState
 
     public IStateMachine StateMachine { get; }
 
+    public event Action Finished;
+
     public void Enter()
     {
         _teamA = ShowdownStateMachine.CurrentMatch.TeamA;
@@ -57,6 +61,5 @@ public class State_PreRacing : IState
 
     private void OnLevelLoaded()
     {
-        StateMachine.TransitionTo(new State_Racing(StateMachine));
     }
 }

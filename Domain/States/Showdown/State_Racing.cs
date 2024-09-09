@@ -1,4 +1,6 @@
-﻿using Showdown4.Tmp;
+﻿using System;
+using Showdown4.Domain.States.Showdown;
+using Showdown4.Tmp;
 using Showdown4.Utils;
 using ZeepkistClient;
 using ZeepSDK.Chat;
@@ -30,6 +32,8 @@ public class State_Racing : IState
         ZeepkistNetwork.PlayerResultsChanged -= OnLeaderBoardUpdated;
         RacingApi.RoundEnded -= OnRoundEnd;
     }
+
+    public event Action Finished;
 
     public void Enter()
     {
@@ -72,7 +76,6 @@ public class State_Racing : IState
 
     private void OnRoundEnd()
     {
-        StateMachine.TransitionTo(new State_PostRacing(StateMachine));
     }
 
     private void OnLeaderBoardUpdated(ZeepkistNetworkPlayer netRacer)

@@ -1,4 +1,6 @@
-﻿using Showdown4.Tmp;
+﻿using System;
+using Showdown4.Domain.States.Showdown;
+using Showdown4.Tmp;
 
 namespace Showdown4.Domain.States;
 
@@ -23,6 +25,8 @@ public class State_RaceEvaluation : IState
     }
 
     public IStateMachine StateMachine { get; }
+
+    public event Action Finished;
 
     public void Enter()
     {

@@ -26,6 +26,11 @@ public class Team
         return $"[{Tag}] {Name}";
     }
 
+    public string GetNameWithTagReverse()
+    {
+        return $"{Name} [{Tag}]";
+    }
+
     public string GetNameWithNoTag()
     {
         return $"{Name}";

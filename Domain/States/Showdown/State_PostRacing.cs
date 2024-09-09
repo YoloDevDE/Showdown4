@@ -1,4 +1,6 @@
-﻿using Showdown4.Utils;
+﻿using System;
+using Showdown4.Domain.States.Showdown;
+using Showdown4.Utils;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
@@ -26,6 +28,8 @@ internal class State_PostRacing : IState
         RacingApi.LevelLoaded -= OnLevelLoaded;
     }
 
+    public event Action Finished;
+
     public void Enter()
     {
         RacingApi.LevelLoaded += OnLevelLoaded;
@@ -39,6 +43,5 @@ internal class State_PostRacing : IState
 
     private void OnLevelLoaded()
     {
-        StateMachine.TransitionTo(new State_RaceEvaluation(StateMachine));
     }
 }

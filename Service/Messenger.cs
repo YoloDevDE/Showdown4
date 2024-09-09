@@ -29,8 +29,8 @@ public static class Messenger
         _taggedMessenger.LogError(message, duration);
     }
 
-    public static void LogCustomColors(string message, Color backgroundColor, Color textColor, float duration = 2.5f)
+    public static void Log(string message, Color backgroundColor, Color textColor, float duration = 2.5f)
     {
-        _taggedMessenger.LogCustomColors(message, backgroundColor, textColor, duration);
+        _taggedMessenger.LogCustomColors(message, textColor, backgroundColor, duration);
     }
 }

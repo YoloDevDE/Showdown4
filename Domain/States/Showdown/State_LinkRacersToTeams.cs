@@ -1,5 +1,6 @@
 ﻿using System;
 using Showdown4.Commands;
+using Showdown4.Domain.States.Showdown;
 using Showdown4.Tmp;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
@@ -40,6 +41,8 @@ public class State_LinkRacersToTeams : IState
         CommandLinkPlayerToTeam.CommandInvoked -= OnLinkRacerToTeam;
     }
 
+    public event Action Finished;
+
     public void Enter()
     {
         _setNextTeam = false;
@@ -47,14 +50,6 @@ public class State_LinkRacersToTeams : IState
         _teamB = _context.CurrentMatch.TeamB;
 
         CommandLinkPlayerToTeam.CommandInvoked += OnLinkRacerToTeam;
-
-        LobbyController.SetServerMessage(ServerMessageColor.orange,
-            new ChatMessage.Builder()
-                .TextLine("Linking up Racers:").NewLine()
-                .TextLine($"{_teamA.GetNameWithTag()} vs {_teamB.GetNameWithTag()} {_teamB.GetTag()}")
-                .Build().Message);
-
-        CheckIfRacersAreLinked();
     }
 
 
@@ -72,7 +67,6 @@ public class State_LinkRacersToTeams : IState
         }
         else
         {
-            StateMachine.TransitionTo(new State_PreRacing(StateMachine));
             return;
         }
 
