@@ -3,6 +3,7 @@ using HarmonyLib;
 using Showdown4.Commands;
 using Showdown4.Domain.Entities;
 using Showdown4.Domain.States;
+using Showdown4.Domain.States.Master;
 using ZeepkistClient;
 using ZeepSDK.ChatCommands;
 
@@ -29,18 +30,12 @@ public class Plugin : BaseUnityPlugin
 
         RegisterCommands();
         MasterStateMachine = new MasterStateMachine();
-        IState stateMasterOff = MasterStateMachine.InitialState;
-        IState stateMasterOn = new State_Master_On(MasterStateMachine);
-        MasterStateMachine
-            .AddTransition(stateMasterOff, stateMasterOn)
-            .AddTransition(stateMasterOn, stateMasterOff)
-            ;
-        MasterStateMachine.Init();
+        MasterStateMachine.Start();
     }
 
     private void Start()
     {
-        // ZeepkistNetwork.ConnectedToMasterServer += ConnectedToMasterServer;
+        ZeepkistNetwork.ConnectedToMasterServer += ConnectedToMasterServer;
     }
 
     private void OnDestroy()
@@ -52,7 +47,7 @@ public class Plugin : BaseUnityPlugin
     private void ConnectedToMasterServer()
     {
         ZeepkistNetwork.ConnectedToMasterServer -= ConnectedToMasterServer;
-        ZeepkistNetwork.CreateLobby("test", 64, false);
+        ZeepkistNetwork.CreateLobby("Im testing mods", 64, false);
     }
 
     private static void RegisterCommands()
@@ -65,5 +60,7 @@ public class Plugin : BaseUnityPlugin
         ChatCommandApi.RegisterMixedChatCommand<CommandLinkPlayerToTeam>();
         ChatCommandApi.RegisterMixedChatCommand<CommandHeads>();
         ChatCommandApi.RegisterMixedChatCommand<CommandTails>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandPick>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandBan>();
     }
 }

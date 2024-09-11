@@ -48,6 +48,14 @@ public class ServerMessage
         lineCount++; // Increment line count after adding a headline
         PrependBreaksIfNeeded(); // Prepend <br> if there are more than 2 lines
         return this;
+    } // Add a method to append another ServerMessage object
+
+    public ServerMessage AddMessage(ServerMessage otherMessage)
+    {
+        message += otherMessage.ToString(); // Append the message from the other ServerMessage object
+        lineCount += otherMessage.lineCount + 2;
+        PrependBreaksIfNeeded(); // Prepend <br> if there are more than 2 lines
+        return this;
     }
 
     // Add a regular line of text
@@ -69,9 +77,9 @@ public class ServerMessage
     }
 
     // Optionally, add a separator line
-    public ServerMessage AddSeparator()
+    public ServerMessage AddSeparator(int length = 20)
     {
-        message += "----------------------------<br>"; // Add separator with line break
+        message += "<s><color=#00000000>" + new string('-', length) + "</color></s><br>"; // Add separator with line break
         lineCount++; // Increment line count after adding a separator
         PrependBreaksIfNeeded(); // Prepend <br> if there are more than 2 lines
         return this;
@@ -80,7 +88,7 @@ public class ServerMessage
     // Prepend a <br> for each line after the 2nd to push the text down
     private void PrependBreaksIfNeeded()
     {
-        if (lineCount > 2)
+        if (lineCount > 3)
         {
             // For every line after 2 lines, prepend one <br> to the message
             message = "<br>" + message;
@@ -94,21 +102,18 @@ public class ServerMessage
                 .AddContent(c => c
                     .AddText("Showdown ")
                     .Color("#ff0000")
-                    .Underline()
                     .Bold()
                     .AllCaps().FontSize(40)
                 )
                 .AddContent(c => c
                     .AddText("Season ")
                     .Color("#ffffff")
-                    .Underline()
                     .Bold()
                     .AllCaps().FontSize(40)
                 )
                 .AddContent(c => c
                     .AddText("4")
                     .Color("#ff8800")
-                    .Underline()
                     .Bold()
                     .AllCaps().FontSize(40)
                 )

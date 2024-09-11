@@ -11,13 +11,14 @@ public interface IStateMachine
     [NotNull] IState InitialState { get; }
     [NotNull] IState FinalState { get; }
 
-    protected Dictionary<IState, IState> Transitions { get; }
+    protected List<ITransition> Transitions { get; }
 
-    public IStateMachine AddTransition([NotNull] IState from, [NotNull] IState to)
+    public IStateMachine AddTransition(ITransition transition)
     {
-        Transitions.Add(from, to);
+        Transitions.Add(transition);
         return this;
     }
+
 
     event Action StateMachineFinished;
 
@@ -34,23 +35,28 @@ public interface IStateMachine
         CurrentState.Finished += OnCurrentStateFinished;
         CurrentState.Enter();
         CurrentState.Execute();
-        CurrentState.SubStateMachine?.Init();
+        CurrentState.SubStateMachine?.Start();
     }
 
     private void OnCurrentStateFinished()
     {
-        if (Transitions.ContainsKey(CurrentState))
+        foreach (ITransition transition in Transitions)
         {
-            // Log the current state and the next state
-            Debug.Log($"Current State: {CurrentState}, Transitioning to: {Transitions[CurrentState]}");
+            if (transition.From != CurrentState || !transition.CanTransition())
+            {
+                continue;
+            }
 
-            // Transition to the next state
-            TransitionTo(Transitions[CurrentState]);
+            // Log the current state and the next state
+            Debug.Log($"Current State: {CurrentState}, Transitioning to: {transition.To}");
+
+            // Perform the transition
+            transition.OnTransition();
+            TransitionTo(transition.To);
+            return;
         }
-        else
-        {
-            Debug.LogError($"No transition found for the current state: {CurrentState}");
-        }
+
+        Debug.LogError($"No valid transition found for the current state: {CurrentState}");
     }
 
 
@@ -65,10 +71,13 @@ public interface IStateMachine
         InvokeFinish();
     }
 
-    void Init()
+
+    void Start()
     {
+        InitTransitions();
         TransitionTo(InitialState);
     }
 
+    void InitTransitions();
     void InvokeFinish();
 }

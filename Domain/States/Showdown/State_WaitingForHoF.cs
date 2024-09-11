@@ -1,10 +1,11 @@
 ﻿using System;
+using ZeepSDK.Racing;
 
 namespace Showdown4.Domain.States.Showdown;
 
-public class State_SelectInitiative : IState
+public class State_WaitingForHoF : IState
 {
-    public State_SelectInitiative(IStateMachine stateMachine)
+    public State_WaitingForHoF(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -14,6 +15,7 @@ public class State_SelectInitiative : IState
 
     public void Enter()
     {
+        RacingApi.RoundStarted += OnRoundStarted;
     }
 
     public void Execute()
@@ -22,5 +24,11 @@ public class State_SelectInitiative : IState
 
     public void Exit()
     {
+        RacingApi.RoundStarted -= OnRoundStarted;
+    }
+
+    private void OnRoundStarted()
+    {
+        Finished?.Invoke();
     }
 }

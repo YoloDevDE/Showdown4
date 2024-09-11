@@ -36,10 +36,11 @@ public class State_SetupMatch : IState
         _teams = ModStorage.Storage.LoadFromJson<TeamJsonWrapper>("Teams").Teams;
 
 
-        ChatApi.AddLocalMessage("Setup Match ->'/sd match <teamtag>,<teamtag>'");
-        ChatApi.AddLocalMessage(teamService.GetFormattedTeams(_teams));
+        // ChatApi.AddLocalMessage("Setup Match ->'/sd match <teamtag>,<teamtag>'");
+        // ChatApi.AddLocalMessage(teamService.GetFormattedTeams(_teams));
         ChatApi.SendMessage("/settime 86400");
         ShowdownStateMachine.ShowdownTimer.Tick += OnTimerTick;
+        ShowdownStateMachine.ShowdownTimer.Start();
     }
 
     public void Execute()
@@ -49,6 +50,7 @@ public class State_SetupMatch : IState
 
     public void Exit()
     {
+        ShowdownStateMachine.ShowdownTimer.Stop();
         ShowdownStateMachine.ShowdownTimer.Tick -= OnTimerTick;
         CommandSetupMatch.CommandInvoked -= OnSetTeam;
     }
@@ -71,7 +73,7 @@ public class State_SetupMatch : IState
 
         if ((ShowdownStateMachine.ShowdownTimer.Ticks + 1) % 4 * 5 == 0)
         {
-            OnSetTeam("NIL,KBW");
+            OnSetTeam("NIL,RUSH");
         }
     }
 

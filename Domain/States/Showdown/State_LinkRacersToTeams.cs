@@ -3,6 +3,7 @@ using Showdown4.Commands;
 using Showdown4.Domain.States.Showdown;
 using Showdown4.Tmp;
 using Showdown4.Utils;
+using ZeepkistClient;
 using ZeepSDK.Messaging;
 
 namespace Showdown4.Domain.States;
@@ -17,8 +18,9 @@ public class State_LinkRacersToTeams : IState
     private MatchService _matchService = new MatchService();
     private RoundService _roundService = new RoundService();
     private bool _setNextTeam;
-
     private Team _teamA, _teamB, _currentTeam;
+
+    private bool test = true;
 
     public State_LinkRacersToTeams(IStateMachine stateMachine)
     {
@@ -102,6 +104,14 @@ public class State_LinkRacersToTeams : IState
                     .AddText($"{_teamB.GetLinkedRacersToString()}"))
             )
             .Send(); // Send the message
+        if (test)
+        {
+            test = false;
+            OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID);
+            OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID);
+            OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID);
+            OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID);
+        }
     }
 
     public void Exit()
@@ -131,7 +141,6 @@ public class State_LinkRacersToTeams : IState
 
     private void FadeOut()
     {
-        _Showdown.ShowdownTimer.Stop();
         _Showdown.ShowdownTimer.Start();
         _Showdown.ShowdownTimer.Tick += OnTimerTick;
     }
@@ -185,24 +194,19 @@ public class State_LinkRacersToTeams : IState
                     .AddContent(c => c
                         .AddText("Currently linked: ")
                     )
-                ).SetLineEffects(line => line
-                    .Color(_teamA.Color)).AddLine(r => r
+                ).AddLine(r => r
                     .AddContent(c => c
                         .AddText($"{_teamA.GetTag()} ")
                         .Color(_teamA.Color))
                     .AddContent(c => c
-                        .AddText($"{_teamA.GetLinkedRacersToString()}")
-                    )
-                )
-                .SetLineEffects(line => line
-                    .Color(_teamB.Color))
-                .AddLine(r => r
+                        .AddText($"{_teamA.GetLinkedRacersToString()}"))
+                ).AddLine(r => r
                     .AddContent(c => c
                         .AddText($"{_teamB.GetTag()} ")
+                        .Color(_teamB.Color)
                     )
                     .AddContent(c => c
-                        .AddText($"{_teamB.GetLinkedRacersToString()}")
-                    )
+                        .AddText($"{_teamB.GetLinkedRacersToString()}"))
                 )
                 .AddSeparator()
                 .AddLine(r => r

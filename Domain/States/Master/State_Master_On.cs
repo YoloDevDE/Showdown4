@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using Showdown4.Commands;
 using Showdown4.Domain.States.Showdown;
 using Showdown4.Service;
 using UnityEngine;
 
-namespace Showdown4.Domain.States;
+namespace Showdown4.Domain.States.Master;
 
 public class State_Master_On : IState
 {
@@ -13,24 +12,6 @@ public class State_Master_On : IState
     {
         StateMachine = stateMachine;
         SubStateMachine = new ShowdownStateMachine();
-
-        // Define your states in a list
-        List<IState> states = new List<IState>
-        {
-            SubStateMachine.InitialState,
-            new State_SetupMatch(SubStateMachine),
-            new State_LinkRacersToTeams(SubStateMachine),
-            new State_Drafting(SubStateMachine),
-            new State_PreRacing(SubStateMachine)
-        };
-
-        // Automatically add transitions between consecutive states
-
-
-        for (int i = 0; i < states.Count - 1; i++)
-        {
-            SubStateMachine.AddTransition(states[i], states[i + 1]);
-        }
     }
 
 
@@ -44,7 +25,6 @@ public class State_Master_On : IState
     {
         CommandShowdownStart.CommandInvoked += OnShowdownStarted;
         CommandShowdownStop.CommandInvoked += OnShowdownStopped;
-        _showdownStateMachine.ShowdownTimer.Start();
     }
 
     public void Execute()
@@ -53,7 +33,6 @@ public class State_Master_On : IState
 
     public void Exit()
     {
-        _showdownStateMachine.ShowdownTimer.Stop();
         CommandShowdownStart.CommandInvoked -= OnShowdownStarted;
         CommandShowdownStop.CommandInvoked -= OnShowdownStopped;
     }
