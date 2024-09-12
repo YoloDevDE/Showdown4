@@ -10,14 +10,20 @@ public class ServerMessage
     private readonly StringBuilder messageBuilder = new StringBuilder(); // Using StringBuilder
 
     private readonly string prefix = "/servermessage white 0 " +
+                                     "<margin-right=\"50%\">" +
                                      "<size=\"30%\">" +
                                      "<align=\"left\">";
+
+    private readonly string suffix =
+        "</align>" +
+        "</size>" +
+        "</margin>";
 
     private int lineCount; // To track the number of lines
 
     public override string ToString()
     {
-        return $"{prefix}{messageBuilder}";
+        return $"{prefix}{messageBuilder}{suffix}";
     }
 
     // Add a line with one or more blocks and optional line-wide formatting
@@ -98,6 +104,7 @@ public class ServerMessage
     public void Send()
     {
         // Simulating sending a message
+        Console.WriteLine(ToString());
         ChatApi.SendMessage(ToString());
     }
 
@@ -107,7 +114,6 @@ public class ServerMessage
         private readonly List<string> closingTag = new List<string>();
         private readonly StringBuilder lineContent = new StringBuilder();
         private readonly List<string> openingTag = new List<string>();
-
 
         // Overload for AddBlock without customization
         public LineBuilder AddBlock(string text)
@@ -172,6 +178,29 @@ public class ServerMessage
         {
             openingTag.Add($"<align=\"{alignment}\">");
             closingTag.Add("</align>");
+            return this;
+        }
+
+        // New Margin methods
+        public LineBuilder MarginLeft(int value)
+        {
+            openingTag.Add($"<margin-left=\"{value}%\">");
+            closingTag.Add("</margin>");
+            return this;
+        }
+
+        // New Indent method (with support for pixels, percentages, or font units)
+        public LineBuilder Indent(string value)
+        {
+            openingTag.Add($"<indent=\"{value}%\">");
+            closingTag.Add("</indent>");
+            return this;
+        }
+
+        public LineBuilder MarginRight(int value)
+        {
+            openingTag.Add($"<margin-right=\"{value}%\">");
+            closingTag.Add("</margin>");
             return this;
         }
 
@@ -251,6 +280,13 @@ public class ServerMessage
             return WrapWithTag("smallcaps");
         }
 
+        // New Indent method (with support for pixels, percentages, or font units)
+        public BlockBuilder Indent(string value)
+        {
+            contentBuilder.Insert(0, $"<indent=\"{value}%\">").Append("</indent>");
+            return this;
+        }
+
         public BlockBuilder Color(string color)
         {
             contentBuilder.Insert(0, $"<color={color}>").Append("</color>");
@@ -266,6 +302,19 @@ public class ServerMessage
         public BlockBuilder Align(string alignment)
         {
             contentBuilder.Insert(0, $"<align=\"{alignment}\">").Append("</align>");
+            return this;
+        }
+
+        // New Margin methods
+        public BlockBuilder MarginLeft(int value)
+        {
+            contentBuilder.Insert(0, $"<margin-left=\"{value}%\">").Append("</margin-left>");
+            return this;
+        }
+
+        public BlockBuilder MarginRight(int value)
+        {
+            contentBuilder.Insert(0, $"<margin-right=\"{value}%\">").Append("</margin-right>");
             return this;
         }
 

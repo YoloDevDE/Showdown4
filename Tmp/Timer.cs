@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Timers;
 
-namespace Showdown4.Domain.States.Showdown;
+namespace Showdown4.Tmp;
 
 public class Timer
 {
     private readonly System.Timers.Timer _timer;
 
-    public Timer()
+    // Constructor allows setting custom interval in milliseconds
+    public Timer(double intervalInMilliseconds = 1000) // Default to 1 second if not provided
     {
-        _timer = new System.Timers.Timer(250);
+        _timer = new System.Timers.Timer(intervalInMilliseconds);
         _timer.Elapsed += OnTimedEvent;
         _timer.AutoReset = true;
     }
@@ -33,5 +34,13 @@ public class Timer
     public void Stop()
     {
         _timer.Stop();
+    }
+
+    // Reset the Ticks and stop the timer
+    public void Reset()
+    {
+        Ticks = 0;
+        Stop();
+        Start();
     }
 }

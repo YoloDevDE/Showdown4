@@ -20,6 +20,8 @@ public class Match
     public Team TeamA { get; set; }
     public Team TeamB { get; set; }
     public int BestOf { get; set; }
+
+    public bool PickWasUsed { get; set; }
     public List<Round> Rounds { get; set; }
 
     public List<Level> Levels { get; set; }
@@ -46,26 +48,66 @@ public class Match
         }
     }
 
-    public void DoBan(Team team, Level level)
+    public void DoPick(Team team, Level level)
     {
         // Find the level in the draft pool
         LevelDraft draft = LevelDrafts.FirstOrDefault(l => l.Level.Equals(level));
+        if (team.Picks == 0)
+        {
+            throw new InvalidOperationException("Your Team has no more picks left. Nerd");
+        }
 
         if (draft == null)
         {
-            throw new InvalidOperationException("Level not found in the draft pool.");
+            throw new InvalidOperationException("Level not found in the draft pool. Nerd");
         }
 
         // Check if the level is already picked or banned
         if (draft.LevelDraftType != LevelDraftType.NONE)
         {
-            throw new InvalidOperationException("Level has already been picked or banned.");
+            throw new InvalidOperationException("Level has already been picked or banned. Nerd");
+        }
+
+        // Mark the level as picked and assign it to the picking team
+        draft.LevelDraftType = LevelDraftType.PICK;
+        draft.Team = team;
+        team.Picks--;
+        PickWasUsed = true;
+        // Optional: Log or send a message about the pick
+        Console.WriteLine($"Team {team.Name} has picked the level: {level.OnlineZeeplevel.Name}");
+    }
+
+    public void DoBan(Team team, Level level)
+    {
+        // Find the level in the draft pool
+        LevelDraft draft = LevelDrafts.FirstOrDefault(l => l.Level.Equals(level));
+        if (PickWasUsed)
+        {
+            throw new InvalidOperationException("You need to pick a level now cause the enemy nerds used a pick. Nerd");
+        }
+
+
+        if (team.Bans == 0)
+        {
+            throw new InvalidOperationException("Your Team has no more bans left. Nerd");
+        }
+
+        if (draft == null)
+        {
+            throw new InvalidOperationException("Level not found in the draft pool. Nerd");
+        }
+
+        // Check if the level is already picked or banned
+        if (draft.LevelDraftType != LevelDraftType.NONE)
+        {
+            throw new InvalidOperationException("Level has already been picked or banned. Nerd");
         }
 
         // Mark the level as banned and assign it to the banning team
         draft.LevelDraftType = LevelDraftType.BAN;
         draft.Team = team;
 
+        team.Bans--;
         // Optional: Log or send a message about the ban
         Console.WriteLine($"Team {team.Name} has banned the level: {level.OnlineZeeplevel.Name}");
     }

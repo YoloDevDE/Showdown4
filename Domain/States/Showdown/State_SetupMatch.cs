@@ -65,9 +65,9 @@ public class State_SetupMatch : IState
             .AddSeparator() // Separator line with <br> in front if necessary
             .Send(); // Send the message
 
-        if ((ShowdownStateMachine.Timer.Ticks + 1) % 4 * 5 == 0)
+        if ((ShowdownStateMachine.Timer.Ticks + 1) % 4 == 0)
         {
-            OnSetTeam("NIL,RUSH");
+            OnSetTeam("NIL,RTR");
         }
     }
 

@@ -1,12 +1,11 @@
 ﻿using System;
 using Showdown4.Commands;
-using Showdown4.Domain.States.Showdown;
 using Showdown4.Tmp;
 using Showdown4.Utils;
 using ZeepkistClient;
 using ZeepSDK.Messaging;
 
-namespace Showdown4.Domain.States;
+namespace Showdown4.Domain.States.Showdown;
 
 public class State_LinkRacersToTeams : IState
 {
@@ -131,61 +130,59 @@ public class State_LinkRacersToTeams : IState
 
     private void OnTimerTick()
     {
-        if (_Showdown.Timer.Ticks % 4 == 0)
-        {
-            new ServerMessage()
-                .ShowdownHeader()
-                .AddLine(line => line
-                    .AddBlock("Match set to:", format =>
-                        format
-                            .Italic()
-                    )
+        new ServerMessage()
+            .ShowdownHeader()
+            .AddLine(line => line
+                .AddBlock("Match set to:", format =>
+                    format
+                        .Italic()
                 )
-                .AddLine(line => line
-                    .Bold()
-                    .AddBlock($"{_Showdown.Match.TeamA.GetNameWithTag()} ", format =>
-                        format
-                            .Color($"{_Showdown.Match.TeamA.Color}")
-                    )
-                    .AddBlock("VS ")
-                    .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()} ", format =>
-                        format
-                            .Color($"{_Showdown.Match.TeamB.Color}")
-                    )
+            )
+            .AddLine(line => line
+                .Bold()
+                .AddBlock($"{_Showdown.Match.TeamA.GetNameWithTag()} ", format =>
+                    format
+                        .Color($"{_Showdown.Match.TeamA.Color}")
                 )
-                .AddSeparator()
-                .AddLine(line => line
-                    .AddBlock("Linking Steam Accounts to Teams...")
+                .AddBlock("VS ")
+                .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()} ", format =>
+                    format
+                        .Color($"{_Showdown.Match.TeamB.Color}")
                 )
-                .AddSeparator()
-                .AddLine(line => line
-                    .AddBlock("Waiting for everyone in ")
-                    .AddBlock($"{_currentTeam.GetTag()} ", format =>
-                        format
-                            .Color($"{_currentTeam.Color}"))
-                    .AddBlock("to type ")
-                    .AddBlock("'!link' ", format => format.Color("#ff0000"))
-                    .AddBlock("in the chat")
-                )
-                .AddLine("Currently linked:")
-                .AddLine(line => line
-                    .AddBlock($"{_teamA.GetTag()} ", format => format.Color(_teamA.Color))
-                    .AddBlock($"{_teamA.GetLinkedRacersToString()}")
-                )
-                .AddLine(line => line
-                    .AddBlock($"{_teamB.GetTag()} ", format => format.Color(_teamB.Color))
-                    .AddBlock($"{_teamB.GetLinkedRacersToString()}")
-                )
-                .AddSeparator()
-                .AddLine(line => line
-                    .AddBlock($"All steam accounts are linked to their teams! Starting Draft Phase in: {5 - _Showdown.Timer.Ticks / 4}", format =>
-                        format
-                            .Color("#00ff00"))
-                )
-                .Send(); // Send the message
-        }
+            )
+            .AddSeparator()
+            .AddLine(line => line
+                .AddBlock("Linking Steam Accounts to Teams...")
+            )
+            .AddSeparator()
+            .AddLine(line => line
+                .AddBlock("Waiting for everyone in ")
+                .AddBlock($"{_currentTeam.GetTag()} ", format =>
+                    format
+                        .Color($"{_currentTeam.Color}"))
+                .AddBlock("to type ")
+                .AddBlock("'!link' ", format => format.Color("#ff0000"))
+                .AddBlock("in the chat")
+            )
+            .AddLine("Currently linked:")
+            .AddLine(line => line
+                .AddBlock($"{_teamA.GetTag()} ", format => format.Color(_teamA.Color))
+                .AddBlock($"{_teamA.GetLinkedRacersToString()}")
+            )
+            .AddLine(line => line
+                .AddBlock($"{_teamB.GetTag()} ", format => format.Color(_teamB.Color))
+                .AddBlock($"{_teamB.GetLinkedRacersToString()}")
+            )
+            .AddSeparator()
+            .AddLine(line => line
+                .AddBlock($"All steam accounts are linked to their teams! Starting Draft Phase in: {5 - _Showdown.Timer.Ticks}", format =>
+                    format
+                        .Color("#00ff00"))
+            )
+            .Send(); // Send the message
 
-        if (_Showdown.Timer.Ticks < 5 * 4)
+
+        if (_Showdown.Timer.Ticks < 5)
         {
             return;
         }
