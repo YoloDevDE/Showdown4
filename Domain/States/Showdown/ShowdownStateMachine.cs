@@ -43,6 +43,8 @@ public class ShowdownStateMachine : IStateMachine
             .AddTransition(Transition.CreateInstance(stateWaitingForHoF, stateSetupMatch))
             .AddTransition(Transition.CreateInstance(stateSetupMatch, stateLinkRacers))
             .AddTransition(Transition.CreateInstance(stateLinkRacers, stateDrafting))
+            .AddTransition(Transition.CreateInstance(stateDrafting, statePreRacing))
+            .AddTransition(Transition.CreateInstance(statePreRacing, stateRacing))
             ;
     }
 

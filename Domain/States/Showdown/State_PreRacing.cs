@@ -38,7 +38,7 @@ public class State_PreRacing : IState
         _teamB = _Showdown.Match.TeamB;
 
         ChatApi.SendMessage("/settime 86400");
-
+        ChatApi.SendMessage("Race starts in 10 seconds (not yet but imagine it would)");
 
         RacingApi.LevelLoaded += OnLevelLoaded;
         RacingApi.RoundEnded += OnRoundEnd;

@@ -10,13 +10,15 @@ namespace Showdown4.Domain.States.Showdown;
 
 public class State_Drafting : IState
 {
-    private readonly CountdownTimer timer;
+    private readonly CountdownTimer DraftTimer;
+    private readonly CountdownTimer ReadyCheckTimer;
     private bool IsTeamADrafting = true;
 
     public State_Drafting(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
-        timer = new CountdownTimer(30);
+        DraftTimer = new CountdownTimer(30);
+        ReadyCheckTimer = new CountdownTimer(120);
     }
 
     private ShowdownStateMachine _Showdown => StateMachine as ShowdownStateMachine;
@@ -33,9 +35,11 @@ public class State_Drafting : IState
     {
         CommandPick.CommandInvoked += OnPick;
         CommandBan.CommandInvoked += OnBan;
-        timer.CountdownTick += OnTick;
-        timer.CountdownFinished += OnCountdownFinished;
-        timer.Start();
+        DraftTimer.CountdownTick += OnDraftTimerTick;
+        ReadyCheckTimer.CountdownTick += OnReadyCheckTimerTick;
+        ReadyCheckTimer.CountdownFinished += OnReadyCheckTimerFinished;
+        DraftTimer.CountdownFinished += OnDraftTimerReady;
+        DraftTimer.Start();
     }
 
     public void Execute()
@@ -51,12 +55,13 @@ public class State_Drafting : IState
             .AddSeparator();
         if (draftComplete)
         {
-            timer.CountdownFinished -= OnCountdownFinished;
-            timer.Stop();
+            DraftTimer.CountdownFinished -= OnDraftTimerReady;
+            DraftTimer.Stop();
+            ReadyCheckTimer.Start();
             msg
                 .AddLine(line => line
-                    .AddBlock("Draft complete! Waiting for everyone to /vs or timer reached 0: ")
-                    .AddBlock($"{TimeFormatter.FormatDuration(timer.SecondsLeft)}", format => format.Color("#ffff00"))
+                    .AddBlock("Draft complete! Waiting for everyone to /vs or timer reached 0:")
+                    .AddBlock($"{TimeFormatter.FormatDuration(ReadyCheckTimer.SecondsLeft)}", format => format.Color("#ffff00"))
                     .Bold()
                     .AllCaps()
                     .Color("#00aa00")
@@ -68,10 +73,10 @@ public class State_Drafting : IState
                 .AddBlock(_currentlydrafting.Tag, format => format.Bold()
                     .Color(_currentlydrafting.Color))
                 .AddBlock("is drafting:", format => format.Bold())
-                .AddBlock($"{TimeFormatter.FormatDuration(timer.SecondsLeft)}", format => format.Bold()
-                    .Color(timer.SecondsLeft <= 10 ? "#ff0000" : "#ffffff")
+                .AddBlock($"{TimeFormatter.FormatDuration(DraftTimer.SecondsLeft)}", format => format.Bold()
+                    .Color(DraftTimer.SecondsLeft <= 10 ? "#ff0000" : "#ffffff")
                 )
-                .AddBlock($"{(timer.SecondsLeft <= 10 ? $"It's getting close! If you don't draft <color={_notdrafting.Color}>{_notdrafting.Tag}</color> will take your turn!" : "")}")
+                .AddBlock($"{(DraftTimer.SecondsLeft <= 10 ? $"It's getting close! If you don't draft <color={_notdrafting.Color}>{_notdrafting.Tag}</color> will take your turn!" : "")}")
             );
         }
 
@@ -117,18 +122,28 @@ public class State_Drafting : IState
     {
         CommandPick.CommandInvoked -= OnPick;
         CommandBan.CommandInvoked -= OnBan;
-        timer.CountdownTick -= OnTick;
-        timer.CountdownFinished -= OnCountdownFinished;
-        timer.Stop();
+        DraftTimer.CountdownTick -= OnDraftTimerTick;
+        DraftTimer.CountdownFinished -= OnDraftTimerReady;
+        DraftTimer.Stop();
     }
 
-    private void OnCountdownFinished()
+    private void OnReadyCheckTimerFinished()
+    {
+        Finished?.Invoke();
+    }
+
+    private void OnReadyCheckTimerTick()
+    {
+        Execute();
+    }
+
+    private void OnDraftTimerReady()
     {
         ChatApi.SendMessage($"{_currentlydrafting.GetNameWithTag()} failed to draft. It's now {_notdrafting.GetNameWithTag()} turn!");
         SwitchDrafter();
     }
 
-    private void OnTick()
+    private void OnDraftTimerTick()
     {
         Execute();
     }
@@ -187,7 +202,7 @@ public class State_Drafting : IState
     private void SwitchDrafter()
     {
         IsTeamADrafting = !IsTeamADrafting;
-        timer.Reset(30);
+        DraftTimer.Reset(30);
         Execute();
     }
 
