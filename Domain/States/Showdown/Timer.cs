@@ -3,13 +3,13 @@ using System.Timers;
 
 namespace Showdown4.Domain.States.Showdown;
 
-public class TimerHelper
+public class Timer
 {
-    private readonly Timer _timer;
+    private readonly System.Timers.Timer _timer;
 
-    public TimerHelper()
+    public Timer()
     {
-        _timer = new Timer(250);
+        _timer = new System.Timers.Timer(250);
         _timer.Elapsed += OnTimedEvent;
         _timer.AutoReset = true;
     }

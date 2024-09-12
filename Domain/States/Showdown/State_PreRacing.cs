@@ -34,8 +34,8 @@ public class State_PreRacing : IState
 
     public void Enter()
     {
-        _teamA = _Showdown.CurrentMatch.TeamA;
-        _teamB = _Showdown.CurrentMatch.TeamB;
+        _teamA = _Showdown.Match.TeamA;
+        _teamB = _Showdown.Match.TeamB;
 
         ChatApi.SendMessage("/settime 86400");
 
@@ -49,7 +49,7 @@ public class State_PreRacing : IState
         ChatApi.SendMessage(
             new ChatMessage.Builder().ClearChat()
                 .DashedLine().NewLine()
-                .CenterTextLine($"Starting Round {_Showdown.CurrentMatch.RoundCounter()}").NewLine()
+                .CenterTextLine($"Starting Round {_Showdown.Match.RoundCounter()}").NewLine()
                 .DashedLine().Build().Message
         );
     }

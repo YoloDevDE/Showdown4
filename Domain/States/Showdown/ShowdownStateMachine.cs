@@ -6,17 +6,17 @@ namespace Showdown4.Domain.States.Showdown;
 
 public class ShowdownStateMachine : IStateMachine
 {
-    public Match CurrentMatch;
-
     public ShowdownStateMachine()
     {
         InitialState = new State_Showdown_Starting(this);
         FinalState = new State_Match_End(this);
-        ShowdownTimer = new TimerHelper();
-        Transitions = new List<ITransition>();
+        Timer = new Timer();
+        Transitions = [];
     }
 
-    public TimerHelper ShowdownTimer { get; }
+    public Match Match { get; set; }
+
+    public Timer Timer { get; }
 
     public IState CurrentState { get; set; }
     public IState InitialState { get; }

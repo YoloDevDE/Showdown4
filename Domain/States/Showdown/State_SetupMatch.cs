@@ -39,8 +39,8 @@ public class State_SetupMatch : IState
         // ChatApi.AddLocalMessage("Setup Match ->'/sd match <teamtag>,<teamtag>'");
         // ChatApi.AddLocalMessage(teamService.GetFormattedTeams(_teams));
         ChatApi.SendMessage("/settime 86400");
-        ShowdownStateMachine.ShowdownTimer.Tick += OnTimerTick;
-        ShowdownStateMachine.ShowdownTimer.Start();
+        ShowdownStateMachine.Timer.Tick += OnTimerTick;
+        ShowdownStateMachine.Timer.Start();
     }
 
     public void Execute()
@@ -50,8 +50,8 @@ public class State_SetupMatch : IState
 
     public void Exit()
     {
-        ShowdownStateMachine.ShowdownTimer.Stop();
-        ShowdownStateMachine.ShowdownTimer.Tick -= OnTimerTick;
+        ShowdownStateMachine.Timer.Stop();
+        ShowdownStateMachine.Timer.Tick -= OnTimerTick;
         CommandSetupMatch.CommandInvoked -= OnSetTeam;
     }
 
@@ -59,19 +59,13 @@ public class State_SetupMatch : IState
     {
         new ServerMessage()
             .ShowdownHeader()
-            .SetLineEffects(sle => sle
-                .FontSize(15)
-                .Italic()
-            )
-            .AddLine(l => l
-                .AddContent(c => c
-                    .AddText("Waiting for Host to setup the Match")
-                )
+            .AddLine(line => line
+                .AddBlock("Waiting for Host to setup the Match")
             )
             .AddSeparator() // Separator line with <br> in front if necessary
             .Send(); // Send the message
 
-        if ((ShowdownStateMachine.ShowdownTimer.Ticks + 1) % 4 * 5 == 0)
+        if ((ShowdownStateMachine.Timer.Ticks + 1) % 4 * 5 == 0)
         {
             OnSetTeam("NIL,RUSH");
         }
@@ -97,7 +91,7 @@ public class State_SetupMatch : IState
             return;
         }
 
-        ShowdownStateMachine.CurrentMatch = new Match(teamA, teamB, 3);
+        ShowdownStateMachine.Match = new Match(teamA, teamB);
         Finished?.Invoke();
     }
 }

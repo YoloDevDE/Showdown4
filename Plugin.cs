@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using HarmonyLib;
 using Showdown4.Commands;
 using Showdown4.Domain.Entities;
@@ -18,10 +19,20 @@ public class Plugin : BaseUnityPlugin
     private double margin;
     private IStateMachine MasterStateMachine;
 
+    public static ConfigEntry<string> LevelPoolPlaylistName { get; set; }
+
     private void Awake()
     {
         harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         harmony.PatchAll();
+
+        LevelPoolPlaylistName = Config.Bind(
+            "General", // Category
+            "Level-Pool Playlistname", // Key
+            "Showdown", // Default value
+            "Showdown" // Description
+        );
+
         // Plugin startup logic
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
 

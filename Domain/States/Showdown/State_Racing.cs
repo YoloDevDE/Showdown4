@@ -37,17 +37,17 @@ public class State_Racing : IState
 
     public void Enter()
     {
-        _teamA = _showdownStateMachine.CurrentMatch.TeamA;
-        _teamB = _showdownStateMachine.CurrentMatch.TeamB;
+        _teamA = _showdownStateMachine.Match.TeamA;
+        _teamB = _showdownStateMachine.Match.TeamB;
 
-        Round round = new Round(_showdownStateMachine.CurrentMatch.RoundCounter() + 1);
-        _showdownStateMachine.CurrentMatch.Rounds.Add(round);
+        Round round = new Round(_showdownStateMachine.Match.RoundCounter() + 1);
+        _showdownStateMachine.Match.Rounds.Add(round);
 
         ChatApi.SendMessage("/settime 300");
         ChatApi.SendMessage(
             new ChatMessage.Builder().ClearChat()
                 .DashedLine().NewLine()
-                .CenterTextLine($"Round {_showdownStateMachine.CurrentMatch.RoundCounter()} started").NewLine()
+                .CenterTextLine($"Round {_showdownStateMachine.Match.RoundCounter()} started").NewLine()
                 .DashedLine().NewLine()
                 .CenterTextLine($"{_teamA.GetTag()}").NewLine()
                 .CenterTextLine("vs").NewLine()
@@ -59,7 +59,7 @@ public class State_Racing : IState
         LobbyController.SetServerMessage(
             ServerMessageColor.green,
             new ChatMessage.Builder()
-                .TextLine($"Round {_showdownStateMachine.CurrentMatch.RoundCounter()}: started!").NewLine()
+                .TextLine($"Round {_showdownStateMachine.Match.RoundCounter()}: started!").NewLine()
                 .TextLine($"{_teamA.GetTag()} {_teamA.Wins}:{_teamB.Wins} {_teamB.GetTag()}").Build().Message);
 
 
