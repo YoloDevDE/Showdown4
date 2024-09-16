@@ -1,10 +1,13 @@
-﻿using BepInEx;
+﻿using System;
+using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
 using Showdown4.Commands;
 using Showdown4.Domain.Entities;
 using Showdown4.Domain.States;
 using Showdown4.Domain.States.Master;
+using Showdown4.Domain.States.Showdown;
+using UnityEngine.SceneManagement;
 using ZeepkistClient;
 using ZeepSDK.ChatCommands;
 
@@ -16,26 +19,39 @@ public class Plugin : BaseUnityPlugin
 {
     private Harmony harmony;
 
+
     private double margin;
     private IStateMachine MasterStateMachine;
 
     public static ConfigEntry<string> LevelPoolPlaylistName { get; set; }
+    public static ConfigEntry<string> ShowdownPlaylistName { get; set; } // New ConfigEntry for Showdown Playlist
+
 
     private void Awake()
     {
+        ModLogger.Initialize(Logger);
         harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         harmony.PatchAll();
 
+        // Existing config entry for Level Pool Playlist
         LevelPoolPlaylistName = Config.Bind(
             "General", // Category
             "Level-Pool Playlistname", // Key
-            "Showdown", // Default value
-            "Showdown" // Description
+            "S4_Pool", // Default value
+            "Name of the playlist to use for the level pool"
+        );
+
+        // New config entry for Showdown Playlist
+        ShowdownPlaylistName = Config.Bind(
+            "General", // Category
+            "Showdown Playlistname", // Key
+            "S4_Live", // Default value
+            "Name of the playlist to use for the showdown start"
         );
 
         // Plugin startup logic
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
-
+        _ = CoroutineStarter.Instance;
 
         ModStorage.Initialize(this);
 
@@ -47,12 +63,27 @@ public class Plugin : BaseUnityPlugin
     private void Start()
     {
         ZeepkistNetwork.ConnectedToMasterServer += ConnectedToMasterServer;
+        SceneManager.sceneLoaded += SceneManagerOnsceneLoaded;
     }
 
     private void OnDestroy()
     {
         harmony?.UnpatchSelf();
         harmony = null;
+    }
+
+    private void SceneManagerOnsceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+    {
+        if (scene.name == "3D_MainMenu")
+        {
+            SceneManager.sceneLoaded -= SceneManagerOnsceneLoaded;
+            SceneManager.LoadScene("Online Lobby");
+        }
+    }
+
+    private void SceneManagerOnactiveSceneChanged(Scene arg0, Scene arg1)
+    {
+        Console.WriteLine(arg0.name + " -> " + arg1.name);
     }
 
     private void ConnectedToMasterServer()

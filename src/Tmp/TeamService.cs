@@ -4,7 +4,7 @@ namespace Showdown4.Tmp;
 
 public class TeamService
 {
-    public void AddRacer(Team team, Racer racer)
+    public static void AddRacer(Team team, Racer racer)
     {
         if (team.Racers.Count < team.MaxTeamSize)
         {

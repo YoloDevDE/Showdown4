@@ -38,13 +38,16 @@ public class ShowdownStateMachine : IStateMachine
         IState stateSelectInitiative = new State_SelectInitiative(this);
         IState stateDrafting = new State_Drafting(this);
         IState stateWaitingForHoF = new State_WaitingForHoF(this);
+        IState statePostDrafting = new State_PostDrafting(this);
         stateMachine
             .AddTransition(Transition.CreateInstance(InitialState, stateWaitingForHoF))
             .AddTransition(Transition.CreateInstance(stateWaitingForHoF, stateSetupMatch))
             .AddTransition(Transition.CreateInstance(stateSetupMatch, stateLinkRacers))
             .AddTransition(Transition.CreateInstance(stateLinkRacers, stateDrafting))
-            .AddTransition(Transition.CreateInstance(stateDrafting, statePreRacing))
+            .AddTransition(Transition.CreateInstance(stateDrafting, statePostDrafting))
+            .AddTransition(Transition.CreateInstance(statePostDrafting, statePreRacing))
             .AddTransition(Transition.CreateInstance(statePreRacing, stateRacing))
+            .AddTransition(Transition.CreateInstance(stateRacing, statePostRacing))
             ;
     }
 

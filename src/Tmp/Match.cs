@@ -34,8 +34,17 @@ public class Match
 
     public void ResetLevelDrafts()
     {
+        // Check if the playlist exists
+        string playlistName = Plugin.LevelPoolPlaylistName.Value;
+        if (!PlaylistApi.Exists(playlistName))
+        {
+            throw new InvalidOperationException($"Playlist '{playlistName}' does not exist.");
+        }
+
+        // Fetch the playlist
+        PlaylistSaveJSON levelPoolPlaylist = PlaylistApi.GetPlaylist(playlistName);
+
         LevelDrafts = new HashSet<LevelDraft>();
-        PlaylistSaveJSON levelPoolPlaylist = PlaylistApi.GetPlaylist(Plugin.LevelPoolPlaylistName.Value);
         foreach (OnlineZeeplevel onlineZeeplevel in levelPoolPlaylist.levels)
         {
             LevelDrafts.Add(
@@ -73,7 +82,6 @@ public class Match
         draft.Team = team;
         team.Picks--;
         PickWasUsed = true;
-        // Optional: Log or send a message about the pick
         Console.WriteLine($"Team {team.Name} has picked the level: {level.OnlineZeeplevel.Name}");
     }
 
@@ -83,9 +91,8 @@ public class Match
         LevelDraft draft = LevelDrafts.FirstOrDefault(l => l.Level.Equals(level));
         if (PickWasUsed)
         {
-            throw new InvalidOperationException("You need to pick a level now cause the enemy nerds used a pick. Nerd");
+            throw new InvalidOperationException("You need to pick a level now because the enemy nerds used a pick. Nerd");
         }
-
 
         if (team.Bans == 0)
         {
@@ -106,9 +113,7 @@ public class Match
         // Mark the level as banned and assign it to the banning team
         draft.LevelDraftType = LevelDraftType.BAN;
         draft.Team = team;
-
         team.Bans--;
-        // Optional: Log or send a message about the ban
         Console.WriteLine($"Team {team.Name} has banned the level: {level.OnlineZeeplevel.Name}");
     }
 
