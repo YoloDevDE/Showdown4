@@ -3,10 +3,10 @@ using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
 using Showdown4.Commands;
-using Showdown4.Domain.Entities;
-using Showdown4.Domain.States;
-using Showdown4.Domain.States.Master;
-using Showdown4.Domain.States.Showdown;
+using Showdown4.Managers;
+using Showdown4.States;
+using Showdown4.States.Master;
+using Showdown4.Utils;
 using UnityEngine.SceneManagement;
 using ZeepkistClient;
 using ZeepSDK.ChatCommands;
@@ -51,7 +51,7 @@ public class Plugin : BaseUnityPlugin
 
         // Plugin startup logic
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
-        _ = CoroutineStarter.Instance;
+        _ = CoroutineManager.Instance;
 
         ModStorage.Initialize(this);
 
