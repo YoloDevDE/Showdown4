@@ -5,6 +5,7 @@ using Showdown4.Utils;
 using UnityEngine;
 using ZeepSDK.Chat;
 using Random = UnityEngine.Random;
+
 // Required for using Coroutine
 
 namespace Showdown4.States.Showdown;

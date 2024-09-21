@@ -9,23 +9,24 @@ public class Round
     public Round(int roundNumber)
     {
         RoundNumber = roundNumber;
-        Leaderboard = new Dictionary<ulong, double>();
+        Leaderboard = new Dictionary<ulong, Result>(); // Use Result to store racer and time data
     }
 
     public int RoundNumber { get; set; }
-    public Dictionary<ulong, double> Leaderboard { get; set; } // Dictionary<SteamId, BestTime>
+    public Dictionary<ulong, Result> Leaderboard { get; set; } // Dictionary<SteamId, Result>
 
     public void AddResult(Result result)
     {
         if (Leaderboard.ContainsKey(result.Racer.SteamId))
         {
             // Update the best time if the new time is better
-            if (result.Time < Leaderboard[result.Racer.SteamId]) Leaderboard[result.Racer.SteamId] = result.Time;
+            if (result.Time < Leaderboard[result.Racer.SteamId].Time)
+                Leaderboard[result.Racer.SteamId] = result;
         }
         else
         {
             // Add new racer and their time
-            Leaderboard[result.Racer.SteamId] = result.Time;
+            Leaderboard[result.Racer.SteamId] = result;
         }
     }
 
@@ -36,7 +37,7 @@ public class Round
 
     public double GetRacerBestTime(ulong steamId)
     {
-        return Leaderboard.ContainsKey(steamId) ? Leaderboard[steamId] : double.MaxValue;
+        return Leaderboard.ContainsKey(steamId) ? Leaderboard[steamId].Time : double.MaxValue;
     }
 
     // Method to get the best time for a racer in this round
@@ -45,34 +46,37 @@ public class Round
         return GetRacerBestTime(racer.SteamId);
     }
 
-    // Method to calculate the total time for a team in this round
+    // Calculate total and average time for teams, etc.
     public double CalculateTotalTime(Team team)
     {
         double totalTime = 0.0;
         foreach (Racer racer in team.Racers)
         {
             double personalBest = GetPersonalBest(racer);
-            if (personalBest < double.MaxValue) totalTime += personalBest;
+            if (personalBest < double.MaxValue)
+                totalTime += personalBest;
         }
 
         return totalTime;
     }
 
-    // Method to calculate the average time for a team in this round
     public double CalculateAverageTime(Team team)
     {
-        double totalTime = CalculateTotalTime(team);
-        return team.Racers.Count > 0 ? totalTime / team.Racers.Count : 0.0;
+        int finishers = CountFinishers(team);
+        return finishers > 0 ? CalculateTotalTime(team) / finishers : 0.0;
     }
 
-    // Method to evaluate and sort teams based on performance in this round
+    public int CountFinishers(Team team)
+    {
+        return team.Racers.Count(racer => Leaderboard.ContainsKey(racer.SteamId));
+    }
+
     public List<Team> EvaluateTeamsSortedByWinner(Team teamA, Team teamB)
     {
         return CompareFinishers(teamA, teamB) ?? CompareTotalTeamTimes(teamA, teamB) ??
             CompareIndividualPlacements(teamA, teamB) ?? SelectRandomWinner(teamA, teamB);
     }
 
-    // Compare the number of finishers between two teams
     private List<Team> CompareFinishers(Team teamA, Team teamB)
     {
         int finishersA = CountFinishers(teamA);
@@ -83,13 +87,6 @@ public class Round
         return null;
     }
 
-    // Count the number of racers from a team who have finished
-    private int CountFinishers(Team team)
-    {
-        return team.Racers.Count(racer => Leaderboard.ContainsKey(racer.SteamId));
-    }
-
-    // Compare the total team times between two teams
     private List<Team> CompareTotalTeamTimes(Team teamA, Team teamB)
     {
         double timeA = CalculateTotalTime(teamA);
@@ -100,14 +97,12 @@ public class Round
         return null;
     }
 
-    // Compare individual placements (stubbed method)
     private List<Team> CompareIndividualPlacements(Team teamA, Team teamB)
     {
-        // TODO: Implement Individual Placements comparison logic
+        // This method is a placeholder for further refinement
         return SelectRandomWinner(teamA, teamB);
     }
 
-    // Randomly select a winner between two teams
     private List<Team> SelectRandomWinner(Team teamA, Team teamB)
     {
         Random random = new();

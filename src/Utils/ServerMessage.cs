@@ -313,5 +313,10 @@ public class ServerMessage
         {
             return contentBuilder.ToString();
         }
+
+        public void Size(int p0)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

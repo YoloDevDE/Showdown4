@@ -6,6 +6,7 @@ using Showdown4.Utils;
 using UnityEngine;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
+
 // Required for using Coroutine
 
 namespace Showdown4.States.Showdown;
@@ -30,7 +31,7 @@ public class State_PreRacing : IState
         _teamA = _Showdown.Match.TeamA;
         _teamB = _Showdown.Match.TeamB;
 
-        ChatApi.SendMessage("/settime 86400");
+        ChatApi.SendMessage("/settime 300");
         RacingApi.RoundEnded += OnRoundEnd;
 
         // Start the 10-second countdown and display it

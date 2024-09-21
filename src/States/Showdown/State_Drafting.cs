@@ -13,9 +13,8 @@ namespace Showdown4.States.Showdown;
 
 public class State_Drafting : IState
 {
-    private bool _isDraftLocked; // Lock drafts during the 2-second window
-    private bool _isTeamADrafting = true;
-    private int _picksMade; // Track the number of picks made
+    private bool _isDraftLocked; // Lock drafts during the window
+    private bool _isTeamADrafting = true; // Track which team is drafting
 
     public State_Drafting(IStateMachine stateMachine)
     {
@@ -28,8 +27,11 @@ public class State_Drafting : IState
     private Team _currentlyDrafting => _isTeamADrafting ? _teamA : _teamB;
     private Team _notDrafting => _isTeamADrafting ? _teamB : _teamA;
 
+    // Draft is complete if 2 picks are made OR no picks and no bans are left for both teams
     private bool DraftComplete =>
-        _picksMade >= 2 || (_teamA.Picks == 0 && _teamB.Picks == 0 && _teamA.Bans == 0 && _teamB.Bans == 0);
+        (_teamA.Picks == 0 && _teamB.Picks == 0) ||
+        (_teamA.Picks == 0 && _teamB.Picks == 0 && _teamA.Bans == 0 &&
+         _teamB.Bans == 0); // Both teams have made 2 picks
 
     public IStateMachine StateMachine { get; }
     public event Action Finished;
@@ -41,7 +43,7 @@ public class State_Drafting : IState
 
     public void Execute()
     {
-        SendDraftMessage(); // Always send draft message with history
+        SendDraftMessage(); // Always send the draft message with history
     }
 
     public void Exit()
@@ -75,21 +77,24 @@ public class State_Drafting : IState
     private void OnPick(ulong steamId, string levelIndex)
     {
         HandleDraftAction(steamId, levelIndex, _Showdown.Match.DoPick);
-        _picksMade++;
 
-        if (_picksMade >= 2 || DraftComplete)
-            Finished?.Invoke(); // Directly trigger transition since timers are removed
+        // Finish the state if the draft is complete
+        if (DraftComplete)
+            Finished?.Invoke();
     }
 
     private void OnBan(ulong steamId, string levelIndex)
     {
         HandleDraftAction(steamId, levelIndex, _Showdown.Match.DoBan);
-        if (DraftComplete) Finished?.Invoke(); // Directly trigger transition since timers are removed
+
+        // Finish the state if the draft is complete
+        if (DraftComplete)
+            Finished?.Invoke();
     }
 
     private void HandleDraftAction(ulong steamId, string levelIndex, Action<Team, Level> draftAction)
     {
-        if (_isDraftLocked) return; // Ignore the draft if locked
+        if (_isDraftLocked) return; // Ignore draft if locked
 
         ZeepkistNetworkPlayer player = GetPlayer(steamId);
         if (player == null || _currentlyDrafting.Racers.All(r => r.SteamId != steamId)) return;
@@ -125,14 +130,16 @@ public class State_Drafting : IState
 
         // Unlock and switch teams
         _isDraftLocked = false;
-        AddDraftToHistory(team, level); // After showing the drafted message, add it to history
+        AddDraftToHistory(team, level); // Add it to history after showing the drafted message
         SwitchDrafter();
     }
 
     // Event Logic
     private void OnRoundEnded()
     {
-        Finished?.Invoke();
+        // Finish the state if the draft is complete
+        if (DraftComplete)
+            Finished?.Invoke();
     }
 
     private void SwitchDrafter()
@@ -176,14 +183,12 @@ public class State_Drafting : IState
             msg.AddLine(line => line
                 .AddBlock($"{draftedTeam.GetNameWithTag()}", f => f.Bold().Color(draftedTeam.Color))
                 .AddBlock(" drafted ")
-                .AddBlock($"{draftedLevel.OnlineZeeplevel.Name}", f => f.Bold().Color("#00ff00"))
-            );
+                .AddBlock($"{draftedLevel.OnlineZeeplevel.Name}", f => f.Bold().Color("#00ff00")));
         else
             // Show normal message
             msg.AddLine(line => line
                 .AddBlock($"{_currentlyDrafting.Tag}", f => f.Bold().Color(_currentlyDrafting.Color))
-                .AddBlock(" is drafting.")
-            );
+                .AddBlock(" is drafting."));
 
         AddDraftHistory(msg); // Always add the draft history
         return msg;
@@ -198,13 +203,13 @@ public class State_Drafting : IState
         {
             LevelDraft draft = _Showdown.Match.LevelDrafts.ToList()[i];
 
-            // Check if the level or any critical elements are null
-            if (draft?.Level?.OnlineZeeplevel == null) continue; // Skip this draft if critical elements are null
+            // Skip if level or critical elements are null
+            if (draft?.Level?.OnlineZeeplevel == null) continue;
 
-            // Add the level name to the message
+            // Add level name to the message
             msg.AddInLine(line => line.AddBlock($"{draft.Level.OnlineZeeplevel.Name}"));
 
-            // If the team is not null, show the "Banned/Picked" info
+            // Show "Banned/Picked" info if the team is not null
             if (draft.Team != null)
                 msg.AddInLine(line => line
                     .Indent("500")
@@ -219,5 +224,6 @@ public class State_Drafting : IState
 
     private void AddDraftToHistory(Team team, Level level)
     {
+        // Logic to add the draft to history (as per game logic)
     }
 }
