@@ -31,8 +31,7 @@ public class State_PreRacing : IState
         _teamA = _Showdown.Match.TeamA;
         _teamB = _Showdown.Match.TeamB;
 
-        ChatApi.SendMessage("/settime 300");
-        RacingApi.RoundEnded += OnRoundEnd;
+        RacingApi.LevelLoaded += OnRoundEnd;
 
         // Start the 10-second countdown and display it
         CoroutineManager.Instance.StartExternalCoroutine(StartCountdown(10));
@@ -44,7 +43,7 @@ public class State_PreRacing : IState
 
     public void Exit()
     {
-        RacingApi.RoundEnded -= OnRoundEnd;
+        RacingApi.LevelLoaded -= OnRoundEnd;
     }
 
     private void UpdateCountdownMessage(int secondsRemaining)

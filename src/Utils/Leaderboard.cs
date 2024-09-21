@@ -12,6 +12,29 @@ public class Leaderboard
         _round = round;
     }
 
+    public ServerMessage GenerateDefaultLeaderboardMessage(Team teamA, Team teamB)
+    {
+        ServerMessage msg = new ServerMessage()
+            .ShowdownHeader()
+            .AddLine(line => line.AddBlock("Current Leaderboard:").Bold());
+
+        // Default entry for Team A
+        msg.AddLine(line => line
+            .AddBlock($"{teamA.GetTag()}", f => f.Color(teamA.Color).Bold())
+            .AddBlock(" - Avg Time: ")
+            .AddBlock("-:--.---", f => f.Color("#ffffff"))
+            .AddBlock(" - Finishers: 0/2"));
+
+        // Default entry for Team B
+        msg.AddLine(line => line
+            .AddBlock($"{teamB.GetTag()}", f => f.Color(teamB.Color).Bold())
+            .AddBlock(" - Avg Time: ")
+            .AddBlock("-:--.---", f => f.Color("#ffffff"))
+            .AddBlock(" - Finishers: 0/2"));
+
+        return msg;
+    }
+
     // Generate a server message for team and racer leaderboard
     public ServerMessage GenerateLeaderboardMessage(Team teamA, Team teamB)
     {
