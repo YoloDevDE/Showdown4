@@ -26,7 +26,7 @@ public class State_Showdown_Starting : IState
         try
         {
             PlaylistManager.SetServerPlaylist(Plugin.IntermissionLevelPlaylistName.Value);
-            if (!LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetCurrentPlaylistLevel().UID))
+            if (!LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetPlaylistLevels(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
             {
                 tmp = "Skipping to HoF...";
                 Managers.LobbyManager.SkipToLevel(0);

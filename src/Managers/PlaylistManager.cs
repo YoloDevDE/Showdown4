@@ -25,6 +25,12 @@ public abstract class PlaylistManager
         MultiplayerApi.UpdateServerPlaylist();
     }
 
+    public static void SetMatchPlaylist(List<OnlineZeeplevel> playlist)
+    {
+        ZeepkistNetwork.CurrentLobby.Playlist = playlist;
+        MultiplayerApi.SetNextLevelIndex(0);
+    }
+
     public static List<OnlineZeeplevel> GetPlaylistLevels(string playlistName)
     {
         return PlaylistApi.GetPlaylist(playlistName).levels;

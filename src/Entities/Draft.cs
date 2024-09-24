@@ -39,7 +39,7 @@ public class Draft
 
         if (!AvailableLevels.Contains(level))
         {
-            throw new InvalidOperationException("Level is not avaialble anymore");
+            throw new InvalidOperationException("Level is not available anymore");
         }
 
         ForcePick = true;
@@ -63,7 +63,7 @@ public class Draft
 
         if (!AvailableLevels.Contains(level))
         {
-            throw new InvalidOperationException("Level is not avaialble anymore");
+            throw new InvalidOperationException("Level is not available anymore");
         }
 
         BannedLevels.Add(level);
@@ -84,7 +84,7 @@ public class Draft
         return bothTeamsOutOfPicksAndBans || twoMapsPicked;
     }
 
-    private void SwitchTeam()
+    public void SwitchTeam()
     {
         currentTeam = otherTeam; // Switch turn
     }

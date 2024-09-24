@@ -3,6 +3,7 @@ using System.Collections;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
+using ZeepkistNetworking;
 using ZeepSDK.Chat;
 using Random = UnityEngine.Random;
 
@@ -119,18 +120,44 @@ public class State_PostDrafting : IState
     {
         // Create a message that shows the ready status of both teams
         ServerMessage msg = new ServerMessage()
-            .ShowdownHeader()
-            .AddLine(line => line
-                .AddBlock("Ready Check in progress.")
-            )
-            .AddLine(line => line
-                .AddBlock($"{_Showdown.Match.TeamA.GetNameWithTag()}: ")
-                .AddBlock(_teamAReady ? "Ready" : "Not Ready", f => f.Color(_teamAReady ? "#00ff00" : "#ff0000"))
-            )
-            .AddLine(line => line
-                .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()}: ")
-                .AddBlock(_teamBReady ? "Ready" : "Not Ready", f => f.Color(_teamBReady ? "#00ff00" : "#ff0000"))
-            );
+                .ShowdownHeader()
+                .AddLine(line => line
+                    .AddBlock("Ready Check in progress.")
+                )
+                .AddLine(line => line
+                    .AddBlock($"{_Showdown.Match.TeamA.GetNameWithTag()}: ")
+                    .AddBlock(_teamAReady ? "Ready" : "Not Ready", f => f.Color(_teamAReady ? "#00ff00" : "#ff0000"))
+                )
+                .AddLine(line => line
+                    .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()}: ")
+                    .AddBlock(_teamBReady ? "Ready" : "Not Ready", f => f.Color(_teamBReady ? "#00ff00" : "#ff0000"))
+                )
+                .AddMessage(ShowPickedMaps())
+            ;
+
         msg.Send();
+    }
+
+    private ServerMessage ShowPickedMaps()
+    {
+        ServerMessage msg = new ServerMessage();
+        msg.AddSeparator()
+            .AddLine(line => line
+                .AddBlock("Picked Maps:"));
+        for (int index = 0; index < _Showdown.Match.FirstDraft.PickedLevels.Count; index++)
+        {
+            int index1 = index;
+            msg.AddLine(line =>
+            {
+                OnlineZeeplevel level = _Showdown.Match.FirstDraft.PickedLevels[index1];
+                line
+                    .AddBlock($"Round {index1 + 1}:")
+                    .AddBlock($"'{level.Name}'", block => block.Color("#00ffff")
+                    )
+                    .Bold();
+            });
+        }
+
+        return msg;
     }
 }
