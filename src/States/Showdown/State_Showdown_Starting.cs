@@ -1,8 +1,8 @@
 ﻿using System;
-using ZeepkistClient;
+using Showdown4.Entities;
+using Showdown4.Managers;
 using ZeepSDK.Chat;
-using ZeepSDK.Multiplayer;
-using ZeepSDK.Playlist;
+using ZeepSDK.Level;
 using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
@@ -24,16 +24,38 @@ public class State_Showdown_Starting : IState
 
     public void Execute()
     {
-        // Use the showdown playlist name from the new config entry
-        string showdownPlaylistName = Plugin.ShowdownPlaylistName.Value;
+        string tmp = "";
+        try
+        {
+            PlaylistManager.SetServerPlaylist(Plugin.IntermissionLevelPlaylistName.Value);
+            if (!LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetCurrentPlaylistLevel().UID))
+            {
+                tmp = "Skipping to HoF...";
+                Managers.LobbyManager.SkipToLevel(0);
+            }
+            else
+            {
+                tmp = "Already on HoF :smile:";
+                OnLevelLoaded();
+            }
 
-        // Fetch the playlist using the configurable playlist name
-        PlaylistSaveJSON playlist = PlaylistApi.GetPlaylist(showdownPlaylistName);
-        ZeepkistNetwork.CurrentLobby.Playlist = playlist.levels;
-        MultiplayerApi.UpdateServerPlaylist();
-
-        // Send the force start command with the appropriate playlist size
-        ChatApi.SendMessage($"/fs {playlist.levels.Count - 1}");
+            ChatApi.SendMessage(new ChatMessage.Builder()
+                .ClearChat()
+                .NewLine()
+                .DashedLine()
+                .NewLine()
+                .TextLine("Showdown Season 4 started")
+                .NewLine()
+                .DashedLine()
+                .NewLine()
+                .TextLine(tmp)
+                .Build().Message);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     public void Exit()

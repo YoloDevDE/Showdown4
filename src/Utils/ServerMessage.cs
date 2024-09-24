@@ -7,7 +7,7 @@ namespace Showdown4.Utils;
 
 public class ServerMessage
 {
-    private readonly StringBuilder messageBuilder = new(); // Using StringBuilder
+    private readonly StringBuilder messageBuilder = new StringBuilder(); // Using StringBuilder
 
     private readonly string prefix = "/servermessage white 0 " +
                                      "<margin-right=\"50%\">" +
@@ -29,7 +29,7 @@ public class ServerMessage
     // Add a line with one or more blocks and optional line-wide formatting
     public ServerMessage AddLine(Action<LineBuilder> line)
     {
-        LineBuilder lineBuilder = new();
+        LineBuilder lineBuilder = new LineBuilder();
         line(lineBuilder);
         messageBuilder.Append(lineBuilder.BuildLine());
         AppendLineBreak();
@@ -38,7 +38,7 @@ public class ServerMessage
 
     public ServerMessage AddLine(string line)
     {
-        LineBuilder lineBuilder = new();
+        LineBuilder lineBuilder = new LineBuilder();
         lineBuilder.AddBlock(line);
         messageBuilder.Append(lineBuilder.BuildLine());
         AppendLineBreak();
@@ -47,7 +47,7 @@ public class ServerMessage
 
     public ServerMessage AddInLine(Action<LineBuilder> line)
     {
-        LineBuilder lineBuilder = new();
+        LineBuilder lineBuilder = new LineBuilder();
         line(lineBuilder);
         messageBuilder.Append(lineBuilder.BuildLine());
         return this;
@@ -84,7 +84,10 @@ public class ServerMessage
     // Prepend a <br> for each line after the 2nd to push the text down
     private void PrependBreaksIfNeeded()
     {
-        if (lineCount > 3) messageBuilder.Insert(0, "<br>");
+        if (lineCount > 3)
+        {
+            messageBuilder.Insert(0, "<br>");
+        }
     }
 
     public ServerMessage ShowdownHeader()
@@ -108,9 +111,9 @@ public class ServerMessage
     // LineBuilder class for formatting entire lines and adding blocks
     public class LineBuilder
     {
-        private readonly List<string> closingTag = new();
-        private readonly StringBuilder lineContent = new();
-        private readonly List<string> openingTag = new();
+        private readonly List<string> closingTag = new List<string>();
+        private readonly StringBuilder lineContent = new StringBuilder();
+        private readonly List<string> openingTag = new List<string>();
 
         // Overload for AddBlock without customization
         public LineBuilder AddBlock(string text)
@@ -122,7 +125,7 @@ public class ServerMessage
         // Add blocks to the line with customization
         public LineBuilder AddBlock(string text, Action<BlockBuilder> customizer)
         {
-            BlockBuilder blockBuilder = new(text + " ");
+            BlockBuilder blockBuilder = new BlockBuilder(text + " ");
             customizer(blockBuilder);
             lineContent.Append(blockBuilder.BuildInline());
             return this;
@@ -204,12 +207,18 @@ public class ServerMessage
         // Build the final formatted line with effects and blocks
         public string BuildLine()
         {
-            StringBuilder line = new();
+            StringBuilder line = new StringBuilder();
 
-            foreach (string tag in openingTag) line.Insert(0, tag);
+            foreach (string tag in openingTag)
+            {
+                line.Insert(0, tag);
+            }
 
             line.Append(lineContent.ToString());
-            foreach (string tag in closingTag) line.Append(tag);
+            foreach (string tag in closingTag)
+            {
+                line.Append(tag);
+            }
 
             return line.ToString();
         }

@@ -2,7 +2,6 @@
 using Showdown4.Commands;
 using Showdown4.States.Showdown;
 using Showdown4.Utils;
-using UnityEngine;
 
 namespace Showdown4.States.Master;
 
@@ -45,6 +44,6 @@ public class State_Master_On : IState
     private void OnShowdownStopped()
     {
         Finished?.Invoke();
-        ToastMessenger.Log("stopped", Color.white, Color.magenta);
+        ToastMessenger.LogSuccess("Season 4 stopped");
     }
 }

@@ -21,7 +21,9 @@ public class Round
         {
             // Update the best time if the new time is better
             if (result.Time < Leaderboard[result.Racer.SteamId].Time)
+            {
                 Leaderboard[result.Racer.SteamId] = result;
+            }
         }
         else
         {
@@ -54,7 +56,9 @@ public class Round
         {
             double personalBest = GetPersonalBest(racer);
             if (personalBest < double.MaxValue)
+            {
                 totalTime += personalBest;
+            }
         }
 
         return totalTime;
@@ -73,8 +77,9 @@ public class Round
 
     public List<Team> EvaluateTeamsSortedByWinner(Team teamA, Team teamB)
     {
-        return CompareFinishers(teamA, teamB) ?? CompareTotalTeamTimes(teamA, teamB) ??
-            CompareIndividualPlacements(teamA, teamB) ?? SelectRandomWinner(teamA, teamB);
+        return CompareFinishers(teamA, teamB) ??
+               CompareTotalTeamTimes(teamA, teamB) ??
+               CompareIndividualPlacements(teamA, teamB) ?? SelectRandomWinner(teamA, teamB);
     }
 
     private List<Team> CompareFinishers(Team teamA, Team teamB)
@@ -82,8 +87,16 @@ public class Round
         int finishersA = CountFinishers(teamA);
         int finishersB = CountFinishers(teamB);
 
-        if (finishersA > finishersB) return new List<Team> { teamA, teamB };
-        if (finishersB > finishersA) return new List<Team> { teamB, teamA };
+        if (finishersA > finishersB)
+        {
+            return new List<Team> { teamA, teamB };
+        }
+
+        if (finishersB > finishersA)
+        {
+            return new List<Team> { teamB, teamA };
+        }
+
         return null;
     }
 
@@ -92,8 +105,16 @@ public class Round
         double timeA = CalculateTotalTime(teamA);
         double timeB = CalculateTotalTime(teamB);
 
-        if (timeA < timeB) return new List<Team> { teamA, teamB };
-        if (timeB < timeA) return new List<Team> { teamB, teamA };
+        if (timeA < timeB)
+        {
+            return new List<Team> { teamA, teamB };
+        }
+
+        if (timeB < timeA)
+        {
+            return new List<Team> { teamB, teamA };
+        }
+
         return null;
     }
 
@@ -105,7 +126,7 @@ public class Round
 
     private List<Team> SelectRandomWinner(Team teamA, Team teamB)
     {
-        Random random = new();
+        Random random = new Random();
         return random.Next(2) == 0 ? new List<Team> { teamA, teamB } : new List<Team> { teamB, teamA };
     }
 }

@@ -25,7 +25,7 @@ public class ShowdownStateMachine : IStateMachine
     public void InitTransitions()
     {
         IStateMachine stateMachine = this;
-        IState stateShowdownStarting = new State_Showdown_Starting(this);
+        IState stateShowdownStarting = InitialState;
         IState stateSetupMatch = new State_SetupMatch(this);
         IState stateLinkRacers = new State_LinkRacersToTeams(this);
         IState statePreRacing = new State_PreRacing(this);
@@ -38,7 +38,7 @@ public class ShowdownStateMachine : IStateMachine
         IState stateWaitingForHoF = new State_WaitingForHoF(this);
         IState statePostDrafting = new State_PostDrafting(this);
         stateMachine
-            .AddTransition(Transition.CreateInstance(InitialState, stateWaitingForHoF))
+            .AddTransition(Transition.CreateInstance(stateShowdownStarting, stateWaitingForHoF))
             .AddTransition(Transition.CreateInstance(stateWaitingForHoF, stateSetupMatch))
             .AddTransition(Transition.CreateInstance(stateSetupMatch, stateLinkRacers))
             .AddTransition(Transition.CreateInstance(stateLinkRacers, stateDrafting))

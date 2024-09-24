@@ -101,9 +101,15 @@ public class State_PostDrafting : IState
 
     private void FinishReadyCheck()
     {
-        if (!_teamAReady) ChatApi.SendMessage($"{_Showdown.Match.TeamA.GetNameWithTag()} failed to ready up in time!");
+        if (!_teamAReady)
+        {
+            ChatApi.SendMessage($"{_Showdown.Match.TeamA.GetNameWithTag()} failed to ready up in time!");
+        }
 
-        if (!_teamBReady) ChatApi.SendMessage($"{_Showdown.Match.TeamB.GetNameWithTag()} failed to ready up in time!");
+        if (!_teamBReady)
+        {
+            ChatApi.SendMessage($"{_Showdown.Match.TeamB.GetNameWithTag()} failed to ready up in time!");
+        }
 
         // After the ready check finishes, invoke the state transition
         Finished?.Invoke();

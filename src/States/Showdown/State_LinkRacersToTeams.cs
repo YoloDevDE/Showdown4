@@ -37,6 +37,9 @@ public class State_LinkRacersToTeams : IState
     public void Execute()
     {
         OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID); // Simulate linking for testing
+        OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID); // Simulate linking for testing
+        OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID); // Simulate linking for testing
+        OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID); // Simulate linking for testing
     }
 
     public void Exit()
@@ -94,10 +97,24 @@ public class State_LinkRacersToTeams : IState
                 .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()} ",
                     format => format.Color($"{_Showdown.Match.TeamB.Color}"))
             )
+            .AddLine("Currently linked:")
+            .AddLine(line => line
+                .AddBlock($"{_teamA.GetTag()} ", format => format.Color(_teamA.Color))
+                .AddBlock($"{_teamA.GetLinkedRacersToString()}")
+            )
+            .AddLine(line => line
+                .AddBlock($"{_teamB.GetTag()} ", format => format.Color(_teamB.Color))
+                .AddBlock($"{_teamB.GetLinkedRacersToString()}")
+            )
             .AddSeparator()
             .AddLine(line => line
-                .AddBlock($"All steam accounts are linked! Starting Draft Phase in: {ticksLeft} seconds",
-                    format => format.Color("#00ff00"))
+                .AddBlock("All steam accounts are linked!",
+                    format => format.Color("#00cc00")
+                )
+            )
+            .AddLine(line => line
+                .AddBlock("Starting Draft Phase in:")
+                .AddBlock($"{TimeFormatter.FormatDuration(ticksLeft)}", format => format.Color("#cc0000"))
             )
             .Send();
     }
@@ -105,7 +122,7 @@ public class State_LinkRacersToTeams : IState
     private void OnLinkRacerToTeam(ulong steamId)
     {
         string steamName = ZeepkistNetworkService.GetSteamNameFromSteamId(steamId);
-        Racer racer = new(steamId, steamName);
+        Racer racer = new Racer(steamId, steamName);
         _currentTeam.AddRacer(racer); // Add racer to current team
 
         CheckIfRacersAreLinked(); // Check again after each link

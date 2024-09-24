@@ -1,9 +1,6 @@
 ﻿using System;
 using Showdown4.Commands;
 using Showdown4.Utils;
-using UnityEngine;
-using ZeepSDK.Racing;
-using Color = UnityEngine.Color;
 
 namespace Showdown4.States.Master;
 
@@ -22,7 +19,6 @@ public class State_Master_Off : IState
     {
         CommandShowdownStart.CommandInvoked += OnShowdownStarted;
         CommandShowdownStop.CommandInvoked += OnShowdownStopped;
-        RacingApi.RoundStarted += OnShowdownStarted;
     }
 
     public void Execute()
@@ -31,7 +27,6 @@ public class State_Master_Off : IState
 
     public void Exit()
     {
-        RacingApi.RoundStarted -= OnShowdownStarted;
         CommandShowdownStart.CommandInvoked -= OnShowdownStarted;
         CommandShowdownStop.CommandInvoked -= OnShowdownStopped;
     }
@@ -43,16 +38,8 @@ public class State_Master_Off : IState
 
     private void OnShowdownStarted()
     {
-        if (Finished != null)
-        {
-            Debug.Log("Invoking Finished event");
-            Finished.Invoke();
-        }
-        else
-        {
-            Debug.LogError("Finished event is null, no subscribers");
-        }
+        Finished?.Invoke();
 
-        ToastMessenger.Log("started", Color.white, Color.magenta);
+        ToastMessenger.LogSuccess("Season 4 started");
     }
 }

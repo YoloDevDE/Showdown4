@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using Showdown4.Managers;
 using Debug = UnityEngine.Debug;
 
 namespace Showdown4.States;
@@ -28,6 +29,7 @@ public interface IStateMachine
         {
             CurrentState.SubStateMachine?.Dispose();
             CurrentState.Finished -= OnCurrentStateFinished;
+            CoroutineManager.Instance.StopAllExternalCoroutines();
             CurrentState.Exit();
         }
 
@@ -42,7 +44,10 @@ public interface IStateMachine
     {
         foreach (ITransition transition in Transitions)
         {
-            if (transition.From != CurrentState || !transition.CanTransition()) continue;
+            if (transition.From != CurrentState || !transition.CanTransition())
+            {
+                continue;
+            }
 
             // Log the current state and the next state
             Debug.Log($"Current State: {CurrentState}, Transitioning to: {transition.To}");

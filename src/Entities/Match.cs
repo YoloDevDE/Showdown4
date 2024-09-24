@@ -35,15 +35,18 @@ public class Match
     public void ResetLevelDrafts()
     {
         // Check if the playlist exists
-        string playlistName = Plugin.LevelPoolPlaylistName.Value;
+        string playlistName = Plugin.CompetitionLevelsPlaylistName.Value;
         if (!PlaylistApi.Exists(playlistName))
+        {
             throw new InvalidOperationException($"Playlist '{playlistName}' does not exist.");
+        }
 
         // Fetch the playlist
         PlaylistSaveJSON levelPoolPlaylist = PlaylistApi.GetPlaylist(playlistName);
 
         LevelDrafts = new HashSet<LevelDraft>();
         foreach (OnlineZeeplevel onlineZeeplevel in levelPoolPlaylist.levels)
+        {
             LevelDrafts.Add(
                 new LevelDraft
                 {
@@ -51,19 +54,28 @@ public class Match
                     Team = null,
                     LevelDraftType = LevelDraftType.NONE
                 });
+        }
     }
 
     public void DoPick(Team team, Level level)
     {
         // Find the level in the draft pool
         LevelDraft draft = LevelDrafts.FirstOrDefault(l => l.Level.Equals(level));
-        if (team.Picks == 0) throw new InvalidOperationException("Your Team has no more picks left. Nerd");
+        if (team.Picks == 0)
+        {
+            throw new InvalidOperationException("Your Team has no more picks left. Nerd");
+        }
 
-        if (draft == null) throw new InvalidOperationException("Level not found in the draft pool. Nerd");
+        if (draft == null)
+        {
+            throw new InvalidOperationException("Level not found in the draft pool. Nerd");
+        }
 
         // Check if the level is already picked or banned
         if (draft.LevelDraftType != LevelDraftType.NONE)
+        {
             throw new InvalidOperationException("Level has already been picked or banned. Nerd");
+        }
 
         // Mark the level as picked and assign it to the picking team
         draft.LevelDraftType = LevelDraftType.PICK;
@@ -78,16 +90,26 @@ public class Match
         // Find the level in the draft pool
         LevelDraft draft = LevelDrafts.FirstOrDefault(l => l.Level.Equals(level));
         if (PickWasUsed)
+        {
             throw new InvalidOperationException(
                 "You need to pick a level now because the enemy nerds used a pick. Nerd");
+        }
 
-        if (team.Bans == 0) throw new InvalidOperationException("Your Team has no more bans left. Nerd");
+        if (team.Bans == 0)
+        {
+            throw new InvalidOperationException("Your Team has no more bans left. Nerd");
+        }
 
-        if (draft == null) throw new InvalidOperationException("Level not found in the draft pool. Nerd");
+        if (draft == null)
+        {
+            throw new InvalidOperationException("Level not found in the draft pool. Nerd");
+        }
 
         // Check if the level is already picked or banned
         if (draft.LevelDraftType != LevelDraftType.NONE)
+        {
             throw new InvalidOperationException("Level has already been picked or banned. Nerd");
+        }
 
         // Mark the level as banned and assign it to the banning team
         draft.LevelDraftType = LevelDraftType.BAN;
@@ -98,7 +120,10 @@ public class Match
 
     public int RoundCounter()
     {
-        if (Rounds == null || Rounds.Count < 1) return 1;
+        if (Rounds == null || Rounds.Count < 1)
+        {
+            return 1;
+        }
 
         return Rounds.Count;
     }

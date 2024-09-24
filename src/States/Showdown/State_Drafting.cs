@@ -15,7 +15,7 @@ namespace Showdown4.States.Showdown;
 public class State_Drafting : IState
 {
     private const int DraftTimeLimit = 30; // 30 seconds for each draft
-    private const int SwitchTime = 3; // 3 seconds for switching teams
+    private const int SwitchTime = 2; // 3 seconds for switching teams
     private const int DraftedMessageTime = 3; // 3 seconds for the drafted message
     private Coroutine _currentCoroutine; // To hold the current coroutine reference
     private string _currentDraftLine; // Variable to hold the draft line
@@ -37,8 +37,8 @@ public class State_Drafting : IState
 
     // Draft is complete if no picks or bans are left for both teams
     private bool DraftComplete =>
-        (_teamA.Picks == 0 && _teamB.Picks == 0) ||
-        (_teamA.Picks == 0 && _teamB.Picks == 0 && _teamA.Bans == 0 && _teamB.Bans == 0);
+        _teamA.Picks == 0 && _teamB.Picks == 0 ||
+        _teamA.Picks == 0 && _teamB.Picks == 0 && _teamA.Bans == 0 && _teamB.Bans == 0;
 
     public IStateMachine StateMachine { get; }
     public event Action Finished;
@@ -106,9 +106,13 @@ public class State_Drafting : IState
         HandleDraftAction(steamId, levelIndex, _Showdown.Match.DoPick);
 
         if (DraftComplete)
+        {
             StartDraftCompleted(); // Trigger draft completion
+        }
         else
+        {
             StartShowDraftedMessage(); // Show "XYZ drafted" message for 3 seconds
+        }
     }
 
     private void OnBan(ulong steamId, string levelIndex)
@@ -116,17 +120,27 @@ public class State_Drafting : IState
         HandleDraftAction(steamId, levelIndex, _Showdown.Match.DoBan);
 
         if (DraftComplete)
+        {
             StartDraftCompleted(); // Trigger draft completion
+        }
         else
+        {
             StartShowDraftedMessage(); // Show "XYZ drafted" message for 3 seconds
+        }
     }
 
     private void HandleDraftAction(ulong steamId, string levelIndex, Action<Team, Level> draftAction)
     {
-        if (_isDraftLocked) return; // Ignore draft if locked
+        if (_isDraftLocked)
+        {
+            return; // Ignore draft if locked
+        }
 
         ZeepkistNetworkPlayer player = GetPlayer(steamId);
-        if (player == null || _currentlyDrafting.Racers.All(r => r.SteamId != steamId)) return;
+        if (player == null || _currentlyDrafting.Racers.All(r => r.SteamId != steamId))
+        {
+            return;
+        }
 
         Level level = GetLevelFromIndex(levelIndex, player);
         if (level == null)
@@ -177,7 +191,9 @@ public class State_Drafting : IState
         while (_timeRemaining > 0)
         {
             if (_timeRemaining == 10 && !_warningIssued)
+            {
                 _warningIssued = true; // Mark the warning issued when the timer hits 10 seconds
+            }
 
             // Send updated draft message with the countdown
             SendDraftMessage();
@@ -238,7 +254,9 @@ public class State_Drafting : IState
     {
         // Finish the state if the draft is complete
         if (DraftComplete)
+        {
             StartDraftCompleted();
+        }
     }
 
     private void SwitchDrafter()
@@ -289,19 +307,32 @@ public class State_Drafting : IState
         }
         else
         {
-            // Show current drafting message with the countdown and the 10-second warning
-            msg.AddLine(line => line
-                .AddBlock($"{_currentlyDrafting.Tag}", f => f.Bold().Color(_currentlyDrafting.Color))
-                .AddBlock($" is drafting. {timeRemaining} seconds left."));
-
             if (_warningIssued)
+            {
                 msg.AddLine(line => line
-                    .AddBlock("Hurry! Only 10 seconds left!", f => f.Bold().Color("#ff0000")));
+                    .AddBlock($"{_currentlyDrafting.Tag}", f => f.Bold().Color(_currentlyDrafting.Color))
+                    .AddBlock("is drafting.")
+                    .AddBlock($"{timeRemaining}", f => f.Bold().Color("#ff0000"))
+                    .AddBlock("seconds left.")
+                    .AddBlock("Time is running low!", f => f.Bold().Color("#ff0000"))
+                );
+            }
+            else
+            {
+                msg.AddLine(line => line
+                    .AddBlock($"{_currentlyDrafting.Tag}", f => f.Bold().Color(_currentlyDrafting.Color))
+                    .AddBlock("is drafting.")
+                    .AddBlock($"{timeRemaining}", f => f.Bold().Color("#ff0000"))
+                    .AddBlock("seconds left.")
+                );
+            }
         }
 
         if (!string.IsNullOrEmpty(_currentDraftLine))
             // Add the switch/team-specific message to the same line if available
+        {
             msg.AddLine(line => line.AddBlock(_currentDraftLine));
+        }
 
         AddDraftHistory(msg); // Always add the draft history
         return msg;
@@ -309,23 +340,31 @@ public class State_Drafting : IState
 
     private void AddDraftHistory(ServerMessage msg)
     {
-        if (_Showdown.Match.LevelDrafts == null) return;
+        if (_Showdown.Match.LevelDrafts == null)
+        {
+            return;
+        }
 
         for (int i = 0; i < _Showdown.Match.LevelDrafts.Count; i++)
         {
             LevelDraft draft = _Showdown.Match.LevelDrafts.ToList()[i];
 
-            if (draft?.Level?.OnlineZeeplevel == null) continue;
+            if (draft?.Level?.OnlineZeeplevel == null)
+            {
+                continue;
+            }
 
             msg.AddInLine(line => line.AddBlock($"{draft.Level.OnlineZeeplevel.Name}"));
 
             if (draft.Team != null)
+            {
                 msg.AddInLine(line => line
                     .Indent("500")
                     .AddBlock(draft.LevelDraftType == LevelDraftType.BAN ? "Banned" : "Picked",
                         f => f.Color(draft.LevelDraftType == LevelDraftType.BAN ? "#aa0000" : "#00aa00"))
                     .AddBlock(" by ")
                     .AddBlock(draft.Team.Tag, f => f.Color(draft.Team.Color)));
+            }
 
             msg.AddLine("");
         }

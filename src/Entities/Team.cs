@@ -50,20 +50,29 @@ public class Team
 
     public void AddRacer(Racer racer)
     {
-        if (Racers.Count < MaxTeamSize) Racers.Add(racer);
+        if (Racers.Count < MaxTeamSize)
+        {
+            Racers.Add(racer);
+        }
     }
 
     public string GetLinkedRacersToString()
     {
         string result = "none";
-        if (Racers.Count <= 0) return result;
+        if (Racers.Count <= 0)
+        {
+            return result;
+        }
 
         result = "";
         for (int index = 0; index < Racers.Count; index++)
         {
             Racer racer = Racers[index];
             result += racer.SteamName;
-            if (index < Racers.Count - 1) result += ", ";
+            if (index < Racers.Count - 1)
+            {
+                result += ", ";
+            }
         }
 
         return result;
