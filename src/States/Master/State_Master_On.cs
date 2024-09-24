@@ -2,6 +2,7 @@
 using Showdown4.Commands;
 using Showdown4.States.Showdown;
 using Showdown4.Utils;
+using ZeepSDK.Chat;
 
 namespace Showdown4.States.Master;
 
@@ -10,7 +11,6 @@ public class State_Master_On : IState
     public State_Master_On(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
-        SubStateMachine = new ShowdownStateMachine();
     }
 
 
@@ -28,10 +28,13 @@ public class State_Master_On : IState
 
     public void Execute()
     {
+        SubStateMachine = new ShowdownStateMachine();
     }
 
     public void Exit()
     {
+        ChatApi.SendMessage("/joinmessage disable");
+        ChatApi.SendMessage("/servermessage remove");
         CommandShowdownStart.CommandInvoked -= OnShowdownStarted;
         CommandShowdownStop.CommandInvoked -= OnShowdownStopped;
     }

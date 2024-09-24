@@ -1,4 +1,6 @@
 ﻿using System;
+using Showdown4.Managers;
+using ZeepSDK.Level;
 using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
@@ -20,6 +22,10 @@ public class State_WaitingForHoF : IState
 
     public void Execute()
     {
+        if (LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetCurrentPlaylistLevel().UID))
+        {
+            OnRoundStarted();
+        }
     }
 
     public void Exit()

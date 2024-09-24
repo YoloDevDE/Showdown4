@@ -27,7 +27,7 @@ public class ShowdownStateMachine : IStateMachine
         IStateMachine stateMachine = this;
         IState stateShowdownStarting = InitialState;
         IState stateSetupMatch = new State_SetupMatch(this);
-        IState stateLinkRacers = new State_LinkRacersToTeams(this);
+        IState stateLinkRacers = new State_LinkRacers(this);
         IState statePreRacing = new State_PreRacing(this);
         IState stateRacing = new State_Racing(this);
         IState statePostRacing = new State_PostRacing(this);

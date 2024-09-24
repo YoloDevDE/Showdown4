@@ -37,7 +37,7 @@ public class State_Racing : IState
     public void Execute()
     {
         // Start a new round and add it to the match
-        _currentRound = new Round(_showdownStateMachine.Match.RoundCounter() + 1);
+        _currentRound = new Round();
         _showdownStateMachine.Match.Rounds.Add(_currentRound);
         _leaderboard = new Leaderboard(_currentRound); // Initialize leaderboard with the current round
 

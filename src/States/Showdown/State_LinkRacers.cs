@@ -9,13 +9,13 @@ using ZeepkistClient;
 
 namespace Showdown4.States.Showdown;
 
-public class State_LinkRacersToTeams : IState
+public class State_LinkRacers : IState
 {
     private const float CountdownDuration = 5f;
     private bool _isCountdownRunning;
     private Team _teamA, _teamB, _currentTeam;
 
-    public State_LinkRacersToTeams(IStateMachine stateMachine)
+    public State_LinkRacers(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }

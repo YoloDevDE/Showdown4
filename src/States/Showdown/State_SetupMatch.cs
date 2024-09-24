@@ -28,20 +28,13 @@ public class State_SetupMatch : IState
 
     public void Enter()
     {
-        // Initialize teams by directly loading from JSON
-        // _teams = ModStorage.Storage.LoadFromJson<TeamJsonWrapper>("Teams").Teams;
-
-        // Register command handler
         CommandSetupMatch.CommandInvoked += OnSetTeam;
-
-        // Set the countdown timer
     }
 
     public void Execute()
     {
         ChatApi.SendMessage("/settime 86400");
         CoroutineManager.Instance.StartExternalCoroutine(CountdownTimerCoroutine());
-        // No periodic logic is required anymore, it's handled by the coroutine.
     }
 
     public void Exit()

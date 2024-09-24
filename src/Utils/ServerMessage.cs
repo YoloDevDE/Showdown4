@@ -9,17 +9,17 @@ public class ServerMessage
 {
     private readonly StringBuilder messageBuilder = new StringBuilder(); // Using StringBuilder
 
-    private readonly string prefix = "/servermessage white 0 " +
-                                     "<margin-right=\"50%\">" +
-                                     "<size=\"30%\">" +
-                                     "<align=\"left\">";
+    private int lineCount; // To track the number of lines
 
-    private readonly string suffix =
+    private string prefix = "/servermessage white 0 " +
+                            "<margin-right=\"50%\">" +
+                            "<size=\"30%\">" +
+                            "<align=\"left\">";
+
+    private string suffix =
         "</align>" +
         "</size>" +
         "</margin>";
-
-    private int lineCount; // To track the number of lines
 
     public override string ToString()
     {
@@ -55,17 +55,35 @@ public class ServerMessage
 
     public ServerMessage AddMessage(ServerMessage otherMessage)
     {
-        // Füge die Inhalte der anderen Nachricht hinzu
-        messageBuilder.Append(otherMessage.messageBuilder);
+        // Remove prefix and suffix of the other message
+        otherMessage.prefix = "";
+        otherMessage.suffix = "";
 
-        // Aktualisiere den lineCount
+        // Convert otherMessage's StringBuilder to a string
+        string otherMessageContent = otherMessage.messageBuilder.ToString();
+
+        // Remove all leading <br> from otherMessage
+        while (otherMessageContent.StartsWith("<br>"))
+        {
+            otherMessageContent = otherMessageContent.Substring(4); // Remove one <br> (4 characters)
+        }
+
+        // Append the cleaned otherMessage's content to the current message
+        messageBuilder.Append(otherMessageContent);
+
+        // Update the line count
+        int originalLineCount = lineCount;
         lineCount += otherMessage.lineCount;
 
-        // Überprüfe, ob Zeilenumbrüche am Anfang benötigt werden
-        PrependBreaksIfNeeded();
+        // Ensure the current message gets prepended breaks for each added line
+        for (int i = originalLineCount; i < lineCount; i++)
+        {
+            PrependBreaksIfNeeded();
+        }
 
         return this;
     }
+
 
     public ServerMessage AddSeparator(int length = 20)
     {
@@ -84,7 +102,7 @@ public class ServerMessage
     // Prepend a <br> for each line after the 2nd to push the text down
     private void PrependBreaksIfNeeded()
     {
-        if (lineCount > 3)
+        if (lineCount > 2)
         {
             messageBuilder.Insert(0, "<br>");
         }

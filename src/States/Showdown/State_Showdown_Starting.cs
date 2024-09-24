@@ -3,7 +3,6 @@ using Showdown4.Entities;
 using Showdown4.Managers;
 using ZeepSDK.Chat;
 using ZeepSDK.Level;
-using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
@@ -19,7 +18,6 @@ public class State_Showdown_Starting : IState
 
     public void Enter()
     {
-        RacingApi.LevelLoaded += OnLevelLoaded;
     }
 
     public void Execute()
@@ -36,7 +34,6 @@ public class State_Showdown_Starting : IState
             else
             {
                 tmp = "Already on HoF :smile:";
-                OnLevelLoaded();
             }
 
             ChatApi.SendMessage(new ChatMessage.Builder()
@@ -56,15 +53,13 @@ public class State_Showdown_Starting : IState
             Console.WriteLine(e);
             throw;
         }
+        finally
+        {
+            Finished?.Invoke();
+        }
     }
 
     public void Exit()
     {
-        RacingApi.LevelLoaded -= OnLevelLoaded;
-    }
-
-    private void OnLevelLoaded()
-    {
-        Finished?.Invoke();
     }
 }

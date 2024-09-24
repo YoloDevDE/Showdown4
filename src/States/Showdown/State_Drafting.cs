@@ -7,22 +7,16 @@ using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistClient;
+using ZeepkistNetworking;
 using ZeepSDK.Chat;
-using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
 public class State_Drafting : IState
 {
-    private const int DraftTimeLimit = 30; // 30 seconds for each draft
-    private const int SwitchTime = 2; // 3 seconds for switching teams
-    private const int DraftedMessageTime = 3; // 3 seconds for the drafted message
-    private Coroutine _currentCoroutine; // To hold the current coroutine reference
-    private string _currentDraftLine; // Variable to hold the draft line
-    private bool _isDraftLocked; // Lock drafts during the window
-    private bool _isTeamADrafting = true; // Track which team is drafting
-    private int _timeRemaining; // Time remaining for the draft
-    private bool _warningIssued; // Track whether the 10-second warning has been issued
+    public bool countDownStarted;
+
+    private int countdownTime = 5; // Countdown starts from 5 seconds
 
     public State_Drafting(IStateMachine stateMachine)
     {
@@ -32,346 +26,201 @@ public class State_Drafting : IState
     private ShowdownStateMachine _Showdown => StateMachine as ShowdownStateMachine;
     private Team _teamA => _Showdown.Match.TeamA;
     private Team _teamB => _Showdown.Match.TeamB;
-    private Team _currentlyDrafting => _isTeamADrafting ? _teamA : _teamB;
-    private Team _notDrafting => _isTeamADrafting ? _teamB : _teamA;
-
-    // Draft is complete if no picks or bans are left for both teams
-    private bool DraftComplete =>
-        _teamA.Picks == 0 && _teamB.Picks == 0 ||
-        _teamA.Picks == 0 && _teamB.Picks == 0 && _teamA.Bans == 0 && _teamB.Bans == 0;
-
     public IStateMachine StateMachine { get; }
     public event Action Finished;
 
     public void Enter()
     {
-        AttachEvents();
-        _timeRemaining = DraftTimeLimit; // Initialize countdown to 30 seconds
-        StartDraftCountdown(); // Start the countdown timer
+        CommandBan.CommandInvoked += OnBan;
+        CommandPick.CommandInvoked += OnPick;
+        _Showdown.Match.FirstDraft = new Draft(_teamA, _teamB, PlaylistManager.GetPlaylistLevels(Plugin.CompetitionLevelsPlaylistName.Value));
     }
 
     public void Execute()
     {
-        SendDraftMessage(); // Always send the current draft message with the countdown
+        ServerMessage DraftMessage = new ServerMessage().ShowdownHeader()
+                .AddLine(line => line
+                    .Bold()
+                    .AddBlock($"{_Showdown.Match.TeamA.GetNameWithTag()} ",
+                        format => format.Color($"{_Showdown.Match.TeamA.Color}"))
+                    .AddBlock("VS ")
+                    .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()} ",
+                        format => format.Color($"{_Showdown.Match.TeamB.Color}"))
+                )
+                .AddMessage(DraftingStateMessage())
+                .AddSeparator()
+                .AddMessage(GetDraftLevelList())
+            ;
+        if (_Showdown.Match.FirstDraft.IsDraftComplete())
+        {
+            DraftMessage
+                .AddSeparator()
+                .AddMessage(DraftCompleteMessage());
+            if (!countDownStarted)
+            {
+                CoroutineManager.Instance.StartExternalCoroutine(DraftCompleteCountdown());
+            }
+        }
+
+        DraftMessage.Send();
     }
 
     public void Exit()
     {
-        DetachEvents();
-        StopCurrentCoroutine(); // Stop any running coroutine to prevent overlap
-    }
-
-    private void StartDraftCountdown()
-    {
-        _warningIssued = false; // Reset the warning flag
-        _timeRemaining = DraftTimeLimit; // Reset the time
-        StopCurrentCoroutine(); // Ensure any previous countdown is stopped
-        _currentCoroutine = CoroutineManager.Instance.StartExternalCoroutine(DraftCountdown()); // Start new countdown
-    }
-
-    private void StopCurrentCoroutine()
-    {
-        if (_currentCoroutine != null)
-        {
-            CoroutineManager.Instance.StopCoroutine(_currentCoroutine); // Stop the active coroutine
-            _currentCoroutine = null;
-        }
-    }
-
-    private void SendDraftMessage()
-    {
-        // Create and send the current draft message with the countdown timer
-        ServerMessage msg = CreateDraftMessage(_timeRemaining);
-        msg.Send();
-    }
-
-    // Event Handling
-    private void AttachEvents()
-    {
-        CommandPick.CommandInvoked += OnPick;
-        CommandBan.CommandInvoked += OnBan;
-        RacingApi.RoundEnded += OnRoundEnded;
-    }
-
-    private void DetachEvents()
-    {
-        CommandPick.CommandInvoked -= OnPick;
         CommandBan.CommandInvoked -= OnBan;
-        RacingApi.RoundEnded -= OnRoundEnded;
+        CommandPick.CommandInvoked -= OnPick;
     }
 
-    // Draft Logic
-    private void OnPick(ulong steamId, string levelIndex)
+    private void FinishState()
     {
-        HandleDraftAction(steamId, levelIndex, _Showdown.Match.DoPick);
-
-        if (DraftComplete)
-        {
-            StartDraftCompleted(); // Trigger draft completion
-        }
-        else
-        {
-            StartShowDraftedMessage(); // Show "XYZ drafted" message for 3 seconds
-        }
-    }
-
-    private void OnBan(ulong steamId, string levelIndex)
-    {
-        HandleDraftAction(steamId, levelIndex, _Showdown.Match.DoBan);
-
-        if (DraftComplete)
-        {
-            StartDraftCompleted(); // Trigger draft completion
-        }
-        else
-        {
-            StartShowDraftedMessage(); // Show "XYZ drafted" message for 3 seconds
-        }
-    }
-
-    private void HandleDraftAction(ulong steamId, string levelIndex, Action<Team, Level> draftAction)
-    {
-        if (_isDraftLocked)
-        {
-            return; // Ignore draft if locked
-        }
-
-        ZeepkistNetworkPlayer player = GetPlayer(steamId);
-        if (player == null || _currentlyDrafting.Racers.All(r => r.SteamId != steamId))
-        {
-            return;
-        }
-
-        Level level = GetLevelFromIndex(levelIndex, player);
-        if (level == null)
-        {
-            ChatApi.SendMessage($"{player.Username} tried to use an invalid level index: {levelIndex}");
-            return;
-        }
-
-        try
-        {
-            // Stop the current draft countdown coroutine as soon as the pick/ban is made
-            StopCurrentCoroutine();
-
-            draftAction(_currentlyDrafting, level);
-
-            _isDraftLocked = true; // Lock the draft
-            AddDraftToHistory(_currentlyDrafting, level); // Add the draft to history
-        }
-        catch (InvalidOperationException ex)
-        {
-            ChatApi.SendMessage($"{player.Username} -> {ex.Message}");
-        }
-    }
-
-    private void StartShowDraftedMessage()
-    {
-        StopCurrentCoroutine(); // Stop any previous coroutine
-        _currentCoroutine =
-            CoroutineManager.Instance
-                .StartExternalCoroutine(ShowDraftedMessage()); // Show drafted message for 3 seconds
-    }
-
-    private IEnumerator ShowDraftedMessage()
-    {
-        // Show "Team XYZ drafted level XYZ" for 3 seconds
-        ServerMessage msg = CreateDraftMessage(0, true, _currentlyDrafting);
-        msg.Send();
-
-        yield return new WaitForSeconds(DraftedMessageTime); // Wait for 3 seconds before switching
-
-        // Unlock and switch teams
-        _isDraftLocked = false;
-        SwitchDrafter();
-    }
-
-    private IEnumerator DraftCountdown()
-    {
-        while (_timeRemaining > 0)
-        {
-            if (_timeRemaining == 10 && !_warningIssued)
-            {
-                _warningIssued = true; // Mark the warning issued when the timer hits 10 seconds
-            }
-
-            // Send updated draft message with the countdown
-            SendDraftMessage();
-
-            yield return new WaitForSeconds(1);
-            _timeRemaining--;
-        }
-
-        // Draft expired, switch teams
-        StartSwitchTeamCountdown();
-    }
-
-    private void StartSwitchTeamCountdown()
-    {
-        StopCurrentCoroutine(); // Stop the current countdown
-        _currentCoroutine = CoroutineManager.Instance.StartExternalCoroutine(SwitchTeamCountdown()); // Start switching
-    }
-
-    private IEnumerator SwitchTeamCountdown()
-    {
-        for (int i = SwitchTime; i > 0; i--)
-        {
-            // Replace draft message with switching message on the same line
-            _currentDraftLine = $"Switching to {_notDrafting.Tag} in {i} seconds";
-            SendDraftMessage(); // Update message to show switching team
-
-            yield return new WaitForSeconds(1);
-        }
-
-        // Switch teams after countdown
-        SwitchDrafter();
-    }
-
-    private void StartDraftCompleted()
-    {
-        StopCurrentCoroutine(); // Ensure any active countdown stops
-        _currentCoroutine =
-            CoroutineManager.Instance.StartExternalCoroutine(DraftCompleted()); // Start the draft completed coroutine
-    }
-
-    private IEnumerator DraftCompleted()
-    {
-        for (int i = 5; i > 0; i--)
-        {
-            // Replace draft message with "Draft Completed" countdown
-            _currentDraftLine = $"Drafting is complete! Starting next phase in {i} seconds.";
-            SendDraftMessage();
-
-            yield return new WaitForSeconds(1);
-        }
-
-        // Trigger the end of the state after the countdown
         Finished?.Invoke();
     }
 
-    // Event Logic
-    private void OnRoundEnded()
+    private ServerMessage DraftingStateMessage()
     {
-        // Finish the state if the draft is complete
-        if (DraftComplete)
-        {
-            StartDraftCompleted();
-        }
-    }
+        ServerMessage tmp = new ServerMessage();
 
-    private void SwitchDrafter()
-    {
-        _isTeamADrafting = !_isTeamADrafting;
-        _warningIssued = false; // Reset warning flag for the next team
-        _timeRemaining = DraftTimeLimit; // Reset countdown
-        StartDraftCountdown(); // Start the next draft countdown
-    }
-
-    // Helper Methods
-    private ZeepkistNetworkPlayer GetPlayer(ulong steamId)
-    {
-        ZeepkistNetwork.TryGetPlayer(steamId, out ZeepkistNetworkPlayer player);
-        return player;
-    }
-
-    private Level GetLevelFromIndex(string levelIndex, ZeepkistNetworkPlayer player)
-    {
-        if (!int.TryParse(levelIndex, out int levelNumber))
-        {
-            ChatApi.SendMessage($"{player.Username} tried to use an invalid level index: {levelIndex}");
-            return null;
-        }
-
-        levelNumber = Math.Clamp(levelNumber, 1, 7);
-        return _Showdown.Match.LevelDrafts.ToList()[levelNumber - 1].Level;
-    }
-
-    private ServerMessage CreateDraftMessage(int timeRemaining, bool showDraftedMessage = false,
-        Team draftedTeam = null, Level draftedLevel = null)
-    {
-        ServerMessage msg = new ServerMessage()
-            .ShowdownHeader()
-            .AddLine(line => line
-                .AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
-                .AddBlock(" VS ")
-                .AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color)))
-            .AddSeparator();
-
-        if (showDraftedMessage && draftedTeam != null && draftedLevel != null)
-        {
-            // Show drafted message
-            msg.AddLine(line => line
-                .AddBlock($"{draftedTeam.GetNameWithTag()}", f => f.Bold().Color(draftedTeam.Color))
-                .AddBlock(" drafted ")
-                .AddBlock($"{draftedLevel.OnlineZeeplevel.Name}", f => f.Bold().Color("#00ff00")));
-        }
-        else
-        {
-            if (_warningIssued)
+        tmp.AddLine(line =>
             {
-                msg.AddLine(line => line
-                    .AddBlock($"{_currentlyDrafting.Tag}", f => f.Bold().Color(_currentlyDrafting.Color))
-                    .AddBlock("is drafting.")
-                    .AddBlock($"{timeRemaining}", f => f.Bold().Color("#ff0000"))
-                    .AddBlock("seconds left.")
-                    .AddBlock("Time is running low!", f => f.Bold().Color("#ff0000"))
-                );
-            }
-            else
-            {
-                msg.AddLine(line => line
-                    .AddBlock($"{_currentlyDrafting.Tag}", f => f.Bold().Color(_currentlyDrafting.Color))
-                    .AddBlock("is drafting.")
-                    .AddBlock($"{timeRemaining}", f => f.Bold().Color("#ff0000"))
-                    .AddBlock("seconds left.")
-                );
-            }
-        }
+                line
+                    .AddBlock($"{_Showdown.Match.FirstDraft.GetCurrentTeam().GetTag()}", block => { block.Color(_Showdown.Match.FirstDraft.GetCurrentTeam().Color); })
+                    .AddBlock("is drafting:")
+                    .AddBlock("time", block => { block.Color("#ffff00"); })
+                    ;
+            })
+            ;
 
-        if (!string.IsNullOrEmpty(_currentDraftLine))
-            // Add the switch/team-specific message to the same line if available
-        {
-            msg.AddLine(line => line.AddBlock(_currentDraftLine));
-        }
 
-        AddDraftHistory(msg); // Always add the draft history
-        return msg;
+        return tmp;
     }
 
-    private void AddDraftHistory(ServerMessage msg)
+    private ServerMessage DraftCompleteMessage()
     {
-        if (_Showdown.Match.LevelDrafts == null)
+        ServerMessage tmp = new ServerMessage();
+
+        tmp.AddLine(line =>
         {
+            line
+                .AddBlock("Draft complete! Initiating Ready-Check in:")
+                .AddBlock($"{TimeFormatter.FormatDuration(countdownTime)}", block => { block.Color("#00ff00"); })
+                ;
+        });
+
+
+        return tmp;
+    }
+
+    private ServerMessage GetDraftLevelList()
+    {
+        ServerMessage tmp = new ServerMessage();
+
+        foreach (OnlineZeeplevel level in _Showdown.Match.FirstDraft.AllLevels)
+        {
+            tmp.AddLine(line =>
+            {
+                line.AddBlock(level.Name, block =>
+                {
+                    // Only strikethrough if the level is NOT found in available levels
+                    if (_Showdown.Match.FirstDraft.AvailableLevels.All(l => l.Name != level.Name))
+                    {
+                        block.Strikethrough();
+                    }
+                });
+            });
+        }
+
+        return tmp;
+    }
+
+    private IEnumerator DraftCompleteCountdown()
+    {
+        countDownStarted = true;
+
+
+        while (countdownTime > 0)
+        {
+            // After countdown reaches 0, execute the next state
+            Execute();
+            // Wait for 1 second
+            yield return new WaitForSeconds(1);
+
+            // Decrease the countdown
+            countdownTime--;
+        }
+
+        FinishState();
+    }
+
+    private void HandleDraft(bool isBan, ulong steamId, string levelIndexStr)
+    {
+        // Get the player name from steamId
+        if (!ZeepkistNetwork.TryGetPlayer(steamId, out ZeepkistNetworkPlayer player))
+        {
+            ChatApi.SendMessage("Error: Could not find the player for the provided Steam ID.");
             return;
         }
 
-        for (int i = 0; i < _Showdown.Match.LevelDrafts.Count; i++)
+        string playerName = player.Username;
+
+        // Get the current draft from the match (FirstDraft assumed here)
+        Draft currentDraft = _Showdown.Match.FirstDraft;
+
+        // Check if the steamId is part of the current team's racers
+        Team currentTeam = currentDraft.GetCurrentTeam();
+        if (currentTeam.Racers.All(racer => racer.SteamId != steamId))
         {
-            LevelDraft draft = _Showdown.Match.LevelDrafts.ToList()[i];
+            ChatApi.SendMessage($"{playerName} is not a member of the current drafting team.");
+            return;
+        }
 
-            if (draft?.Level?.OnlineZeeplevel == null)
+        // Validate if levelIndexStr is a valid integer between 1 and 7
+        if (!int.TryParse(levelIndexStr, out int levelIndex) || levelIndex < 1 || levelIndex > 7)
+        {
+            ChatApi.SendMessage($"Please enter a valid level index between 1 and 7. You entered: {levelIndexStr}");
+            return;
+        }
+
+        // Retrieve the list of available levels from the current draft
+        if (levelIndex > currentDraft.AllLevels.Count)
+        {
+            ChatApi.SendMessage($"The selected level index {levelIndex} is out of range. There are only {currentDraft.AvailableLevels.Count} levels available.");
+            return;
+        }
+
+        // Get the level to ban/pick
+        OnlineZeeplevel levelToPickOrBan = currentDraft.AllLevels[levelIndex - 1]; // Assuming index matches the level
+
+        // Depending on whether this is a pick or a ban, handle appropriately
+        try
+        {
+            if (isBan)
             {
-                continue;
+                currentDraft.BanLevel(levelToPickOrBan);
+                ChatApi.SendMessage($"{currentTeam.GetTag()} has banned the level {levelToPickOrBan.Name}");
             }
-
-            msg.AddInLine(line => line.AddBlock($"{draft.Level.OnlineZeeplevel.Name}"));
-
-            if (draft.Team != null)
+            else
             {
-                msg.AddInLine(line => line
-                    .Indent("500")
-                    .AddBlock(draft.LevelDraftType == LevelDraftType.BAN ? "Banned" : "Picked",
-                        f => f.Color(draft.LevelDraftType == LevelDraftType.BAN ? "#aa0000" : "#00aa00"))
-                    .AddBlock(" by ")
-                    .AddBlock(draft.Team.Tag, f => f.Color(draft.Team.Color)));
+                currentDraft.PickLevel(levelToPickOrBan);
+                ChatApi.SendMessage($"{currentTeam.GetTag()} has picked the level {levelToPickOrBan.Name}");
             }
-
-            msg.AddLine("");
+        }
+        catch (InvalidOperationException ex)
+        {
+            ChatApi.SendMessage(ex.Message);
+        }
+        finally
+        {
+            Execute();
         }
     }
 
-    private void AddDraftToHistory(Team team, Level level)
+    private void OnPick(ulong steamId, string levelIndexStr)
     {
-        // Logic to add the draft to history (as per game logic)
+        HandleDraft(false, steamId, levelIndexStr);
+    }
+
+    private void OnBan(ulong steamId, string levelIndexStr)
+    {
+        HandleDraft(true, steamId, levelIndexStr);
     }
 }

@@ -38,7 +38,7 @@ public class Leaderboard
     // Generate a server message for team and racer leaderboard
     public ServerMessage GenerateLeaderboardMessage(Team teamA, Team teamB)
     {
-        List<Team> sortedTeams = _round.EvaluateTeamsSortedByWinner(teamA, teamB);
+        List<Team> sortedTeams = _round.GetTeamsSortedByWinnerAsc(teamA, teamB);
 
         ServerMessage msg = new ServerMessage()
             .ShowdownHeader()
@@ -47,8 +47,8 @@ public class Leaderboard
         int position = 1;
         foreach (Team team in sortedTeams)
         {
-            double averageTime = _round.CalculateAverageTime(team);
-            int finishers = _round.CountFinishers(team);
+            double averageTime = _round.GetAvgTimeOfTeam(team);
+            int finishers = _round.GetFinishersCount(team);
 
             // Add team header with team color
             msg.AddLine(line => line

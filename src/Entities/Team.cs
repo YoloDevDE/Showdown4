@@ -17,8 +17,8 @@ public class Team
     public string Name { get; set; }
     public string Tag { get; set; }
     public string Color { get; set; }
-    public uint Picks { get; set; } = 1;
-    public uint Bans { get; set; } = 2;
+    public int Picks { get; set; } = 1;
+    public int Bans { get; set; } = 2;
     public List<Racer> Racers { get; set; }
 
     public int MaxTeamSize { get; set; } = 2;
