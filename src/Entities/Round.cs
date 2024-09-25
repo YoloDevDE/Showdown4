@@ -6,8 +6,9 @@ namespace Showdown4.Entities;
 
 public class Round
 {
-    private readonly Team teamA;
-    private readonly Team teamB;
+    public readonly Team teamA;
+    public readonly Team teamB;
+    public List<Team> TeamsSortedByWinAsc;
 
     public Round(Team teamA, Team teamB)
     {
@@ -19,6 +20,7 @@ public class Round
     public Dictionary<ulong, Result> Leaderboard { get; set; }
 
     public Team GetWinnerTeam => GetTeamsSortedByWinnerAsc().First();
+
 
     public void AddResult(Result result)
     {
@@ -57,12 +59,23 @@ public class Round
         return team.Racers.Count(racer => Leaderboard.ContainsKey(racer.SteamId));
     }
 
+    public void Evaluate(out List<Team> teams)
+    {
+        TeamsSortedByWinAsc = new List<Team>(CompareFinishers() ??
+                                             CompareCumulativeTeamTimes() ??
+                                             CompareIndividualPlacements() ??
+                                             SelectRandomWinner());
+        teams = TeamsSortedByWinAsc;
+    }
+
     public List<Team> GetTeamsSortedByWinnerAsc()
     {
-        return CompareFinishers() ??
-               CompareCumulativeTeamTimes() ??
-               CompareIndividualPlacements() ??
-               SelectRandomWinner();
+        if (TeamsSortedByWinAsc == null)
+        {
+            Evaluate(out List<Team> teams);
+        }
+
+        return TeamsSortedByWinAsc;
     }
 
     private List<Team> CompareFinishers()
@@ -70,7 +83,8 @@ public class Round
         int finishersA = GetFinishersCount(teamA);
         int finishersB = GetFinishersCount(teamB);
 
-        return finishersA > finishersB ? new List<Team> { teamA, teamB } :
+        return
+            finishersA > finishersB ? new List<Team> { teamA, teamB } :
             finishersB > finishersA ? new List<Team> { teamB, teamA } :
             null;
     }

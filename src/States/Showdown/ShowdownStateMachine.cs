@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Showdown4.Entities;
+using Showdown4.Managers;
+using ZeepSDK.Level;
 
 namespace Showdown4.States.Showdown;
 
@@ -38,7 +40,9 @@ public class ShowdownStateMachine : IStateMachine
         IState stateWaitingForHoF = new State_WaitingForHoF(this);
         IState statePostDrafting = new State_PostDrafting(this);
         stateMachine
-            .AddTransition(Transition.CreateInstance(stateShowdownStarting, stateWaitingForHoF))
+            .AddTransition(Transition.CreateInstance(stateShowdownStarting, stateWaitingForHoF, () => !LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
+            )
+            .AddTransition(Transition.CreateInstance(stateShowdownStarting, stateSetupMatch, () => LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID)))
             .AddTransition(Transition.CreateInstance(stateWaitingForHoF, stateSetupMatch))
             .AddTransition(Transition.CreateInstance(stateSetupMatch, stateLinkRacers))
             .AddTransition(Transition.CreateInstance(stateLinkRacers, stateDrafting))
@@ -49,6 +53,7 @@ public class ShowdownStateMachine : IStateMachine
             .AddTransition(Transition.CreateInstance(statePostRacing, stateRacing, () => Match.RoundCounter() < 2))
             .AddTransition(Transition.CreateInstance(statePostRacing, stateDrafting, () => Match.RoundCounter() >= 2 && Match.TeamA.Wins < 2 && Match.TeamB.Wins < 2))
             .AddTransition(Transition.CreateInstance(statePostRacing, stateMatchEnd, () => Match.TeamA.Wins >= 2 || Match.TeamB.Wins >= 2))
+            .AddTransition(Transition.CreateInstance(stateMatchEnd, stateShowdownStarting))
             ;
     }
 

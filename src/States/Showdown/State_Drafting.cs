@@ -15,10 +15,11 @@ namespace Showdown4.States.Showdown;
 
 public class State_Drafting : IState
 {
-    private const int DraftTime = 30;
+    private const int DraftTime = 60;
+    private const int countdown = 6;
     public bool countDownStarted;
 
-    private int countdownTime = 6;
+    private int countdownTime = countdown;
     private int DraftCountdownTime = DraftTime;
 
     public State_Drafting(IStateMachine stateMachine)
@@ -34,10 +35,23 @@ public class State_Drafting : IState
 
     public void Enter()
     {
+        PlaylistManager.ResetPlaylist();
+        // Initialize all relevant variables
+        countDownStarted = false;
+        countdownTime = countdown;
+        DraftCountdownTime = DraftTime;
+
+        // Subscribe to events
         CommandBan.CommandInvoked += OnBan;
         CommandPick.CommandInvoked += OnPick;
-        _Showdown.Match.AddDraft(); // Set the lobby time to 300 seconds (5 minutes)
+
+        // Add a new draft for the match
+        _Showdown.Match.AddDraft();
+
+        // Set the lobby time to 86400 seconds (24 hours)
         ChatApi.SendMessage("/settime 86400");
+
+        // Start the draft countdown coroutine
         CoroutineManager.Instance.StartExternalCoroutine(DraftCountdown());
     }
 
@@ -51,22 +65,33 @@ public class State_Drafting : IState
                 .AddBlock("VS ")
                 .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()} ",
                     format => format.Color($"{_Showdown.Match.TeamB.Color}"))
-            ).AddSeparator();
+            )
+            .AddSeparator();
         if (_Showdown.Match.CurrentDraft.IsDraftComplete())
         {
             DraftMessage.AddMessage(DraftCompleteMessage());
 
             if (!countDownStarted)
             {
+                if (_Showdown.Match.CurrentDraft.PickedLevels.Count == 0)
+                {
+                    _Showdown.Match.CurrentDraft.PickedLevels.Add(
+                        new DraftAction(
+                            _Showdown.Match.CurrentDraft.AvailableLevels.Last(),
+                            new Team("Showdown", "Showdown", "#ff0000"),
+                            true
+                        ));
+                }
+
                 // Create a copy of the PickedLevels list by extracting the OnlineZeeplevel from DraftAction
-                List<OnlineZeeplevel> meps = new List<OnlineZeeplevel>(
-                    _Showdown.Match.CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
+                List<OnlineZeeplevel> MatchPlaylist = new List<OnlineZeeplevel>(_Showdown.Match.CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
+
 
                 // Add the current playlist level to the copied list
-                meps.Add(PlaylistManager.GetCurrentPlaylistLevel());
+                MatchPlaylist.Add(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value).First());
 
                 // Set the match playlist with the modified copy
-                PlaylistManager.SetMatchPlaylist(meps);
+                PlaylistManager.SetServerPlaylist(MatchPlaylist);
 
                 // Stop any running coroutines and start the countdown coroutine
                 CoroutineManager.Instance.StopAllExternalCoroutines();
@@ -98,21 +123,35 @@ public class State_Drafting : IState
         Finished?.Invoke();
     }
 
+
     private ServerMessage DraftingStateMessage()
     {
         ServerMessage tmp = new ServerMessage();
 
+        // Check if the time is 10 seconds or less
+        bool isTimeRunningLow = DraftCountdownTime <= 10;
+
         tmp.AddLine(line =>
+        {
+            line
+                .AddBlock($"{_Showdown.Match.CurrentDraft.GetCurrentTeam().GetTag()}", block => { block.Color(_Showdown.Match.CurrentDraft.GetCurrentTeam().Color); })
+                .AddBlock("is drafting:")
+                .AddBlock($"{TimeFormatter.FormatDuration(DraftCountdownTime)}", block =>
+                {
+                    block.Color(isTimeRunningLow ? "#ff0000" : "#ffff00"); // Red if time is <= 10, yellow otherwise
+                });
+            if (isTimeRunningLow)
             {
-                line
-                    .AddBlock($"{_Showdown.Match.CurrentDraft.GetCurrentTeam().GetTag()}", block => { block.Color(_Showdown.Match.CurrentDraft.GetCurrentTeam().Color); })
-                    .AddBlock("is drafting:")
-                    .AddBlock($"{DraftCountdownTime}", block => { block.Color("#ffff00"); })
-                    ;
-            })
-            ;
+                line.AddBlock("Time is running low! Make your choice!", block => block.Color("#ff0000").Bold());
+            }
+        });
 
 
+        tmp.AddLine(line => line
+            .AddBlock("Picks left:")
+            .AddBlock($"{_Showdown.Match.CurrentDraft.GetCurrentTeam().Picks}", block => block.Color("#00ff00")) // Green for remaining picks
+            .AddBlock("| Bans left:")
+            .AddBlock($"{_Showdown.Match.CurrentDraft.GetCurrentTeam().Bans}", block => block.Color("#ff0000")));
         return tmp;
     }
 
@@ -146,28 +185,43 @@ public class State_Drafting : IState
             {
                 line.AddBlock(level.Name, block =>
                 {
-                    // Only strikethrough if the level is NOT found in available levels
-                    if (_Showdown.Match.CurrentDraft.AvailableLevels.All(l => l.Name != level.Name) || _Showdown.Match.CurrentDraft.UnAvailableLevels.Any(l => l.Name == level.Name))
+                    if (_Showdown.Match.CurrentDraft.AvailableLevels.All(l => l.Name != level.Name) ||
+                        _Showdown.Match.CurrentDraft.UnAvailableLevels.Any(l => l.Name == level.Name))
                     {
                         block.Strikethrough();
-                        if (_Showdown.Match.CurrentDraft.UnAvailableLevels.Any(l => l.Name == level.Name))
-                        {
-                            block.Color("#ffff00");
-                        }
                     }
 
-                    // Color red if the level is banned
+                    if (_Showdown.Match.CurrentDraft.UnAvailableLevels.Any(l => l.Name == level.Name))
+                    {
+                        block.Color("#ffff00");
+                    }
+
                     if (_Showdown.Match.CurrentDraft.BannedLevels.Any(l => l.Level.Name == level.Name))
                     {
                         block.Color("#ff0000");
                     }
 
-                    // Color green if the level is picked
                     if (_Showdown.Match.CurrentDraft.PickedLevels.Any(l => l.Level.Name == level.Name))
                     {
                         block.Color("#00ff00");
                     }
                 });
+
+                DraftAction bannedLevel = _Showdown.Match.CurrentDraft.BannedLevels.FirstOrDefault(l => l.Level.Name == level.Name);
+                DraftAction pickedLevel = _Showdown.Match.CurrentDraft.PickedLevels.FirstOrDefault(l => l.Level.Name == level.Name);
+
+                if (bannedLevel != null)
+                {
+                    line.AddBlock("banned", block => block.Color("#ff0000").Indent("500%"))
+                        .AddBlock("by")
+                        .AddBlock($"{bannedLevel.Team.GetTag()}", block => block.Color(bannedLevel.Team.Color)); // Using the Indent method
+                }
+                else if (pickedLevel != null)
+                {
+                    line.AddBlock("picked", block => block.Color("#00ff00").Indent("500%"))
+                        .AddBlock("by")
+                        .AddBlock($"{pickedLevel.Team.GetTag()}", block => block.Color(pickedLevel.Team.Color)); // Using the Indent method
+                }
             });
         }
 

@@ -1,0 +1,15 @@
+﻿{
+  "Match": {
+    "teamA": {
+      "name": "Whatever"
+    },
+    ....
+
+
+    state=
+    "racing": Round
+    : {
+}
+
+}
+}

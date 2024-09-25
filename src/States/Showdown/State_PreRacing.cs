@@ -96,13 +96,13 @@ public class State_PreRacing : IState
 
     private void SkipToNextLevel()
     {
-        ChatApi.SendMessage("/fs"); // Move to the next level
+        ChatApi.SendMessage("/fs 0"); // Move to the next level
     }
 
     private ServerMessage ShowPickedMaps()
     {
         ServerMessage msg = new ServerMessage();
-        msg.AddSeparator()
+        msg
             .AddLine(line => line
                 .AddBlock("Picked Maps:"));
         for (int index = 0; index < _Showdown.Match.CurrentDraft.PickedLevels.Count; index++)

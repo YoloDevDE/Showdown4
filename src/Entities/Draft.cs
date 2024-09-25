@@ -13,9 +13,21 @@ public class Draft
     public Draft(Team teamA, Team teamB, List<OnlineZeeplevel> allLevels, List<OnlineZeeplevel> unAvailableLevels = null)
     {
         AllLevels = new List<OnlineZeeplevel>(allLevels);
-        unAvailableLevels ??= new List<OnlineZeeplevel>();
-        AvailableLevels = AllLevels.Except(unAvailableLevels).ToList();
+
+        // Initialize unavailable levels as an empty list if it's null
+        if (unAvailableLevels == null)
+        {
+            unAvailableLevels = new List<OnlineZeeplevel>();
+        }
+
+        // Make a copy of all levels as available levels
+        AvailableLevels = new List<OnlineZeeplevel>(AllLevels);
+
+        // Remove all unavailable levels from available levels by comparing their UID
+        AvailableLevels.RemoveAll(level => unAvailableLevels.Any(unavailable => unavailable.UID == level.UID));
+
         UnAvailableLevels = new List<OnlineZeeplevel>(unAvailableLevels);
+
         this.teamA = teamA;
         this.teamB = teamB;
         currentTeam = teamA;
@@ -39,7 +51,7 @@ public class Draft
             throw new InvalidOperationException("You have no more picks left.");
         }
 
-        if (!AvailableLevels.Contains(level))
+        if (!AvailableLevels.Any(l => l.UID.Equals(level.UID)) || UnAvailableLevels.Any(l => l.UID.Equals(level.UID)))
         {
             throw new InvalidOperationException("Level is not available anymore");
         }
@@ -63,7 +75,7 @@ public class Draft
             throw new InvalidOperationException("You have no more bans left.");
         }
 
-        if (!AvailableLevels.Contains(level))
+        if (!AvailableLevels.Any(l => l.UID.Equals(level.UID)) || UnAvailableLevels.Any(l => l.UID.Equals(level.UID)))
         {
             throw new InvalidOperationException("Level is not available anymore");
         }

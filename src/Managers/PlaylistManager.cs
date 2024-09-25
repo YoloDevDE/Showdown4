@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using ZeepSDK.Multiplayer;
@@ -9,29 +10,28 @@ namespace Showdown4.Managers;
 
 public abstract class PlaylistManager
 {
-    public static int GetCurrentPlaylistIndex()
+    public static void ResetPlaylist()
     {
-        return ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex;
-    }
-
-    public static OnlineZeeplevel GetCurrentPlaylistLevel()
-    {
-        return ZeepkistNetwork.CurrentLobby.Playlist[GetCurrentPlaylistIndex()];
-    }
-
-    public static void SetServerPlaylist(List<OnlineZeeplevel> playlist)
-    {
-        ZeepkistNetwork.CurrentLobby.Playlist = playlist;
-        MultiplayerApi.UpdateServerPlaylist();
-    }
-
-    public static void SetMatchPlaylist(List<OnlineZeeplevel> playlist)
-    {
-        ZeepkistNetwork.CurrentLobby.Playlist = playlist;
+        OnlineZeeplevel intermissionLevel = GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value).First();
+        ZeepkistNetwork.CurrentLobby.Playlist.Clear();
+        ZeepkistNetwork.CurrentLobby.Playlist.Add(intermissionLevel);
+        ZeepkistNetwork.CurrentLobby.PlaylistRandom = false;
+        ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = 0;
         MultiplayerApi.SetNextLevelIndex(0);
     }
 
-    public static List<OnlineZeeplevel> GetPlaylistLevels(string playlistName)
+
+    public static void SetServerPlaylist(List<OnlineZeeplevel> playlist)
+    {
+        ZeepkistNetwork.CurrentLobby.Playlist.Clear();
+        ZeepkistNetwork.CurrentLobby.Playlist.AddRange(playlist);
+        ZeepkistNetwork.CurrentLobby.PlaylistRandom = false;
+        ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = 0;
+        MultiplayerApi.SetNextLevelIndex(0);
+    }
+
+
+    public static List<OnlineZeeplevel> GetLocalLevelsByPlaylistName(string playlistName)
     {
         return PlaylistApi.GetPlaylist(playlistName).levels;
     }
@@ -40,8 +40,7 @@ public abstract class PlaylistManager
     {
         if (PlaylistApi.Exists(playlistName))
         {
-            PlaylistSaveJSON playlist = PlaylistApi.GetPlaylist(playlistName);
-            SetServerPlaylist(playlist.levels);
+            SetServerPlaylist(GetLocalLevelsByPlaylistName(playlistName));
         }
         else
         {

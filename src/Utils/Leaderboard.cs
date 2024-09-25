@@ -38,11 +38,11 @@ public class Leaderboard
     // Generate a server message for team and racer leaderboard
     public ServerMessage GenerateLeaderboardMessage()
     {
+        _round.Evaluate(out List<Team> teams);
         List<Team> sortedTeams = _round.GetTeamsSortedByWinnerAsc();
 
         ServerMessage msg = new ServerMessage()
-            .ShowdownHeader()
-            .AddLine(line => line.AddBlock("Leaderboard:").Bold());
+            .ShowdownHeader();
 
         int position = 1;
         foreach (Team team in sortedTeams)
@@ -50,26 +50,32 @@ public class Leaderboard
             double averageTime = _round.GetAvgTimeOfTeam(team);
             int finishers = _round.GetFinishersCount(team);
 
-            // Add team header with team color
-            msg.AddLine(line => line
-                .AddBlock($"#{position} ", f => f.Bold().Color("#ffffff"))
-                .AddBlock($"{team.GetTag()}", f => f.Bold().Color(team.Color))
-                .AddBlock($" - Avg Time: {averageTime.GetFormattedTime()} ", f => f.Color("#ffffff"))
-                .AddBlock($"- Finishers: {finishers}/2", f => f.Color("#ffffff"))
-            );
-
-            // Add racers' individual times, making them smaller
-            foreach (Racer racer in team.Racers)
+            // Check if there are 4 finishers across both teams
+            int totalFinishers = _round.GetFinishersCount(_round.teamA) + _round.GetFinishersCount(_round.teamA);
+            msg.AddLine(line =>
             {
-                double bestTime = _round.GetPersonalBest(racer);
-                string timeDisplay = bestTime == double.MaxValue ? "-:--.---" : $"{bestTime.GetFormattedTime()}";
+                line
+                    .AddBlock($"#{position} ", f => f.Bold().Color("#ffffff"))
+                    .AddBlock($"{team.GetTag()}", f => f.Bold().Color(team.Color));
 
-                msg.AddLine(line => line
-                        .AddBlock($"   {racer.SteamName}: ",
-                            f => f.Color("#ffffff").FontSize(12)) // Smaller font size for racers
-                        .AddBlock($"{timeDisplay}", f => f.Color("#ffffff").FontSize(12)) // Smaller font size for times
-                );
-            }
+
+                // If fewer than 4 finishers, show only the number of finishers, otherwise show the average time
+                if (totalFinishers < 4)
+                {
+                    line.AddBlock($"| Finishers: {finishers}/2", f => f.Color("#ffffff")
+                    );
+                }
+                else
+                {
+                    line.AddBlock($"| Avg Time: {averageTime.GetFormattedTime()} ", f => f.Color("#ffffff")
+                    );
+                    if (position > 1)
+
+                    {
+                        line.AddBlock($"+{(_round.GetAvgTimeOfTeam(sortedTeams[1]) - _round.GetAvgTimeOfTeam(sortedTeams[0])).GetFormattedTime()}", f => f.Color("#ffff00"));
+                    }
+                }
+            });
 
             position++;
         }

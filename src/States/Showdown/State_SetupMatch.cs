@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using Showdown4.Commands;
-using Showdown4.Managers;
+using Showdown4.Entities;
 using Showdown4.Utils;
-using UnityEngine;
 using ZeepSDK.Chat;
-using Match = Showdown4.Entities.Match;
-using Team = Showdown4.Entities.Team;
 
 namespace Showdown4.States.Showdown;
 
@@ -34,7 +30,11 @@ public class State_SetupMatch : IState
     public void Execute()
     {
         ChatApi.SendMessage("/settime 86400");
-        CoroutineManager.Instance.StartExternalCoroutine(CountdownTimerCoroutine());
+        new ServerMessage()
+            .ShowdownHeader()
+            .AddLine(line => line.AddBlock("Waiting for Host to setup the Match"))
+            .AddSeparator()
+            .Send();
     }
 
     public void Exit()
@@ -42,24 +42,6 @@ public class State_SetupMatch : IState
         CommandSetupMatch.CommandInvoked -= OnSetTeam;
     }
 
-    private IEnumerator CountdownTimerCoroutine()
-    {
-        // Display the waiting message directly within the coroutine
-        new ServerMessage()
-            .ShowdownHeader()
-            .AddLine(line => line.AddBlock("Waiting for Host to setup the Match"))
-            .AddSeparator()
-            .Send();
-
-        // Wait for 2 seconds before setting the teams
-        yield return new WaitForSeconds(2f);
-
-        // Simulate the periodic setting of teams after the delay
-        OnSetTeam("KBW,PMP");
-
-        // Stop the timer after handling the team setup
-        _isTimerRunning = false;
-    }
 
     private void OnSetTeam(string arg)
     {

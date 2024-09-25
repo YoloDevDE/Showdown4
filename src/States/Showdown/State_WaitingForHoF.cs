@@ -22,7 +22,7 @@ public class State_WaitingForHoF : IState
 
     public void Execute()
     {
-        if (LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetCurrentPlaylistLevel().UID))
+        if (LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
         {
             OnRoundStarted();
         }

@@ -25,11 +25,21 @@ public interface IStateMachine
 
     protected void TransitionTo([NotNull] IState nextState)
     {
+        InitTransitions();
         if (CurrentState != null)
         {
             CurrentState.SubStateMachine?.Dispose();
             CurrentState.Finished -= OnCurrentStateFinished;
-            CoroutineManager.Instance.StopAllExternalCoroutines();
+            try
+            {
+                CoroutineManager.Instance.StopAllExternalCoroutines();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
             CurrentState.Exit();
         }
 
@@ -64,7 +74,16 @@ public interface IStateMachine
 
     void Dispose()
     {
-        TransitionTo(FinalState);
+        try
+        {
+            TransitionTo(FinalState);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
         CurrentState.Exit();
     }
 

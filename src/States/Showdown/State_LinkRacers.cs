@@ -5,13 +5,12 @@ using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
-using ZeepkistClient;
 
 namespace Showdown4.States.Showdown;
 
 public class State_LinkRacers : IState
 {
-    private const float CountdownDuration = 5f;
+    private const int CountdownDuration = 5;
     private bool _isCountdownRunning;
     private Team _teamA, _teamB, _currentTeam;
 
@@ -28,18 +27,22 @@ public class State_LinkRacers : IState
 
     public void Enter()
     {
-        _teamA = _Showdown.Match.TeamA;
-        _teamB = _Showdown.Match.TeamB;
+        // Initialize variables with default values
+        _teamA = _Showdown.Match.TeamA ?? new Team("TeamA", "A", "#ff0000"); // Example of default team
+        _teamB = _Showdown.Match.TeamB ?? new Team("TeamB", "B", "#0000ff"); // Example of default team
+        _currentTeam = _teamA; // Default to TeamA initially
+        _isCountdownRunning = false; // Set countdown running flag to false
+
+        // Ensure there are no racers linked at the start
+        _teamA.Racers.Clear();
+        _teamB.Racers.Clear();
+
         CommandLinkPlayerToTeam.CommandInvoked += OnLinkRacerToTeam;
         CheckIfRacersAreLinked(); // Start linking process
     }
 
     public void Execute()
     {
-        OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID); // Simulate linking for testing
-        OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID); // Simulate linking for testing
-        OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID); // Simulate linking for testing
-        OnLinkRacerToTeam(ZeepkistNetwork.LocalPlayer.SteamID); // Simulate linking for testing
     }
 
     public void Exit()
@@ -75,7 +78,7 @@ public class State_LinkRacers : IState
         while (countdown > 0)
         {
             OnTimerTick((int)countdown); // Update message every second
-            yield return new WaitForSeconds(1f); // Wait for 1 second
+            yield return new WaitForSeconds(1); // Wait for 1 second
             countdown--; // Decrease the countdown value
         }
 
@@ -109,12 +112,12 @@ public class State_LinkRacers : IState
             .AddSeparator()
             .AddLine(line => line
                 .AddBlock("All steam accounts are linked!",
-                    format => format.Color("#00cc00")
+                    format => format.Color("#00ff00")
                 )
             )
             .AddLine(line => line
                 .AddBlock("Starting Draft Phase in:")
-                .AddBlock($"{TimeFormatter.FormatDuration(ticksLeft)}", format => format.Color("#cc0000"))
+                .AddBlock($"{TimeFormatter.FormatDuration(ticksLeft)}", format => format.Color("#ff0000"))
             )
             .Send();
     }

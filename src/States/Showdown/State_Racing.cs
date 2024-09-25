@@ -29,8 +29,7 @@ public class State_Racing : IState
         _teamA = _Showdown.Match.TeamA;
         _teamB = _Showdown.Match.TeamB;
         // Start a new round and add it to the match
-        _Showdown.Match.AddRound(new Round(_teamA, _teamB));
-        // Initialize _currentRound
+        _Showdown.Match.AddRound(new Round(_teamA, _teamB)); // Round is initialized with max times for all racers
         _currentRound = _Showdown.Match.CurrentRound;
 
         // Subscribe to relevant events
@@ -42,8 +41,6 @@ public class State_Racing : IState
     public void Execute()
     {
         _leaderboard = new Leaderboard(_currentRound); // Initialize leaderboard with the current round
-
-        ChatApi.SendMessage("/timeset 30");
         // Announce the start of the round
         ChatApi.SendMessage(
             new ChatMessage.Builder().ClearChat()
@@ -78,7 +75,7 @@ public class State_Racing : IState
         // Check if netRacer or netRacer.CurrentResult is null
         if (netRacer?.CurrentResult == null)
         {
-            ChatApi.SendMessage("Error: Received an invalid racer or result.");
+            ChatApi.AddLocalMessage("Error: Received an invalid racer or result.");
             return;
         }
 
@@ -89,7 +86,7 @@ public class State_Racing : IState
         // Ensure _currentRound is initialized
         if (_currentRound == null)
         {
-            ChatApi.SendMessage("Error: _currentRound is not initialized.");
+            ChatApi.AddLocalMessage("Error: _currentRound is not initialized.");
             return;
         }
 
