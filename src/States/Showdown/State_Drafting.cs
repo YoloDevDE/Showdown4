@@ -36,7 +36,8 @@ public class State_Drafting : IState
     {
         CommandBan.CommandInvoked += OnBan;
         CommandPick.CommandInvoked += OnPick;
-        _Showdown.Match.FirstDraft = new Draft(_teamA, _teamB, PlaylistManager.GetPlaylistLevels(Plugin.CompetitionLevelsPlaylistName.Value));
+        _Showdown.Match.AddDraft(); // Set the lobby time to 300 seconds (5 minutes)
+        ChatApi.SendMessage("/settime 86400");
         CoroutineManager.Instance.StartExternalCoroutine(DraftCountdown());
     }
 
@@ -51,22 +52,24 @@ public class State_Drafting : IState
                 .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()} ",
                     format => format.Color($"{_Showdown.Match.TeamB.Color}"))
             ).AddSeparator();
-        if (_Showdown.Match.FirstDraft.IsDraftComplete())
+        if (_Showdown.Match.CurrentDraft.IsDraftComplete())
         {
-            DraftMessage
-                .AddMessage(DraftCompleteMessage());
+            DraftMessage.AddMessage(DraftCompleteMessage());
+
             if (!countDownStarted)
             {
-                // Create a copy of the PickedLevels list
-                List<OnlineZeeplevel> meps = new List<OnlineZeeplevel>(_Showdown.Match.FirstDraft.PickedLevels);
+                // Create a copy of the PickedLevels list by extracting the OnlineZeeplevel from DraftAction
+                List<OnlineZeeplevel> meps = new List<OnlineZeeplevel>(
+                    _Showdown.Match.CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
 
                 // Add the current playlist level to the copied list
                 meps.Add(PlaylistManager.GetCurrentPlaylistLevel());
 
                 // Set the match playlist with the modified copy
                 PlaylistManager.SetMatchPlaylist(meps);
+
+                // Stop any running coroutines and start the countdown coroutine
                 CoroutineManager.Instance.StopAllExternalCoroutines();
-                // Start the countdown coroutine
                 CoroutineManager.Instance.StartExternalCoroutine(DraftCompleteCountdown());
             }
         }
@@ -102,7 +105,7 @@ public class State_Drafting : IState
         tmp.AddLine(line =>
             {
                 line
-                    .AddBlock($"{_Showdown.Match.FirstDraft.GetCurrentTeam().GetTag()}", block => { block.Color(_Showdown.Match.FirstDraft.GetCurrentTeam().Color); })
+                    .AddBlock($"{_Showdown.Match.CurrentDraft.GetCurrentTeam().GetTag()}", block => { block.Color(_Showdown.Match.CurrentDraft.GetCurrentTeam().Color); })
                     .AddBlock("is drafting:")
                     .AddBlock($"{DraftCountdownTime}", block => { block.Color("#ffff00"); })
                     ;
@@ -137,26 +140,30 @@ public class State_Drafting : IState
     {
         ServerMessage tmp = new ServerMessage();
 
-        foreach (OnlineZeeplevel level in _Showdown.Match.FirstDraft.AllLevels)
+        foreach (OnlineZeeplevel level in _Showdown.Match.CurrentDraft.AllLevels)
         {
             tmp.AddLine(line =>
             {
                 line.AddBlock(level.Name, block =>
                 {
                     // Only strikethrough if the level is NOT found in available levels
-                    if (_Showdown.Match.FirstDraft.AvailableLevels.All(l => l.Name != level.Name))
+                    if (_Showdown.Match.CurrentDraft.AvailableLevels.All(l => l.Name != level.Name) || _Showdown.Match.CurrentDraft.UnAvailableLevels.Any(l => l.Name == level.Name))
                     {
                         block.Strikethrough();
+                        if (_Showdown.Match.CurrentDraft.UnAvailableLevels.Any(l => l.Name == level.Name))
+                        {
+                            block.Color("#ffff00");
+                        }
                     }
 
                     // Color red if the level is banned
-                    if (_Showdown.Match.FirstDraft.BannedLevels.Any(l => l.Name == level.Name))
+                    if (_Showdown.Match.CurrentDraft.BannedLevels.Any(l => l.Level.Name == level.Name))
                     {
                         block.Color("#ff0000");
                     }
 
                     // Color green if the level is picked
-                    if (_Showdown.Match.FirstDraft.PickedLevels.Any(l => l.Name == level.Name))
+                    if (_Showdown.Match.CurrentDraft.PickedLevels.Any(l => l.Level.Name == level.Name))
                     {
                         block.Color("#00ff00");
                     }
@@ -188,7 +195,7 @@ public class State_Drafting : IState
         }
 
         DraftCountdownTime = DraftTime;
-        _Showdown.Match.FirstDraft.SwitchTeam();
+        _Showdown.Match.CurrentDraft.SwitchTeam();
     }
 
     private IEnumerator DraftCompleteCountdown()
@@ -221,8 +228,8 @@ public class State_Drafting : IState
 
         string playerName = player.Username;
 
-        // Get the current draft from the match (FirstDraft assumed here)
-        Draft currentDraft = _Showdown.Match.FirstDraft;
+        // Get the current draft from the match (CurrentDraft assumed here)
+        Draft currentDraft = _Showdown.Match.CurrentDraft;
 
         // Check if the steamId is part of the current team's racers
         Team currentTeam = currentDraft.GetCurrentTeam();

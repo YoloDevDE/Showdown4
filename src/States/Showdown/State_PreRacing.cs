@@ -32,19 +32,28 @@ public class State_PreRacing : IState
         _teamA = _Showdown.Match.TeamA;
         _teamB = _Showdown.Match.TeamB;
 
-        RacingApi.LevelLoaded += OnRoundEnd;
-
+        RacingApi.RoundEnded += OnRoundEnd;
+        RacingApi.LevelLoaded += OnLevelLoaded;
         // Start the 10-second countdown and display it
         CoroutineManager.Instance.StartExternalCoroutine(StartCountdown(10));
     }
 
     public void Execute()
     {
+        // Set the lobby time to 300 seconds (5 minutes)
+        ChatApi.SendMessage("/settime 300");
     }
 
     public void Exit()
     {
-        RacingApi.LevelLoaded -= OnRoundEnd;
+        RacingApi.RoundEnded -= OnRoundEnd;
+
+        RacingApi.LevelLoaded -= OnLevelLoaded;
+    }
+
+    private void OnLevelLoaded()
+    {
+        Finished?.Invoke();
     }
 
     private void UpdateCountdownMessage(int secondsRemaining)
@@ -96,12 +105,12 @@ public class State_PreRacing : IState
         msg.AddSeparator()
             .AddLine(line => line
                 .AddBlock("Picked Maps:"));
-        for (int index = 0; index < _Showdown.Match.FirstDraft.PickedLevels.Count; index++)
+        for (int index = 0; index < _Showdown.Match.CurrentDraft.PickedLevels.Count; index++)
         {
             int index1 = index;
             msg.AddLine(line =>
             {
-                OnlineZeeplevel level = _Showdown.Match.FirstDraft.PickedLevels[index1];
+                OnlineZeeplevel level = _Showdown.Match.CurrentDraft.PickedLevels[index1].Level;
                 line
                     .AddBlock($"Round {index1 + 1}:")
                     .AddBlock($"'{level.Name}'", block => block.Color("#00ffff")
@@ -118,9 +127,8 @@ public class State_PreRacing : IState
         ChatApi.SendMessage(
             new ChatMessage.Builder().ClearChat()
                 .DashedLine().NewLine()
-                .CenterTextLine($"Starting Round {_Showdown.Match.RoundCounter()}").NewLine()
+                .CenterTextLine($"Starting Round {_Showdown.Match.RoundCounter() + 1}").NewLine()
                 .DashedLine().Build().Message
         );
-        Finished?.Invoke();
     }
 }

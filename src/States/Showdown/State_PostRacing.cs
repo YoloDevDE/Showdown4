@@ -17,9 +17,26 @@ internal class State_PostRacing : IState
 
     public IStateMachine StateMachine { get; }
 
+    public void Enter()
+    {
+        RacingApi.LevelLoaded += OnLevelLoaded;
+    }
 
     public void Execute()
     {
+        Team winnerTeam = _showdownStateMachine.Match.CurrentRound.GetWinnerTeam;
+        winnerTeam.AddWin();
+
+        ChatApi.SendMessage(
+            new ChatMessage.Builder().NewLine()
+                .DashedLine().NewLine()
+                .TextLine($"Round {_showdownStateMachine.Match.RoundCounter()} over!!").NewLine()
+                .TextLine($"Team {winnerTeam.GetNameWithTag()} scored!").NewLine()
+                .TextLine("Current Standing:").NewLine()
+                .TextLine($"{_showdownStateMachine.Match.Score()}").NewLine()
+                .DashedLine().NewLine()
+                .TextLine($"Moving to '{_showdownStateMachine.Match.CurrentDraft.PickedLevels[_showdownStateMachine.Match.RoundCounter()].Level.Name}'").NewLine()
+                .DashedLine().Build().Message);
     }
 
     public void Exit()
@@ -29,18 +46,9 @@ internal class State_PostRacing : IState
 
     public event Action Finished;
 
-    public void Enter()
-    {
-        RacingApi.LevelLoaded += OnLevelLoaded;
-
-        ChatApi.SendMessage(
-            new ChatMessage.Builder().NewLine()
-                .DashedLine().NewLine()
-                .TextLine($"Round {_showdownStateMachine.Match.RoundCounter()} over!!").NewLine()
-                .DashedLine().Build().Message);
-    }
 
     private void OnLevelLoaded()
     {
+        Finished?.Invoke();
     }
 }

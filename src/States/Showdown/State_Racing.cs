@@ -18,7 +18,7 @@ public class State_Racing : IState
         StateMachine = stateMachine;
     }
 
-    private ShowdownStateMachine _showdownStateMachine => StateMachine as ShowdownStateMachine;
+    private ShowdownStateMachine _Showdown => StateMachine as ShowdownStateMachine;
 
     public IStateMachine StateMachine { get; }
 
@@ -26,29 +26,29 @@ public class State_Racing : IState
 
     public void Enter()
     {
-        _teamA = _showdownStateMachine.Match.TeamA;
-        _teamB = _showdownStateMachine.Match.TeamB;
+        _teamA = _Showdown.Match.TeamA;
+        _teamB = _Showdown.Match.TeamB;
+        // Start a new round and add it to the match
+        _Showdown.Match.AddRound(new Round(_teamA, _teamB));
+        // Initialize _currentRound
+        _currentRound = _Showdown.Match.CurrentRound;
 
         // Subscribe to relevant events
         ZeepkistNetwork.PlayerResultsChanged += OnLeaderBoardUpdated;
         RacingApi.RoundEnded += OnRoundEnd;
     }
 
+
     public void Execute()
     {
-        // Start a new round and add it to the match
-        _currentRound = new Round();
-        _showdownStateMachine.Match.Rounds.Add(_currentRound);
         _leaderboard = new Leaderboard(_currentRound); // Initialize leaderboard with the current round
 
-        // Set the lobby time to 300 seconds (5 minutes)
-        ChatApi.SendMessage("/settime 300");
-
+        ChatApi.SendMessage("/timeset 30");
         // Announce the start of the round
         ChatApi.SendMessage(
             new ChatMessage.Builder().ClearChat()
                 .DashedLine().NewLine()
-                .CenterTextLine($"Round {_showdownStateMachine.Match.RoundCounter()} started").NewLine()
+                .CenterTextLine($"Round {_Showdown.Match.RoundCounter()} started").NewLine()
                 .DashedLine().NewLine()
                 .CenterTextLine($"{_teamA.GetTag()}").NewLine()
                 .CenterTextLine("vs").NewLine()
@@ -70,27 +70,27 @@ public class State_Racing : IState
 
     private void OnRoundEnd()
     {
-        // When the round ends, invoke the Finished event to signal the state transition
-        ChatApi.SendMessage("Round has ended. Moving to the next state.");
         Finished?.Invoke();
     }
 
     private void OnLeaderBoardUpdated(ZeepkistNetworkPlayer netRacer)
     {
-        Racer racer;
-        Result result;
-
-        if (netRacer != null && netRacer.CurrentResult != null)
+        // Check if netRacer or netRacer.CurrentResult is null
+        if (netRacer?.CurrentResult == null)
         {
-            // Convert netRacer to Racer if valid
-            racer = new Racer(netRacer.SteamID, netRacer.Username);
-            result = new Result(racer, netRacer.CurrentResult.Time);
+            ChatApi.SendMessage("Error: Received an invalid racer or result.");
+            return;
         }
-        else
+
+        // Convert netRacer to Racer if valid
+        Racer racer = new Racer(netRacer.SteamID, netRacer.Username);
+        Result result = new Result(racer, netRacer.CurrentResult.Time);
+
+        // Ensure _currentRound is initialized
+        if (_currentRound == null)
         {
-            // Handle null netRacer, use default Racer and result
-            racer = new Racer(0, "Unknown Racer");
-            result = new Result(racer, double.MaxValue); // Default time to indicate no result
+            ChatApi.SendMessage("Error: _currentRound is not initialized.");
+            return;
         }
 
         // Add the result to the round's leaderboard
@@ -110,7 +110,7 @@ public class State_Racing : IState
     private void SendTeamLeaderboard()
     {
         // Generate and send the team-focused leaderboard message
-        ServerMessage leaderboardMessage = _leaderboard.GenerateLeaderboardMessage(_teamA, _teamB);
+        ServerMessage leaderboardMessage = _leaderboard.GenerateLeaderboardMessage();
         leaderboardMessage.Send();
     }
 }

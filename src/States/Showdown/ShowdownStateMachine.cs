@@ -46,6 +46,9 @@ public class ShowdownStateMachine : IStateMachine
             .AddTransition(Transition.CreateInstance(statePostDrafting, statePreRacing))
             .AddTransition(Transition.CreateInstance(statePreRacing, stateRacing))
             .AddTransition(Transition.CreateInstance(stateRacing, statePostRacing))
+            .AddTransition(Transition.CreateInstance(statePostRacing, stateRacing, () => Match.RoundCounter() < 2))
+            .AddTransition(Transition.CreateInstance(statePostRacing, stateDrafting, () => Match.RoundCounter() >= 2 && Match.TeamA.Wins < 2 && Match.TeamB.Wins < 2))
+            .AddTransition(Transition.CreateInstance(statePostRacing, stateMatchEnd, () => Match.TeamA.Wins >= 2 || Match.TeamB.Wins >= 2))
             ;
     }
 

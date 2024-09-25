@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Showdown4.Entities;
 using ZeepkistNetworking;
-
-namespace Showdown4.States.Showdown;
 
 public class Draft
 {
@@ -11,24 +10,27 @@ public class Draft
     private readonly Team teamB;
     private Team currentTeam;
 
-    public Draft(Team teamA, Team teamB, List<OnlineZeeplevel> levels)
+    public Draft(Team teamA, Team teamB, List<OnlineZeeplevel> allLevels, List<OnlineZeeplevel> unAvailableLevels = null)
     {
-        AvailableLevels = new List<OnlineZeeplevel>(levels); // Copy levels
-        AllLevels = new List<OnlineZeeplevel>(levels); // Copy levels
+        AllLevels = new List<OnlineZeeplevel>(allLevels);
+        unAvailableLevels ??= new List<OnlineZeeplevel>();
+        AvailableLevels = AllLevels.Except(unAvailableLevels).ToList();
+        UnAvailableLevels = new List<OnlineZeeplevel>(unAvailableLevels);
         this.teamA = teamA;
         this.teamB = teamB;
-        currentTeam = teamA; // For example, Team A starts
+        currentTeam = teamA;
     }
+
 
     private Team otherTeam => currentTeam.Equals(teamA) ? teamB : teamA;
 
-
     public List<OnlineZeeplevel> AllLevels { get; }
-    public List<OnlineZeeplevel> AvailableLevels { get; } // Levels available to pick/ban
-    public List<OnlineZeeplevel> PickedLevels { get; } = new List<OnlineZeeplevel>();
-    public List<OnlineZeeplevel> BannedLevels { get; } = new List<OnlineZeeplevel>();
+    public List<OnlineZeeplevel> AvailableLevels { get; }
+    public List<OnlineZeeplevel> UnAvailableLevels { get; }
+    public List<DraftAction> PickedLevels { get; } = new List<DraftAction>();
+    public List<DraftAction> BannedLevels { get; } = new List<DraftAction>();
 
-    public bool ForcePick { get; set; }
+    public bool IsPickPhase { get; set; }
 
     public void PickLevel(OnlineZeeplevel level)
     {
@@ -42,8 +44,8 @@ public class Draft
             throw new InvalidOperationException("Level is not available anymore");
         }
 
-        ForcePick = true;
-        PickedLevels.Add(level);
+        IsPickPhase = true;
+        PickedLevels.Add(new DraftAction(level, currentTeam, true));
         AvailableLevels.Remove(level);
         currentTeam.Picks -= 1;
         SwitchTeam();
@@ -51,7 +53,7 @@ public class Draft
 
     public void BanLevel(OnlineZeeplevel level)
     {
-        if (ForcePick)
+        if (IsPickPhase)
         {
             throw new InvalidOperationException($"{otherTeam.GetTag()} has picked a level and therefore you can't ban a level anymore.");
         }
@@ -66,7 +68,7 @@ public class Draft
             throw new InvalidOperationException("Level is not available anymore");
         }
 
-        BannedLevels.Add(level);
+        BannedLevels.Add(new DraftAction(level, currentTeam, false));
         AvailableLevels.Remove(level);
         currentTeam.Bans -= 1;
         SwitchTeam();
@@ -74,14 +76,10 @@ public class Draft
 
     public bool IsDraftComplete()
     {
-        // Both teams have no picks and no bans left
-        bool bothTeamsOutOfPicksAndBans = teamA.Picks == 0 && teamA.Bans == 0 && teamB.Picks == 0 && teamB.Bans == 0;
+        bool noMoreInventoryLeft = teamA.Bans + teamB.Bans == 0;
+        bool noPicksLeft = teamA.Picks + teamB.Picks == 0 && IsPickPhase;
 
-        // Two maps have been picked
-        bool twoMapsPicked = PickedLevels.Count >= 2;
-
-        // Draft is complete if either of these conditions is true
-        return bothTeamsOutOfPicksAndBans || twoMapsPicked;
+        return noPicksLeft || noMoreInventoryLeft;
     }
 
     public void SwitchTeam()

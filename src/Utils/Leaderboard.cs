@@ -36,9 +36,9 @@ public class Leaderboard
     }
 
     // Generate a server message for team and racer leaderboard
-    public ServerMessage GenerateLeaderboardMessage(Team teamA, Team teamB)
+    public ServerMessage GenerateLeaderboardMessage()
     {
-        List<Team> sortedTeams = _round.GetTeamsSortedByWinnerAsc(teamA, teamB);
+        List<Team> sortedTeams = _round.GetTeamsSortedByWinnerAsc();
 
         ServerMessage msg = new ServerMessage()
             .ShowdownHeader()

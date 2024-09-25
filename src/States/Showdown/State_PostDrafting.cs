@@ -144,12 +144,12 @@ public class State_PostDrafting : IState
         msg.AddSeparator()
             .AddLine(line => line
                 .AddBlock("Picked Maps:"));
-        for (int index = 0; index < _Showdown.Match.FirstDraft.PickedLevels.Count; index++)
+        for (int index = 0; index < _Showdown.Match.CurrentDraft.PickedLevels.Count; index++)
         {
             int index1 = index;
             msg.AddLine(line =>
             {
-                OnlineZeeplevel level = _Showdown.Match.FirstDraft.PickedLevels[index1];
+                OnlineZeeplevel level = _Showdown.Match.CurrentDraft.PickedLevels[index1].Level;
                 line
                     .AddBlock($"Round {index1 + 1}:")
                     .AddBlock($"'{level.Name}'", block => block.Color("#00ffff")

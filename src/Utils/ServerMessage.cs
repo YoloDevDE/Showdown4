@@ -9,21 +9,23 @@ public class ServerMessage
 {
     private readonly StringBuilder messageBuilder = new StringBuilder(); // Using StringBuilder
 
+    private string command = "/servermessage white 0 ";
+
     private int lineCount; // To track the number of lines
 
-    private string prefix = "/servermessage white 0 " +
-                            "<margin-right=\"50%\">" +
+    private string prefix = "<margin-right=\"50%\">" +
                             "<size=\"30%\">" +
                             "<align=\"left\">";
 
-    private string suffix =
-        "</align>" +
-        "</size>" +
-        "</margin>";
+    private string suffix = "</align>" +
+                            "</size>" +
+                            "</margin>";
 
     public override string ToString()
     {
-        return $"{prefix}{messageBuilder}{suffix}";
+        string tmp = "<size=\"0%\">TestTestTest" +
+                     "</size>";
+        return $"{command}{tmp}{prefix}{messageBuilder}{suffix}";
     }
 
     // Add a line with one or more blocks and optional line-wide formatting
@@ -57,6 +59,7 @@ public class ServerMessage
     {
         // Remove prefix and suffix of the other message
         otherMessage.prefix = "";
+        otherMessage.command = "";
         otherMessage.suffix = "";
 
         // Convert otherMessage's StringBuilder to a string
