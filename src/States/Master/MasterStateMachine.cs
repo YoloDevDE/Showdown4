@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Showdown4.States.Showdown;
 
 namespace Showdown4.States.Master;
 
@@ -8,24 +7,26 @@ public class MasterStateMachine : IStateMachine
 {
     public MasterStateMachine()
     {
-        Transitions = [];
-        FinalState = new State_Master_Off(this);
-        InitialState = new State_Master_Off(this);
+        Transitions = new List<ITransition>();
     }
 
     public IState CurrentState { get; set; }
-    public IState InitialState { get; }
-    public IState FinalState { get; }
+
+    // Instead of assigning a value in the constructor, use properties that return new instances
+    public IState InitialState => new State_Master_Off(this);
+    public IState FinalState => new State_Master_Off(this);
+
     public List<ITransition> Transitions { get; }
     public event Action StateMachineFinished;
 
     public void InitTransitions()
     {
         IStateMachine stateMachine = this;
-        IState stateMasterOn = new State_Master_On(this);
+
+        // Add transitions with new instances directly
         stateMachine
-            .AddTransition(Transition.CreateInstance(InitialState, stateMasterOn))
-            .AddTransition(Transition.CreateInstance(stateMasterOn, InitialState));
+            .AddTransition(new State_Master_Off(this), new State_Master_On(this))
+            .AddTransition(new State_Master_On(this), new State_Master_Off(this));
     }
 
     public void InvokeFinish()

@@ -37,7 +37,7 @@ public class State_LinkRacers : IState
         _teamA.Racers.Clear();
         _teamB.Racers.Clear();
 
-        CommandLinkPlayerToTeam.CommandInvoked += OnLinkRacerToTeam;
+        CommandLinkRacer.CommandInvoked += OnLinkRacerToTeam;
         CheckIfRacersAreLinked(); // Start linking process
     }
 
@@ -47,7 +47,7 @@ public class State_LinkRacers : IState
 
     public void Exit()
     {
-        CommandLinkPlayerToTeam.CommandInvoked -= OnLinkRacerToTeam;
+        CommandLinkRacer.CommandInvoked -= OnLinkRacerToTeam;
     }
 
     private void CheckIfRacersAreLinked()

@@ -6,11 +6,11 @@ public class Transition : ITransition
 {
     private readonly Func<bool> _condition; // Condition function
 
-    private Transition(IState from, IState to, Func<bool> condition)
+    public Transition(IState from, IState to, Func<bool> condition = null)
     {
         From = from;
         To = to;
-        _condition = condition;
+        _condition = condition ?? (() => true);
     }
 
     public IState From { get; }
@@ -25,11 +25,5 @@ public class Transition : ITransition
     public void OnTransition()
     {
         // Optional: Add any transition-specific logic here
-    }
-
-    public static Transition CreateInstance(IState from, IState to, Func<bool> condition = null)
-    {
-        // If the condition is null, default it to always return true
-        return new Transition(from, to, condition ?? (() => true));
     }
 }

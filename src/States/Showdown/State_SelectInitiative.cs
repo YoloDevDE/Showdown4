@@ -18,6 +18,7 @@ public class State_SelectInitiative : IState
 
     public void Execute()
     {
+        Finished?.Invoke();
     }
 
     public void Exit()

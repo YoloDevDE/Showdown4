@@ -57,15 +57,8 @@ public class State_Drafting : IState
 
     public void Execute()
     {
-        ServerMessage DraftMessage = new ServerMessage().ShowdownHeader()
-            .AddLine(line => line
-                .Bold()
-                .AddBlock($"{_Showdown.Match.TeamA.GetNameWithTag()} ",
-                    format => format.Color($"{_Showdown.Match.TeamA.Color}"))
-                .AddBlock("VS ")
-                .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()} ",
-                    format => format.Color($"{_Showdown.Match.TeamB.Color}"))
-            )
+        ServerMessage DraftMessage = new ServerMessage().ShowdownHeader(true)
+            .AddLine(l => l.FontSize(30).Bold().AddBlock(_Showdown.Match.ScoreColored()).Indent("600%"))
             .AddSeparator();
         if (_Showdown.Match.CurrentDraft.IsDraftComplete())
         {

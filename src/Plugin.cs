@@ -55,9 +55,8 @@ public class Plugin : BaseUnityPlugin
         ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStart>();
         ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStop>();
         ChatCommandApi.RegisterLocalChatCommand<CommandStopMatch>();
-        ChatCommandApi.RegisterMixedChatCommand<CommandLinkPlayerToTeam>();
-        ChatCommandApi.RegisterMixedChatCommand<CommandHeads>();
-        ChatCommandApi.RegisterMixedChatCommand<CommandTails>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandLinkRacer>();
+
         ChatCommandApi.RegisterMixedChatCommand<CommandPick>();
         ChatCommandApi.RegisterMixedChatCommand<CommandBan>();
     }

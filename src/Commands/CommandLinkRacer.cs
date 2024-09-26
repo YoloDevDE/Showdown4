@@ -4,10 +4,10 @@ using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
 
-public class CommandHeads : IMixedChatCommand
+public class CommandLinkRacer : IMixedChatCommand
 {
-    public string Prefix => "#";
-    public string Command => "heads";
+    public string Prefix => "!";
+    public string Command => "link";
     public string Description => "WIP";
 
     public void Handle(ulong playerId, string arguments)

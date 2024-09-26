@@ -11,6 +11,7 @@ public class Match
     {
         TeamA = teamA;
         TeamB = teamB;
+        Initiative = teamA;
     }
 
     public Team TeamA { get; set; }
@@ -20,6 +21,13 @@ public class Match
     public List<Draft> Drafts { get; } = new List<Draft>();
     public Draft CurrentDraft => Drafts[^1];
     public Round CurrentRound => Rounds[^1];
+    public Team Initiative { get; set; }
+    public Team NonInitiative => Initiative == TeamA ? TeamB : TeamA;
+
+    public string ScoreColored()
+    {
+        return $"<color={TeamA.Color}>{TeamA.GetTag()}</color> {TeamA.Wins}:{TeamB.Wins} <color={TeamB.Color}>{TeamB.GetTag()}</color>";
+    }
 
     public string Score()
     {
@@ -40,7 +48,7 @@ public class Match
             unAvaiableLevels = new List<OnlineZeeplevel>(CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
         }
 
-        Draft draft = new Draft(TeamA, TeamB, allLevels, unAvaiableLevels);
+        Draft draft = new Draft(Initiative, NonInitiative, allLevels, unAvaiableLevels);
         Drafts.Add(draft);
     }
 

@@ -13,13 +13,11 @@ public class ServerMessage
 
     private int lineCount; // To track the number of lines
 
-    private string prefix = "<margin-right=\"50%\">" +
-                            "<size=\"30%\">" +
+    private string prefix = "<size=\"30%\">" +
                             "<align=\"left\">";
 
     private string suffix = "</align>" +
-                            "</size>" +
-                            "</margin>";
+                            "</size>";
 
     public override string ToString()
     {
@@ -95,6 +93,7 @@ public class ServerMessage
         return this;
     }
 
+
     private void AppendLineBreak()
     {
         messageBuilder.Append("<br>");
@@ -111,8 +110,19 @@ public class ServerMessage
         }
     }
 
-    public ServerMessage ShowdownHeader()
+    public ServerMessage ShowdownHeader(bool inline = false)
     {
+        if (inline)
+        {
+            return new ServerMessage()
+                .AddInLine(line => line
+                    .AddBlock("Showdown", b => b.Color("#ff0000"))
+                    .AddBlock("Season", b => b.Color("#ffffff"))
+                    .AddBlock("4", b => b.Color("#ff8800"))
+                    .Bold().AllCaps().FontSize(40)
+                );
+        }
+
         return new ServerMessage()
             .AddLine(line => line
                 .AddBlock("Showdown", b => b.Color("#ff0000"))

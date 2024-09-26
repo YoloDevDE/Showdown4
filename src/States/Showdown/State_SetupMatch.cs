@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Showdown4.Commands;
 using Showdown4.Entities;
 using Showdown4.Utils;
@@ -9,9 +8,6 @@ namespace Showdown4.States.Showdown;
 
 public class State_SetupMatch : IState
 {
-    private bool _isTimerRunning;
-    private List<Team> _teams;
-
     public State_SetupMatch(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;

@@ -55,7 +55,7 @@ public class State_Racing : IState
         );
 
         // Send default leaderboard at the start of the round
-        SendDefaultLeaderboard();
+        SendTeamLeaderboard();
     }
 
     public void Exit()
@@ -97,17 +97,11 @@ public class State_Racing : IState
         SendTeamLeaderboard();
     }
 
-    private void SendDefaultLeaderboard()
-    {
-        // Generate a default leaderboard message with placeholder data
-        ServerMessage leaderboardMessage = _leaderboard.GenerateDefaultLeaderboardMessage(_teamA, _teamB);
-        leaderboardMessage.Send();
-    }
 
     private void SendTeamLeaderboard()
     {
         // Generate and send the team-focused leaderboard message
-        ServerMessage leaderboardMessage = _leaderboard.GenerateLeaderboardMessage();
+        ServerMessage leaderboardMessage = _leaderboard.GenerateLeaderboardMessage(_Showdown.Match);
         leaderboardMessage.Send();
     }
 }

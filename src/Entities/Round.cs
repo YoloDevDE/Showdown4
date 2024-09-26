@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Showdown4.Utils;
 
 namespace Showdown4.Entities;
 
@@ -17,10 +18,12 @@ public class Round
         this.teamB = teamB;
     }
 
+    // Store the method used to determine the winner
+    public WinningMethod WinningMethod { get; private set; }
+
     public Dictionary<ulong, Result> Leaderboard { get; set; }
 
     public Team GetWinnerTeam => GetTeamsSortedByWinnerAsc().First();
-
 
     public void AddResult(Result result)
     {
@@ -83,10 +86,19 @@ public class Round
         int finishersA = GetFinishersCount(teamA);
         int finishersB = GetFinishersCount(teamB);
 
-        return
-            finishersA > finishersB ? new List<Team> { teamA, teamB } :
-            finishersB > finishersA ? new List<Team> { teamB, teamA } :
-            null;
+        if (finishersA > finishersB)
+        {
+            WinningMethod = WinningMethod.Finishers;
+            return new List<Team> { teamA, teamB };
+        }
+
+        if (finishersB > finishersA)
+        {
+            WinningMethod = WinningMethod.Finishers;
+            return new List<Team> { teamB, teamA };
+        }
+
+        return null;
     }
 
     private List<Team> CompareCumulativeTeamTimes()
@@ -94,9 +106,19 @@ public class Round
         double timeA = GetCumulativeTimeOfTeam(teamA);
         double timeB = GetCumulativeTimeOfTeam(teamB);
 
-        return timeA < timeB ? new List<Team> { teamA, teamB } :
-            timeB < timeA ? new List<Team> { teamB, teamA } :
-            null;
+        if (timeA < timeB)
+        {
+            WinningMethod = WinningMethod.CumulativeTime;
+            return new List<Team> { teamA, teamB };
+        }
+
+        if (timeB < timeA)
+        {
+            WinningMethod = WinningMethod.CumulativeTime;
+            return new List<Team> { teamB, teamA };
+        }
+
+        return null;
     }
 
     private List<Team> CompareIndividualPlacements()
@@ -120,11 +142,13 @@ public class Round
 
             if (timeA < timeB)
             {
+                WinningMethod = WinningMethod.IndividualPlacements;
                 return new List<Team> { teamA, teamB };
             }
 
             if (timeB < timeA)
             {
+                WinningMethod = WinningMethod.IndividualPlacements;
                 return new List<Team> { teamB, teamA };
             }
         }
@@ -134,6 +158,7 @@ public class Round
 
     private List<Team> SelectRandomWinner()
     {
+        WinningMethod = WinningMethod.RandomSelection;
         Random random = new Random();
         return random.Next(2) == 0 ? new List<Team> { teamA, teamB } : new List<Team> { teamB, teamA };
     }
