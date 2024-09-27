@@ -10,8 +10,7 @@ namespace Showdown4.States.Showdown;
 public class State_Match_End : IState
 {
     private bool countdownStarted;
-
-    private int countdownTime = 10; // Countdown duration in seconds
+    private int countdownTime = 60; // Countdown duration set to 60 seconds
 
     public State_Match_End(IStateMachine stateMachine)
     {
@@ -35,13 +34,26 @@ public class State_Match_End : IState
     {
         Team winnerTeam = Showdown.Match.CurrentRound.GetWinnerTeam;
 
-        ServerMessage msg = new ServerMessage().ShowdownHeader()
+        // Decorated ServerMessage without emotes
+        ServerMessage msg = new ServerMessage()
+            .ShowdownHeader()
+            .AddSeparator() // Add a separator line
             .AddLine(line => line
-                .AddBlock("Match over!")
-                .AddBlock($"{winnerTeam.GetNameWithTag()} won the Match!", block => block.Color(winnerTeam.Color))
+                .AddBlock("**Match Over!** ", block => block.Bold().Color("#ff0000"))
             )
-            .AddLine(Showdown.Match.Score())
-            .AddLine($"Starting new Match in {countdownTime} seconds.");
+            .AddLine(line => line
+                    .AddBlock($"{winnerTeam.GetNameWithTag()} ", block => block.Color(winnerTeam.Color).Bold())
+                    .AddBlock("won the Match!", block => block.Color("#FFD700")) // Gold for celebration
+            )
+            .AddLine(line => line
+                    .AddBlock("Final Score: ", block => block.Bold().Color("#ffffff"))
+                    .AddBlock(Showdown.Match.Score(), block => block.Color("#00ff00")) // Green for the final score
+            )
+            .AddSeparator() // Another separator for visual clarity
+            .AddLine(line => line
+                    .AddBlock($"Starting new match in {countdownTime} seconds.", block => block.Bold().Color(countdownTime <= 10 ? "#ff0000" : "#00ff00")) // Red if time is <= 10 seconds
+            )
+            .AddSeparator(); // Final separator
 
         msg.Send();
     }
@@ -49,6 +61,11 @@ public class State_Match_End : IState
     public void Exit()
     {
         CoroutineManager.Instance.StopAllExternalCoroutines();
+    }
+
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
     }
 
     private IEnumerator Countdown()

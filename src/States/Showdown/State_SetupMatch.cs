@@ -39,7 +39,7 @@ public class State_SetupMatch : IState
         _selectedTeamB = null;
         _isCountdownActive = false;
         _currentCountdown = CountdownDuration;
-
+        ChatApi.SendMessage("/timeset 86400");
         if (_teams.Count == 0)
         {
             ChatApi.SendMessage("No teams found in the JSON file.");
@@ -77,7 +77,14 @@ public class State_SetupMatch : IState
         // Display the countdown if it's active
         if (_isCountdownActive)
         {
-            serverMessage.AddLine(line => line.AddBlock($"Match Procedure starts in {_currentCountdown} seconds...", block => block.Bold().Color("#ff0000")));
+            serverMessage.AddSeparator()
+                .AddLine(line => line
+                    .AddBlock("Continue to")
+                    .AddBlock("'Link Racers'", block => block.Color("#ffff00"))
+                    .AddBlock("in")
+                    .AddBlock($"{_currentCountdown}", block => block.Color("#00ff00"))
+                    .AddBlock("seconds...")
+                );
         }
 
         serverMessage.AddSeparator().Send();
@@ -86,6 +93,11 @@ public class State_SetupMatch : IState
     public void Exit()
     {
         StateManager.Instance.SetCurrentState(null);
+    }
+
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
     }
 
     public void HandleInput()

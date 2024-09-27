@@ -33,6 +33,11 @@ public class State_WaitingForHoF : IState
         RacingApi.RoundStarted -= OnRoundStarted;
     }
 
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
+    }
+
     private void OnRoundStarted()
     {
         Finished?.Invoke();

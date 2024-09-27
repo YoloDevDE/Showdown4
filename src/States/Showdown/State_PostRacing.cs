@@ -69,6 +69,11 @@ internal class State_PostRacing : IState
         RacingApi.RoundStarted -= OnRoundStarted;
     }
 
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
+    }
+
     public event Action Finished;
 
 

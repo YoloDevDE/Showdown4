@@ -62,4 +62,9 @@ public class State_Showdown_Starting : IState
     public void Exit()
     {
     }
+
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
+    }
 }

@@ -11,5 +11,11 @@ public interface IState
     event Action Finished;
     void Enter();
     void Execute();
+
+    void HandleInput()
+    {
+    }
+
     void Exit();
+    void InvokeFinish();
 }

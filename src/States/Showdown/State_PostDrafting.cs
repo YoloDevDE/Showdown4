@@ -13,7 +13,7 @@ namespace Showdown4.States.Showdown;
 
 public class State_PostDrafting : IState
 {
-    private readonly HashSet<ulong> _readyPlayers = new HashSet<ulong>(); // Store the IDs of players who are ready
+    private HashSet<ulong> _readyPlayers; // Store the IDs of players who are ready
 
     public State_PostDrafting(IStateMachine stateMachine)
     {
@@ -28,6 +28,7 @@ public class State_PostDrafting : IState
 
     public void Enter()
     {
+        _readyPlayers = new HashSet<ulong>();
         CommandReady.CommandInvoked += OnReady;
         Execute(); // Initial display of picked maps and ready status
     }
@@ -56,6 +57,11 @@ public class State_PostDrafting : IState
     public void Exit()
     {
         CommandReady.CommandInvoked -= OnReady;
+    }
+
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
     }
 
     private void OnReady(ulong steamId, string arg)
@@ -113,8 +119,23 @@ public class State_PostDrafting : IState
 
     private IEnumerator ReadyCountdown()
     {
-        // Append the final message in green
-        ServerMessage msg = new ServerMessage()
+        ServerMessage msg = ShowPickedMaps();
+
+        // Display the ready status of players
+        msg.AddSeparator()
+            .AddLine(line => line.AddBlock("Ready Status:"));
+
+        foreach (KeyValuePair<uint, ZeepkistNetworkPlayer> playerEntry in ZeepkistNetwork.Players)
+        {
+            ZeepkistNetworkPlayer player = playerEntry.Value;
+            bool isReady = _readyPlayers.Contains(player.SteamID);
+            msg.AddLine(line => line
+                .AddBlock($"{player.Username}: ", block => block.Bold())
+                .AddBlock(isReady ? "Ready" : "Not Ready", block => block.Color(isReady ? "#00ff00" : "#ff0000"))
+            );
+        }
+
+        msg
             .AddSeparator()
             .AddLine(line => line
                 .AddBlock("Everyone ready. Prepare for battle!", block => block.Color("#00ff00").Bold()))

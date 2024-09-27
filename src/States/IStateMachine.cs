@@ -38,6 +38,7 @@ public interface IStateMachine
 
     protected void TransitionTo([NotNull] IState nextState)
     {
+        InitTransitions();
         if (CurrentState != null)
         {
             CurrentState.SubStateMachine?.Dispose();

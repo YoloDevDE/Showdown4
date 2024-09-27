@@ -16,13 +16,13 @@ public class MasterStateMachine : IStateMachine
     public IState InitialState => new State_Master_Off(this);
     public IState FinalState => new State_Master_Off(this);
 
-    public List<ITransition> Transitions { get; }
+    public List<ITransition> Transitions { get; set; }
     public event Action StateMachineFinished;
 
     public void InitTransitions()
     {
         IStateMachine stateMachine = this;
-
+        Transitions = new List<ITransition>();
         // Add transitions with new instances directly
         stateMachine
             .AddTransition(new State_Master_Off(this), new State_Master_On(this))

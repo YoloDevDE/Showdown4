@@ -7,7 +7,7 @@ namespace Showdown4.Commands;
 public class CommandBan : IMixedChatCommand
 {
     public string Prefix => "!";
-    public string Command => "ban";
+    public string Command => "b";
     public string Description => "WIP";
 
     public void Handle(ulong playerId, string arguments)

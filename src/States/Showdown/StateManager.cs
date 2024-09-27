@@ -1,11 +1,11 @@
-﻿using Showdown4.States.Showdown;
+﻿using Showdown4.States;
 using UnityEngine;
 
 public class StateManager : MonoBehaviour
 {
     private static StateManager _instance;
 
-    private State_SetupMatch _currentState;
+    private IState _currentState;
 
     public static StateManager Instance
     {
@@ -32,7 +32,7 @@ public class StateManager : MonoBehaviour
     }
 
     // Assign the current state to be handled for input detection
-    public void SetCurrentState(State_SetupMatch state)
+    public void SetCurrentState(IState state)
     {
         _currentState = state;
     }

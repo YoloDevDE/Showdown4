@@ -31,6 +31,11 @@ public class State_Master_Off : IState
         CommandShowdownStop.CommandInvoked -= OnShowdownStopped;
     }
 
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
+    }
+
     private void OnShowdownStopped()
     {
         ToastMessenger.LogWarning("already stopped");

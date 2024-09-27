@@ -110,7 +110,7 @@ public class State_Drafting : IState
         CommandPick.CommandInvoked -= OnPick;
     }
 
-    private void FinishState()
+    public void InvokeFinish()
     {
         Finished?.Invoke();
     }
@@ -157,9 +157,11 @@ public class State_Drafting : IState
             if (countdownTime < 5)
             {
                 line
-                    .AddBlock("Initiating Match-Start-Procedure in:", block => block.Italic())
-                    .AddBlock($"{TimeFormatter.FormatDuration(countdownTime)}", block => { block.Color("#00ff00"); })
-                    ;
+                    .AddBlock("Continue to")
+                    .AddBlock("'Pre-Racing'", block => block.Color("#ffff00"))
+                    .AddBlock("in")
+                    .AddBlock($"{countdownTime}", block => block.Color("#00ff00"))
+                    .AddBlock("seconds...");
             }
         });
 
@@ -261,7 +263,7 @@ public class State_Drafting : IState
             countdownTime--;
         }
 
-        FinishState();
+        InvokeFinish();
     }
 
     private void HandleDraft(bool isBan, ulong steamId, string levelIndexStr)

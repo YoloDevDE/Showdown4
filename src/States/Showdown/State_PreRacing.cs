@@ -51,6 +51,11 @@ public class State_PreRacing : IState
         RacingApi.LevelLoaded -= OnLevelLoaded;
     }
 
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
+    }
+
     private void OnLevelLoaded()
     {
         Finished?.Invoke();

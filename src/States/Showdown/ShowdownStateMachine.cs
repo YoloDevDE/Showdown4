@@ -19,14 +19,14 @@ public class ShowdownStateMachine : IStateMachine
     public IState InitialState => new State_Showdown_Starting(this);
     public IState FinalState => new State_Match_End(this);
     public IState CurrentState { get; set; }
-    public List<ITransition> Transitions { get; }
+    public List<ITransition> Transitions { get; set; }
 
     public event Action StateMachineFinished;
 
     public void InitTransitions()
     {
         IStateMachine stateMachine = this;
-
+        Transitions = new List<ITransition>();
         // Transitions use new instances directly
         stateMachine
             .AddTransition(new State_Showdown_Starting(this), new State_WaitingForHoF(this),
@@ -47,7 +47,7 @@ public class ShowdownStateMachine : IStateMachine
                 () => Match.RoundCounter() >= 2 && Match.TeamA.Wins < 2 && Match.TeamB.Wins < 2)
             .AddTransition(new State_PostRacing(this), new State_Match_End(this),
                 () => Match.TeamA.Wins >= 2 || Match.TeamB.Wins >= 2)
-            .AddTransition(new State_Match_End(this), new State_Showdown_Starting(this));
+            .AddTransition(new State_Match_End(this), new State_WaitingForHoF(this));
     }
 
     public void InvokeFinish()

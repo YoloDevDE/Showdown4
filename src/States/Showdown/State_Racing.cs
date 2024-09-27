@@ -65,6 +65,11 @@ public class State_Racing : IState
         RacingApi.RoundEnded -= OnRoundEnd;
     }
 
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
+    }
+
     private void OnRoundEnd()
     {
         Finished?.Invoke();

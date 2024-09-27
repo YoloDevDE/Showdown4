@@ -10,7 +10,7 @@ namespace Showdown4.States.Showdown;
 
 public class State_LinkRacers : IState
 {
-    private const int CountdownDuration = 10;
+    private const int CountdownDuration = 5;
     private bool _isCountdownRunning;
     private Team _teamA, _teamB, _currentTeam;
 
@@ -50,6 +50,11 @@ public class State_LinkRacers : IState
         CommandLinkRacer.CommandInvoked -= OnLinkRacerToTeam;
     }
 
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
+    }
+
     private void CheckIfRacersAreLinked()
     {
         if (_teamA.Racers.Count >= _teamA.MaxTeamSize && _teamB.Racers.Count >= _teamB.MaxTeamSize)
@@ -73,11 +78,11 @@ public class State_LinkRacers : IState
         }
     }
 
-    private IEnumerator CountdownCoroutine(float countdown)
+    private IEnumerator CountdownCoroutine(int countdown)
     {
         while (countdown > 0)
         {
-            OnTimerTick((int)countdown); // Update message every second
+            OnTimerTick(countdown); // Update message every second
             yield return new WaitForSeconds(1); // Wait for 1 second
             countdown--; // Decrease the countdown value
         }
@@ -85,21 +90,19 @@ public class State_LinkRacers : IState
         Finished?.Invoke(); // Notify when countdown finishes
     }
 
-    private void OnTimerTick(int ticksLeft)
+    private void OnTimerTick(int countdownTime)
     {
-        new ServerMessage()
+        // Send or append the countdown message to the server
+        ServerMessage msg = new ServerMessage()
             .ShowdownHeader()
-            .AddLine(line => line
-                .AddBlock("Match set to:", format => format.Italic())
-            )
+            .AddSeparator()
             .AddLine(line => line
                 .Bold()
-                .AddBlock($"{_Showdown.Match.TeamA.GetNameWithTag()} ",
-                    format => format.Color($"{_Showdown.Match.TeamA.Color}"))
-                .AddBlock("VS ")
-                .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()} ",
-                    format => format.Color($"{_Showdown.Match.TeamB.Color}"))
+                .AddBlock($"{_Showdown.Match.TeamA.GetColoredTagAndName()} ")
+                .AddBlock("VS")
+                .AddBlock($"{_Showdown.Match.TeamB.GetColoredTagAndName()} ")
             )
+            .AddSeparator()
             .AddLine("Currently linked:")
             .AddLine(line => line
                 .AddBlock($"{_teamA.GetTag()} ", format => format.Color(_teamA.Color))
@@ -115,11 +118,16 @@ public class State_LinkRacers : IState
                     format => format.Color("#00ff00")
                 )
             )
+            .AddSeparator()
             .AddLine(line => line
-                .AddBlock("Starting 'DraftPhase I' in:")
-                .AddBlock($"{TimeFormatter.FormatDuration(ticksLeft)}", format => format.Color("#ff0000"))
+                .AddBlock("Continue to")
+                .AddBlock("'Select Initiative'", block => block.Color("#ffff00"))
+                .AddBlock("in")
+                .AddBlock($"{countdownTime}", block => block.Color("#00ff00"))
+                .AddBlock("seconds...")
             )
-            .Send();
+            .AddSeparator();
+        msg.Send();
     }
 
     private void OnLinkRacerToTeam(ulong steamId)
@@ -136,9 +144,11 @@ public class State_LinkRacers : IState
         new ServerMessage()
             .ShowdownHeader()
             .AddLine(line => line
-                .AddBlock("Waiting for everyone in ")
+                .AddBlock("Waiting for everyone in")
                 .AddBlock($"{_currentTeam.GetTag()} ", format => format.Color($"{_currentTeam.Color}"))
-                .AddBlock("to type '!link' in the chat")
+                .AddBlock("to type")
+                .AddBlock("'!link'", f => f.Color("#ffff00").Bold())
+                .AddBlock("in the chat")
             )
             .AddLine("Currently linked:")
             .AddLine(line => line

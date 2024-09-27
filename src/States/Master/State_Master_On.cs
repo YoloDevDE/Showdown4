@@ -24,6 +24,7 @@ public class State_Master_On : IState
     {
         CommandShowdownStart.CommandInvoked += OnShowdownStarted;
         CommandShowdownStop.CommandInvoked += OnShowdownStopped;
+        CommandFinishState.CommandInvoked += OnFinishedState;
     }
 
     public void Execute()
@@ -37,6 +38,17 @@ public class State_Master_On : IState
         ChatApi.SendMessage("/servermessage remove");
         CommandShowdownStart.CommandInvoked -= OnShowdownStarted;
         CommandShowdownStop.CommandInvoked -= OnShowdownStopped;
+        CommandFinishState.CommandInvoked -= OnFinishedState;
+    }
+
+    public void InvokeFinish()
+    {
+        Finished?.Invoke();
+    }
+
+    private void OnFinishedState(string arg)
+    {
+        SubStateMachine.CurrentState?.InvokeFinish();
     }
 
     private void OnShowdownStarted()
