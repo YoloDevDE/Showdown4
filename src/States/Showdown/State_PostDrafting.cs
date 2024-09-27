@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using Showdown4.Commands;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
+using ZeepkistClient;
 using ZeepkistNetworking;
 using ZeepSDK.Chat;
-using Random = UnityEngine.Random;
-
-// Required for using Coroutine
 
 namespace Showdown4.States.Showdown;
 
 public class State_PostDrafting : IState
 {
-    private bool _teamAReady;
-    private bool _teamBReady;
+    private readonly HashSet<ulong> _readyPlayers = new HashSet<ulong>(); // Store the IDs of players who are ready
 
     public State_PostDrafting(IStateMachine stateMachine)
     {
@@ -29,113 +28,55 @@ public class State_PostDrafting : IState
 
     public void Enter()
     {
-        _teamAReady = false;
-        _teamBReady = false;
-
-        AttachEvents();
-
-        // Announce that the ready check has started
-        ChatApi.SendMessage("Ready check started! Waiting for both teams to ready up.");
-
-        // Start the simulated ready check coroutine
-        CoroutineManager.Instance.StartExternalCoroutine(SimulateReadyCheck());
+        CommandReady.CommandInvoked += OnReady;
+        Execute(); // Initial display of picked maps and ready status
     }
 
     public void Execute()
     {
-        // Regular updates like status checks can be done here, if needed
-        SendReadyCheckStatus();
+        ServerMessage msg = ShowPickedMaps();
+
+        // Display the ready status of players
+        msg.AddSeparator()
+            .AddLine(line => line.AddBlock("Ready Status:"));
+
+        foreach (KeyValuePair<uint, ZeepkistNetworkPlayer> playerEntry in ZeepkistNetwork.Players)
+        {
+            ZeepkistNetworkPlayer player = playerEntry.Value;
+            bool isReady = _readyPlayers.Contains(player.SteamID);
+            msg.AddLine(line => line
+                .AddBlock($"{player.Username}: ", block => block.Bold())
+                .AddBlock(isReady ? "Ready" : "Not Ready", block => block.Color(isReady ? "#00ff00" : "#ff0000"))
+            );
+        }
+
+        msg.AddSeparator().Send();
     }
 
     public void Exit()
     {
-        DetachEvents();
+        CommandReady.CommandInvoked -= OnReady;
     }
 
-    // Event Handling
-    private void AttachEvents()
+    private void OnReady(ulong steamId, string arg)
     {
-        // Optionally attach events like a real ready command
-    }
-
-    private void DetachEvents()
-    {
-        // Optionally detach events like a real ready command
-    }
-
-    // Simulated Ready Check Coroutine
-    private IEnumerator SimulateReadyCheck()
-    {
-        while (!_teamAReady || !_teamBReady) // Continue until both teams are ready
+        if (!_readyPlayers.Contains(steamId))
         {
-            // Wait for a random amount of time between 2 and 5 seconds
-            float waitTime = Random.Range(2f, 5f);
-            yield return new WaitForSeconds(waitTime);
+            _readyPlayers.Add(steamId); // Mark player as ready
 
-            // Simulate team readiness check
-            SimulateTeamReadyCheck();
+            // Send a message confirming the player's readiness
+            ChatApi.SendMessage($"{ZeepkistNetworkService.GetSteamNameFromSteamId(steamId)} is ready!");
 
-            // Send updated ready status after each check
-            SendReadyCheckStatus();
+            // Check if all players are ready
+            if (_readyPlayers.Count >= ZeepkistNetwork.Players.Count)
+            {
+                ConfirmReady(); // All players ready, finish the state
+            }
+            else
+            {
+                Execute(); // Update the ready status in the server message
+            }
         }
-
-        // Once both teams are ready, finish the ready check
-        FinishReadyCheck();
-    }
-
-    // Simulate random team readiness
-    private void SimulateTeamReadyCheck()
-    {
-        // Randomly set the team readiness for demonstration purposes
-        if (!_teamAReady && Random.value > 0.5f)
-        {
-            _teamAReady = true;
-            ChatApi.SendMessage($"{_Showdown.Match.TeamA.GetNameWithTag()} is now ready!");
-        }
-
-        if (!_teamBReady && Random.value > 0.5f)
-        {
-            _teamBReady = true;
-            ChatApi.SendMessage($"{_Showdown.Match.TeamB.GetNameWithTag()} is now ready!");
-        }
-    }
-
-    private void FinishReadyCheck()
-    {
-        if (!_teamAReady)
-        {
-            ChatApi.SendMessage($"{_Showdown.Match.TeamA.GetNameWithTag()} failed to ready up in time!");
-        }
-
-        if (!_teamBReady)
-        {
-            ChatApi.SendMessage($"{_Showdown.Match.TeamB.GetNameWithTag()} failed to ready up in time!");
-        }
-
-        // After the ready check finishes, invoke the state transition
-        Finished?.Invoke();
-    }
-
-    private void SendReadyCheckStatus()
-    {
-        // Create a message that shows the ready status of both teams
-        ServerMessage msg = new ServerMessage()
-                .ShowdownHeader()
-                .AddLine(line => line
-                    .AddBlock("Ready Check in progress.")
-                )
-                .AddLine(line => line
-                    .AddBlock($"{_Showdown.Match.TeamA.GetNameWithTag()}: ")
-                    .AddBlock(_teamAReady ? "Ready" : "Not Ready", f => f.Color(_teamAReady ? "#00ff00" : "#ff0000"))
-                )
-                .AddLine(line => line
-                    .AddBlock($"{_Showdown.Match.TeamB.GetNameWithTag()}: ")
-                    .AddBlock(_teamBReady ? "Ready" : "Not Ready", f => f.Color(_teamBReady ? "#00ff00" : "#ff0000"))
-                )
-                .AddMessage(ShowPickedMaps())
-            ;
-
-        msg.Send();
     }
 
     private ServerMessage ShowPickedMaps()
@@ -159,5 +100,31 @@ public class State_PostDrafting : IState
         }
 
         return msg;
+    }
+
+    private void ConfirmReady()
+    {
+        // Notify that all players are ready
+        ChatApi.SendMessage("All players are ready.");
+
+        // Display message in the server with a 2-second delay before proceeding
+        CoroutineManager.Instance.StartExternalCoroutine(ReadyCountdown());
+    }
+
+    private IEnumerator ReadyCountdown()
+    {
+        // Append the final message in green
+        ServerMessage msg = new ServerMessage()
+            .AddSeparator()
+            .AddLine(line => line
+                .AddBlock("Everyone ready. Prepare for battle!", block => block.Color("#00ff00").Bold()))
+            .AddSeparator();
+        msg.Send();
+
+        // Wait for 2 seconds before transitioning to the next state
+        yield return new WaitForSeconds(2);
+
+        // Proceed to the next state
+        Finished?.Invoke();
     }
 }

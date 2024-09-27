@@ -35,7 +35,6 @@ public class State_Drafting : IState
 
     public void Enter()
     {
-        PlaylistManager.ResetPlaylist();
         // Initialize all relevant variables
         countDownStarted = false;
         countdownTime = countdown;
@@ -243,6 +242,7 @@ public class State_Drafting : IState
 
         DraftCountdownTime = DraftTime;
         _Showdown.Match.CurrentDraft.SwitchTeam();
+        ResetDraftCountdown();
     }
 
     private IEnumerator DraftCompleteCountdown()

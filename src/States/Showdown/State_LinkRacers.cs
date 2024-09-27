@@ -10,7 +10,7 @@ namespace Showdown4.States.Showdown;
 
 public class State_LinkRacers : IState
 {
-    private const int CountdownDuration = 5;
+    private const int CountdownDuration = 10;
     private bool _isCountdownRunning;
     private Team _teamA, _teamB, _currentTeam;
 
@@ -111,12 +111,12 @@ public class State_LinkRacers : IState
             )
             .AddSeparator()
             .AddLine(line => line
-                .AddBlock("All steam accounts are linked!",
+                .AddBlock("All Racers are linked to their Teams!",
                     format => format.Color("#00ff00")
                 )
             )
             .AddLine(line => line
-                .AddBlock("Starting Draft Phase in:")
+                .AddBlock("Starting 'DraftPhase I' in:")
                 .AddBlock($"{TimeFormatter.FormatDuration(ticksLeft)}", format => format.Color("#ff0000"))
             )
             .Send();

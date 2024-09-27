@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using Showdown4.Entities;
 
-namespace Showdown4;
+namespace Showdown4.Entities;
 
-public class TeamJsonWrapper
+public class TeamData
 {
     public List<Team> Teams { get; set; }
 }
