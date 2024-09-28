@@ -393,6 +393,7 @@ public class State_Drafting : IState
             return;
         }
 
+
         string playerName = player.Username;
 
         // Get the current draft from the match (CurrentDraft assumed here)
@@ -422,6 +423,19 @@ public class State_Drafting : IState
 
         // Get the level to ban/pick
         OnlineZeeplevel levelToPickOrBan = currentDraft.AllLevels[levelIndex - 1]; // Assuming index matches the level
+        if (player.IsLocal && currentDraft.IsDraftComplete())
+        {
+            Team showdownTeam = new Team("Showdown", "Showdown", "#ff0000");
+            _showdown.Match.CurrentDraft.PickedLevels.Add(
+                new DraftAction(
+                    levelToPickOrBan,
+                    showdownTeam,
+                    true
+                ));
+            ChatApi.SendMessage($"{showdownTeam.GetTag()} has picked the level {levelToPickOrBan.Name}");
+            Execute();
+            return;
+        }
 
         // Depending on whether this is a pick or a ban, handle appropriately
         try

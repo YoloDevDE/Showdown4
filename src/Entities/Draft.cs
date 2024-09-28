@@ -8,7 +8,7 @@ public class Draft
 {
     private readonly Team teamA;
     private readonly Team teamB;
-    private Team currentTeam;
+    public Team currentTeam;
 
     public Draft(Team teamA, Team teamB, List<OnlineZeeplevel> allLevels, List<OnlineZeeplevel> unAvailableLevels = null)
     {
