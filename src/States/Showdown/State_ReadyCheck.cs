@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Showdown4.Commands;
+using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
@@ -11,17 +12,18 @@ using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
-public class State_PostDrafting : IState
+public class State_ReadyCheck : IState
 {
     private HashSet<ulong> _readyPlayers; // Store the IDs of players who are ready
 
-    public State_PostDrafting(IStateMachine stateMachine)
+    public State_ReadyCheck(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
 
     private ShowdownStateMachine _Showdown => StateMachine as ShowdownStateMachine;
-
+    private Team _teamA => _Showdown.Match.TeamA;
+    private Team _teamB => _Showdown.Match.TeamB;
     public IStateMachine StateMachine { get; }
 
     public event Action Finished;
@@ -88,9 +90,17 @@ public class State_PostDrafting : IState
     private ServerMessage ShowPickedMaps()
     {
         ServerMessage msg = new ServerMessage();
-        msg.AddSeparator()
+        msg
+            .ShowdownHeader()
+            .AddLine(line => line
+                .AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
+                .AddBlock("VS")
+                .AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color))
+            )
+            .AddSeparator()
             .AddLine(line => line
                 .AddBlock("Picked Maps:"));
+
         for (int index = 0; index < _Showdown.Match.CurrentDraft.PickedLevels.Count; index++)
         {
             int index1 = index;
@@ -104,6 +114,16 @@ public class State_PostDrafting : IState
                     .Bold();
             });
         }
+
+        // Add the ready check instruction at the end
+        msg
+            .AddSeparator()
+            .AddLine(line => line
+                .AddBlock("To ready up, type")
+                .AddBlock("'!ready'", b => b.Color("#ffff00").Bold())
+                .AddBlock("in the chat.")
+            )
+            .AddSeparator();
 
         return msg;
     }

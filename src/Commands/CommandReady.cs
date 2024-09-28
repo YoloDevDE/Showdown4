@@ -7,7 +7,7 @@ namespace Showdown4.Commands;
 public class CommandReady : IMixedChatCommand
 {
     public string Prefix => "!";
-    public string Command => "r";
+    public string Command => "ready";
     public string Description => "Ready Check";
 
     public void Handle(ulong playerId, string arguments)

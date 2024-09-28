@@ -25,17 +25,7 @@ public class Team
 
     public string GetNameWithTag()
     {
-        return $"[{Tag}] {Name}";
-    }
-
-    public string GetNameWithTagReverse()
-    {
-        return $"{Name} [{Tag}]";
-    }
-
-    public string GetNameWithNoTag()
-    {
-        return $"{Name}";
+        return $"{GetTag()} {Name}";
     }
 
     public void AddWin()

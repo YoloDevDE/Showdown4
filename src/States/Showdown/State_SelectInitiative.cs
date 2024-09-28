@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using Showdown4.Entities;
 using Showdown4.Managers;
@@ -10,7 +9,7 @@ namespace Showdown4.States.Showdown;
 
 public class State_SelectInitiative : IState
 {
-    private const int CountdownDuration = 5; // Countdown in seconds
+    private const int CountdownDuration = 20; // Countdown in seconds
     private int _currentSelectionIndex; // To track the currently selected team
     private Team _selectedTeam; // The team with initiative
     private List<Team> _teams;
@@ -19,6 +18,9 @@ public class State_SelectInitiative : IState
     {
         StateMachine = stateMachine;
     }
+
+    private Team _teamA => _Showdown.Match.TeamA;
+    private Team _teamB => _Showdown.Match.TeamB;
 
     private ShowdownStateMachine _Showdown => (ShowdownStateMachine)StateMachine;
 
@@ -35,33 +37,11 @@ public class State_SelectInitiative : IState
 
         // Register this state for input detection
         StateManager.Instance.SetCurrentState(this);
-        Execute(); // Initial display of team selection
     }
 
     public void Execute()
     {
-        // Display the current team selection in the server message
-        ServerMessage serverMessage = new ServerMessage()
-            .ShowdownHeader()
-            .AddLine(line => line.AddBlock("Select a team to have the initiative. Use arrow keys to select, and press Space to confirm."));
-
-        for (int index = 0; index < _teams.Count; index++)
-        {
-            Team team = _teams[index];
-
-            if (index == _currentSelectionIndex)
-            {
-                // Highlight the currently selected team
-                serverMessage.AddLine(line => line.AddBlock($"> {team.GetColoredTagAndName()}", block => block.Bold().Color("#ffff00")));
-            }
-            else
-            {
-                // Show the other team normally
-                serverMessage.AddLine(line => line.AddBlock($"{team.GetColoredTagAndName()}"));
-            }
-        }
-
-        serverMessage.AddSeparator().Send();
+        ServerMessageThing().Send();
     }
 
     public void Exit()
@@ -101,24 +81,69 @@ public class State_SelectInitiative : IState
         }
     }
 
+    private ServerMessage ServerMessageThing()
+    {
+        // Display the current team selection in the server message
+        ServerMessage serverMessage = new ServerMessage()
+            .ShowdownHeader()
+            .AddLine(line => line
+                .AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
+                .AddBlock("VS")
+                .AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color))
+            )
+            .AddSeparator()
+            .AddLine(line => line.AddBlock("Selecting Initiative"))
+            .AddSeparator();
+
+        for (int index = 0; index < _teams.Count; index++)
+        {
+            Team team = _teams[index];
+
+            if (index == _currentSelectionIndex)
+            {
+                // Highlight the currently selected team
+                serverMessage.AddLine(line => line.AddBlock($"> {team.GetColoredTagAndName()}", block => block.Bold().Color("#ffff00")));
+            }
+            else
+            {
+                // Show the other team normally
+                serverMessage.AddLine(line => line.AddBlock($"{team.GetColoredTagAndName()}"));
+            }
+        }
+
+        return serverMessage;
+    }
+
     private void SelectTeamWithInitiative()
     {
         // Confirm the selected team for initiative
         _selectedTeam = _teams[_currentSelectionIndex];
-        ((ShowdownStateMachine)StateMachine).Match.Initiative = _selectedTeam;
+        _Showdown.Match.Initiative = _selectedTeam;
 
-        // Start a 5-second countdown and append it to the existing server message
-        CoroutineManager.Instance.StartExternalCoroutine(CountdownCoroutine(CountdownDuration));
+        // Replace the old countdown coroutine with CountdownTimer
+        CoroutineManager.Instance.StartExternalCoroutine(
+            CountdownTimer.Start(CountdownDuration, UpdateCountdownMessage, Finished)
+        );
     }
 
-    private IEnumerator CountdownCoroutine(int countdownTime)
+    private void UpdateCountdownMessage(int countdownTime)
     {
-        while (countdownTime > 0)
-        {
-            // Send or append the countdown message to the server
-            ServerMessage msg = new ServerMessage()
-                .ShowdownHeader()
+        // Send or append the countdown message to the server
+        ServerMessage msg =
+            ServerMessageThing()
+                .AddSeparator()
                 .AddLine(line => line.AddBlock($"Initiative has been given to {_selectedTeam.GetColoredTagAndName()}"))
+                .AddLine(line => line
+                    .AddBlock($"{_selectedTeam.GetTag()}", f => f.Color(_selectedTeam.Color))
+                    .AddBlock("will start to draft after the countdown!"))
+                .AddLine(line => line.Italic()
+                        .AddBlock("To pick use ")
+                        .AddBlock("'!pick 1-7'", block => block.Color("#ffff00")) // '!pick' in yellow
+                )
+                .AddLine(line => line.Italic()
+                        .AddBlock("To ban use ")
+                        .AddBlock("'!ban 1-7'", block => block.Color("#ffff00")) // '!ban' in yellow
+                )
                 .AddSeparator()
                 .AddLine(line => line
                     .AddBlock("Continue to")
@@ -126,16 +151,8 @@ public class State_SelectInitiative : IState
                     .AddBlock("in")
                     .AddBlock($"{countdownTime}", block => block.Color("#00ff00"))
                     .AddBlock("seconds...")
-                )
-                .AddSeparator();
+                );
 
-            msg.Send();
-
-            yield return new WaitForSeconds(1);
-            countdownTime--;
-        }
-
-        // After countdown, finish the state
-        Finished?.Invoke();
+        msg.Send();
     }
 }

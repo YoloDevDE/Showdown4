@@ -7,7 +7,7 @@ namespace Showdown4.Commands;
 public class CommandPick : IMixedChatCommand
 {
     public string Prefix => "!";
-    public string Command => "p";
+    public string Command => "pick";
     public string Description => "WIP";
 
     public void Handle(ulong playerId, string arguments)

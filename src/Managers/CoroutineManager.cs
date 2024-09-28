@@ -27,6 +27,7 @@ public class CoroutineManager : MonoBehaviour
 
     public Coroutine StartExternalCoroutine(IEnumerator coroutine)
     {
+        StopAllExternalCoroutines();
         Coroutine startedCoroutine = StartCoroutine(coroutine);
         _activeCoroutines.Add(startedCoroutine); // Track the coroutine
         return startedCoroutine;

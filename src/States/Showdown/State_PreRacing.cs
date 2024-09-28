@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
-using UnityEngine;
 using ZeepkistNetworking;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
-
-// Required for using Coroutine
 
 namespace Showdown4.States.Showdown;
 
@@ -34,8 +30,13 @@ public class State_PreRacing : IState
 
         RacingApi.RoundEnded += OnRoundEnd;
         RacingApi.LevelLoaded += OnLevelLoaded;
-        // Start the 10-second countdown and display it
-        CoroutineManager.Instance.StartExternalCoroutine(StartCountdown(10));
+
+        // Use the new CountdownTimer
+        CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
+            10, // Countdown duration
+            UpdateCountdownMessage, // Action on tick
+            SkipToNextLevel // Action on completion
+        ));
     }
 
     public void Execute()
@@ -47,7 +48,6 @@ public class State_PreRacing : IState
     public void Exit()
     {
         RacingApi.RoundEnded -= OnRoundEnd;
-
         RacingApi.LevelLoaded -= OnLevelLoaded;
     }
 
@@ -58,17 +58,17 @@ public class State_PreRacing : IState
 
     private void OnLevelLoaded()
     {
-        Finished?.Invoke();
+        InvokeFinish();
     }
 
+    // Update the server message with the countdown time
     private void UpdateCountdownMessage(int secondsRemaining)
     {
-        // Create a server message with the match information and countdown in red
         ServerMessage msg = new ServerMessage()
             .ShowdownHeader()
             .AddLine(line => line
                 .AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
-                .AddBlock(" VS ")
+                .AddBlock("VS")
                 .AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color))
             )
             .AddSeparator()
@@ -80,23 +80,6 @@ public class State_PreRacing : IState
             .AddMessage(ShowPickedMaps());
 
         msg.Send();
-    }
-
-    private IEnumerator StartCountdown(int countdownDuration)
-    {
-        while (countdownDuration >= 0)
-        {
-            // Update the countdown message every second
-            UpdateCountdownMessage(countdownDuration);
-
-            // Wait for 1 second
-            yield return new WaitForSeconds(1f);
-
-            countdownDuration--;
-        }
-
-        // After countdown finishes, move to the next level
-        SkipToNextLevel();
     }
 
     private void SkipToNextLevel()
@@ -117,7 +100,7 @@ public class State_PreRacing : IState
             {
                 OnlineZeeplevel level = _Showdown.Match.CurrentDraft.PickedLevels[index1].Level;
                 line
-                    .AddBlock($"Round {index1 + 1}:")
+                    .AddBlock($"Round {(_Showdown.Match.RoundCounter() < 2 ? index1 + 1 : index1 + 3)}:")
                     .AddBlock($"'{level.Name}'", block => block.Color("#00ffff")
                     )
                     .Bold();

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Utils;
+using ZeepkistNetworking;
 
 namespace Showdown4.Entities;
 
@@ -17,6 +18,9 @@ public class Round
         this.teamA = teamA;
         this.teamB = teamB;
     }
+
+    public bool IsRoundOver { get; private set; } = false;
+    public OnlineZeeplevel OnlineZeeplevel { get; }
 
     // Store the method used to determine the winner
     public WinningMethod WinningMethod { get; private set; }

@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Showdown4.States.Master;
 
-public class MasterStateMachine : IStateMachine
+public class MasterStateMachine : MonoBehaviour, IStateMachine
 {
     public MasterStateMachine()
     {

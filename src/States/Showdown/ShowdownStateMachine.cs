@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using Showdown4.Entities;
 using Showdown4.Managers;
+using UnityEngine;
 using ZeepSDK.Level;
 
 namespace Showdown4.States.Showdown;
 
-public class ShowdownStateMachine : IStateMachine
+public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 {
     public ShowdownStateMachine()
     {
@@ -37,8 +38,8 @@ public class ShowdownStateMachine : IStateMachine
             .AddTransition(new State_SetupMatch(this), new State_LinkRacers(this))
             .AddTransition(new State_LinkRacers(this), new State_SelectInitiative(this))
             .AddTransition(new State_SelectInitiative(this), new State_Drafting(this))
-            .AddTransition(new State_Drafting(this), new State_PostDrafting(this))
-            .AddTransition(new State_PostDrafting(this), new State_PreRacing(this))
+            .AddTransition(new State_Drafting(this), new State_ReadyCheck(this))
+            .AddTransition(new State_ReadyCheck(this), new State_PreRacing(this))
             .AddTransition(new State_PreRacing(this), new State_Racing(this))
             .AddTransition(new State_Racing(this), new State_PostRacing(this))
             .AddTransition(new State_PostRacing(this), new State_Racing(this),

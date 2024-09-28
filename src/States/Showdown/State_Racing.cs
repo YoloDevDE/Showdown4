@@ -72,7 +72,7 @@ public class State_Racing : IState
 
     private void OnRoundEnd()
     {
-        Finished?.Invoke();
+        InvokeFinish();
     }
 
     private void OnLeaderBoardUpdated(ZeepkistNetworkPlayer netRacer)

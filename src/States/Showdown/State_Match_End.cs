@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
-using UnityEngine;
+using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
@@ -24,43 +23,57 @@ public class State_Match_End : IState
 
     public void Enter()
     {
+        ChatApi.SendMessage("/timeset 86400");
         if (!countdownStarted)
         {
-            CoroutineManager.Instance.StartExternalCoroutine(Countdown());
+            countdownStarted = true;
+
+            // Use CountdownTimer to manage the countdown
+            CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
+                countdownTime,
+                remainingTime => UpdateCountdownMessage(remainingTime), // onTick action
+                InvokeFinish // onComplete action
+            ));
         }
     }
 
     public void Execute()
     {
+        // We don't need to send this message every second manually now, since it's handled in `UpdateCountdownMessage`
         Team winnerTeam = Showdown.Match.CurrentRound.GetWinnerTeam;
 
         // Decorated ServerMessage without emotes
         ServerMessage msg = new ServerMessage()
             .ShowdownHeader()
-            .AddSeparator() // Add a separator line
+            .AddSeparator()
             .AddLine(line => line
-                .AddBlock("**Match Over!** ", block => block.Bold().Color("#ff0000"))
+                .AddBlock("Match Over!", block => block.Bold().Color("#ff0000"))
             )
             .AddLine(line => line
-                    .AddBlock($"{winnerTeam.GetNameWithTag()} ", block => block.Color(winnerTeam.Color).Bold())
-                    .AddBlock("won the Match!", block => block.Color("#FFD700")) // Gold for celebration
+                .AddBlock($"{winnerTeam.GetColoredTagAndName()} ", block => block.Bold())
+                .AddBlock("won the Match! :party:", block => block.Color("#FFD700"))
             )
             .AddLine(line => line
                     .AddBlock("Final Score: ", block => block.Bold().Color("#ffffff"))
-                    .AddBlock(Showdown.Match.Score(), block => block.Color("#00ff00")) // Green for the final score
+                    .AddBlock(Showdown.Match.ScoreColored()) // Green for the final score
             )
-            .AddSeparator() // Another separator for visual clarity
+            .AddSeparator()
             .AddLine(line => line
-                    .AddBlock($"Starting new match in {countdownTime} seconds.", block => block.Bold().Color(countdownTime <= 10 ? "#ff0000" : "#00ff00")) // Red if time is <= 10 seconds
+                .AddBlock("You can now join us in Discord for an interview :smile:")
             )
-            .AddSeparator(); // Final separator
+            .AddLine(line => line
+                .AddBlock("Teams will get kicked after")
+                .AddBlock($"{countdownTime}", block => block.Bold().Color(countdownTime <= 10 ? "#ff0000" : "#00ff00"))
+                .AddBlock("seconds.")
+            )
+            .AddSeparator();
 
         msg.Send();
     }
 
     public void Exit()
     {
-        CoroutineManager.Instance.StopAllExternalCoroutines();
+        // No extra cleanup required here
     }
 
     public void InvokeFinish()
@@ -68,18 +81,9 @@ public class State_Match_End : IState
         Finished?.Invoke();
     }
 
-    private IEnumerator Countdown()
+    private void UpdateCountdownMessage(int remainingTime)
     {
-        countdownStarted = true;
-
-        while (countdownTime > 0)
-        {
-            Execute(); // Update the message with the current countdown time
-
-            yield return new WaitForSeconds(1);
-            countdownTime--;
-        }
-
-        Finished?.Invoke(); // End the state once the countdown is complete
+        countdownTime = remainingTime;
+        Execute(); // This will send the updated message with the countdown
     }
 }
