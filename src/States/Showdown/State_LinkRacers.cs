@@ -118,7 +118,7 @@ public class State_LinkRacers : IState
                 )
                 .AddSeparator()
                 .AddLine(line => line
-                    .AddBlock("Awaiting all racers of")
+                    .AddBlock("Waiting for all racers of")
                     .AddBlock($"{_currentTeam.GetTag()} ", format => format.Color($"{_currentTeam.Color}").Bold())
                     .AddBlock("to link with their team by writing")
                     .AddBlock("'!link'", format => format.Color("#ffff00").Bold())

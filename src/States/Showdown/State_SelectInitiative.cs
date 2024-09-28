@@ -11,6 +11,7 @@ public class State_SelectInitiative : IState
 {
     private const int CountdownDuration = 20; // Countdown in seconds
     private int _currentSelectionIndex; // To track the currently selected team
+    private bool _isLocked; // To lock input after selecting initiative
     private Team _selectedTeam; // The team with initiative
     private List<Team> _teams;
 
@@ -34,6 +35,7 @@ public class State_SelectInitiative : IState
         _teams = new List<Team> { _Showdown.Match.TeamA, _Showdown.Match.TeamB };
         _currentSelectionIndex = 0;
         _selectedTeam = null;
+        _isLocked = false; // Allow input at the start
 
         // Register this state for input detection
         StateManager.Instance.SetCurrentState(this);
@@ -57,6 +59,12 @@ public class State_SelectInitiative : IState
 
     public void HandleInput()
     {
+        if (_isLocked)
+        {
+            // Do nothing if input is locked
+            return;
+        }
+
         bool inputDetected = false;
 
         // Detect arrow key presses
@@ -120,7 +128,10 @@ public class State_SelectInitiative : IState
         _selectedTeam = _teams[_currentSelectionIndex];
         _Showdown.Match.Initiative = _selectedTeam;
 
-        // Replace the old countdown coroutine with CountdownTimer
+        // Lock the input after the selection
+        _isLocked = true;
+
+        // Start the countdown using CountdownTimer
         CoroutineManager.Instance.StartExternalCoroutine(
             CountdownTimer.Start(CountdownDuration, UpdateCountdownMessage, Finished)
         );
@@ -136,12 +147,13 @@ public class State_SelectInitiative : IState
                 .AddLine(line => line
                     .AddBlock($"{_selectedTeam.GetTag()}", f => f.Color(_selectedTeam.Color))
                     .AddBlock("will start to draft after the countdown!"))
+                .AddSeparator()
                 .AddLine(line => line.Italic()
-                        .AddBlock("To pick use ")
+                        .AddBlock("To pick use")
                         .AddBlock("'!pick 1-7'", block => block.Color("#ffff00")) // '!pick' in yellow
                 )
                 .AddLine(line => line.Italic()
-                        .AddBlock("To ban use ")
+                        .AddBlock("To ban use")
                         .AddBlock("'!ban 1-7'", block => block.Color("#ffff00")) // '!ban' in yellow
                 )
                 .AddSeparator()

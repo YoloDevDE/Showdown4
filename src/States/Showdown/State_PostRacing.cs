@@ -55,7 +55,7 @@ internal class State_PostRacing : IState
                 .ClearChat()
                 .DashedLine().NewLine() // Dashed separator
                 .CenterTextLine($"Round {currentRoundCounter} finished!").NewLine() // Centered round completion message
-                .TextLine($"Team '{winnerTeam.GetNameWithTag()}' scored!").NewLine() // Display the winning team
+                .TextLine($"'{winnerTeam.GetNameWithTag()}' scored!").NewLine() // Display the winning team
                 .DashedLine().NewLine() // Dashed line separating content
                 .TextLine("Current Standings:").NewLine() // Standings section
                 .TextLine($"{_showdownStateMachine.Match.Score()}").NewLine() // Display the score

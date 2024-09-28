@@ -88,7 +88,7 @@ public class Draft
 
     public bool IsDraftComplete()
     {
-        bool noMoreInventoryLeft = teamA.Bans + teamB.Bans == 0;
+        bool noMoreInventoryLeft = teamA.Bans + teamB.Bans == 0 && teamA.Picks + teamB.Picks == 0;
         bool noPicksLeft = teamA.Picks + teamB.Picks == 0 && IsPickPhase;
 
         return noPicksLeft || noMoreInventoryLeft;

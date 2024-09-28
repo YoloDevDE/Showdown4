@@ -110,7 +110,8 @@ public class State_SetupMatch : IState
         // ServerMessage showing the team selection
         ServerMessage serverMessage = new ServerMessage()
             .ShowdownHeader()
-            .AddLine(line => line.AddBlock("Use arrow keys to select teams. Press right arrow to confirm, left arrow to reset. Press Space to confirm and start the match."));
+            .AddLine(line => line.AddBlock("Setup Match"))
+            .AddSeparator();
 
         for (int index = 0; index < _teams.Count; index++)
         {

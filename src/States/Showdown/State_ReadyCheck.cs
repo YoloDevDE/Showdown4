@@ -32,15 +32,12 @@ public class State_ReadyCheck : IState
     {
         _readyPlayers = new HashSet<ulong>();
         CommandReady.CommandInvoked += OnReady;
-        Execute(); // Initial display of picked maps and ready status
     }
 
     public void Execute()
     {
-        ServerMessage msg = ShowPickedMaps();
-
-        // Display the ready status of players
-        msg.AddSeparator()
+        ServerMessage msg = ShowPickedMaps()
+            .AddSeparator()
             .AddLine(line => line.AddBlock("Ready Status:"));
 
         foreach (KeyValuePair<uint, ZeepkistNetworkPlayer> playerEntry in ZeepkistNetwork.Players)
@@ -48,12 +45,12 @@ public class State_ReadyCheck : IState
             ZeepkistNetworkPlayer player = playerEntry.Value;
             bool isReady = _readyPlayers.Contains(player.SteamID);
             msg.AddLine(line => line
-                .AddBlock($"{player.Username}: ", block => block.Bold())
+                .AddBlock($"{player.Username}:")
                 .AddBlock(isReady ? "Ready" : "Not Ready", block => block.Color(isReady ? "#00ff00" : "#ff0000"))
             );
         }
 
-        msg.AddSeparator().Send();
+        msg.Send();
     }
 
     public void Exit()
@@ -89,8 +86,7 @@ public class State_ReadyCheck : IState
 
     private ServerMessage ShowPickedMaps()
     {
-        ServerMessage msg = new ServerMessage();
-        msg
+        ServerMessage msg = new ServerMessage()
             .ShowdownHeader()
             .AddLine(line => line
                 .AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
@@ -122,8 +118,7 @@ public class State_ReadyCheck : IState
                 .AddBlock("To ready up, type")
                 .AddBlock("'!ready'", b => b.Color("#ffff00").Bold())
                 .AddBlock("in the chat.")
-            )
-            .AddSeparator();
+            );
 
         return msg;
     }
@@ -139,10 +134,8 @@ public class State_ReadyCheck : IState
 
     private IEnumerator ReadyCountdown()
     {
-        ServerMessage msg = ShowPickedMaps();
-
-        // Display the ready status of players
-        msg.AddSeparator()
+        ServerMessage msg = ShowPickedMaps()
+            .AddSeparator()
             .AddLine(line => line.AddBlock("Ready Status:"));
 
         foreach (KeyValuePair<uint, ZeepkistNetworkPlayer> playerEntry in ZeepkistNetwork.Players)

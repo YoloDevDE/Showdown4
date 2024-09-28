@@ -65,6 +65,7 @@ public class Plugin : BaseUnityPlugin
         ChatCommandApi.RegisterLocalChatCommand<CommandSetupMatch>();
         ChatCommandApi.RegisterLocalChatCommand<CommandStartMatch>();
         ChatCommandApi.RegisterLocalChatCommand<CommandFinishState>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandStartRandom>();
         ChatCommandApi.RegisterLocalChatCommand<CommandCreateTeam>();
         ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStart>();
         ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStop>();

@@ -17,13 +17,14 @@ public class State_Drafting : IState
 {
     private const int DraftTime = 60;
     private const int Countdown = 5;
-    private const int InitiationDelay = 3;
+    private const int MaxSpinLoops = 8;
 
     private int _draftCompleteCountDownTick = Countdown;
     private int _draftCountdownTime = DraftTime;
     private bool _hasInitiativeBanned;
     private bool _isDraftCompleteCountdownStarted;
     private bool _isInitiationPhaseComplete; // Flag to control the initiation phase
+    private bool _isRandomSelectionActive;
 
     public State_Drafting(IStateMachine stateMachine)
     {
@@ -34,6 +35,8 @@ public class State_Drafting : IState
     private Team _teamA => _showdown.Match.TeamA;
     private Team _teamB => _showdown.Match.TeamB;
     private Team _initiativeTeam => _showdown.Match.Initiative;
+
+    private List<OnlineZeeplevel> _availableMaps => _showdown.Match.CurrentDraft.AvailableLevels;
 
     public IStateMachine StateMachine { get; }
     public event Action Finished;
@@ -48,6 +51,7 @@ public class State_Drafting : IState
         // Subscribe to events
         CommandBan.CommandInvoked += OnBan;
         CommandPick.CommandInvoked += OnPick;
+        CommandStartRandom.CommandInvoked += OnStartRandom;
 
         // Add a new draft for the match
         _showdown.Match.AddDraft();
@@ -80,26 +84,30 @@ public class State_Drafting : IState
             {
                 if (_showdown.Match.CurrentDraft.PickedLevels.Count == 0)
                 {
-                    _showdown.Match.CurrentDraft.PickedLevels.Add(
-                        new DraftAction(
-                            _showdown.Match.CurrentDraft.AvailableLevels.Last(),
-                            new Team("Showdown", "Showdown", "#ff0000"),
-                            true
-                        ));
+                    // _showdown.Match.CurrentDraft.PickedLevels.Add(
+                    //     new DraftAction(
+                    //         _showdown.Match.CurrentDraft.AvailableLevels.Last(),
+                    //         new Team("Showdown", "Showdown", "#ff0000"),
+                    //         true
+                    //     ));
+                    ChatApi.SendMessage("Draft incomplete! Waiting for Host to initiate Random Map Selection");
+                    CoroutineManager.Instance.StopAllExternalCoroutines();
                 }
+                else
+                {
+                    // Create a copy of the PickedLevels list by extracting the OnlineZeeplevel from DraftAction
+                    List<OnlineZeeplevel> MatchPlaylist = new List<OnlineZeeplevel>(_showdown.Match.CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
 
-                // Create a copy of the PickedLevels list by extracting the OnlineZeeplevel from DraftAction
-                List<OnlineZeeplevel> MatchPlaylist = new List<OnlineZeeplevel>(_showdown.Match.CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
+                    // Add the current playlist level to the copied list
+                    MatchPlaylist.Add(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value).First());
 
-                // Add the current playlist level to the copied list
-                MatchPlaylist.Add(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value).First());
+                    // Set the match playlist with the modified copy
+                    PlaylistManager.SetServerPlaylist(MatchPlaylist);
 
-                // Set the match playlist with the modified copy
-                PlaylistManager.SetServerPlaylist(MatchPlaylist);
-
-                // Start the draft complete countdown using CountdownTimer
-                _isDraftCompleteCountdownStarted = true;
-                CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(Countdown, OnDraftCompleteTick, InvokeFinish));
+                    // Start the draft complete countdown using CountdownTimer
+                    _isDraftCompleteCountdownStarted = true;
+                    CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(Countdown, OnDraftCompleteTick, InvokeFinish));
+                }
             }
         }
         else
@@ -118,6 +126,7 @@ public class State_Drafting : IState
     {
         CommandBan.CommandInvoked -= OnBan;
         CommandPick.CommandInvoked -= OnPick;
+        CommandStartRandom.CommandInvoked -= OnStartRandom;
     }
 
     public void InvokeFinish()
@@ -131,15 +140,44 @@ public class State_Drafting : IState
         ServerMessage initiationMessage = new ServerMessage()
             .ShowdownHeader()
             .AddLine(line => line
-                .AddBlock("Initiating Draft... ")
+                .AddBlock("Initiating Draft...")
                 .AddBlock($"{_initiativeTeam.GetTag()}", b => b.Color(_initiativeTeam.Color))
-                .AddBlock(" starts.")
+                .AddBlock("starts.")
+            )
+            .AddSeparator()
+            .AddLine(line => line.Italic()
+                    .AddBlock("To pick use")
+                    .AddBlock("'!pick 1-7'", block => block.Color("#ffff00")) // '!pick' in yellow
+            )
+            .AddLine(line => line.Italic()
+                    .AddBlock("To ban use")
+                    .AddBlock("'!ban 1-7'", block => block.Color("#ffff00")) // '!ban' in yellow
             )
             .AddSeparator();
         initiationMessage.Send();
 
         // Wait for 3 seconds before allowing Execute to proceed with the draft
-        yield return new WaitForSeconds(InitiationDelay);
+        yield return new WaitForSeconds(2);
+        initiationMessage = new ServerMessage()
+            .ShowdownHeader()
+            .AddLine(line => line
+                .AddBlock("Initiating Draft...")
+                .AddBlock($"{_initiativeTeam.GetTag()}", b => b.Color(_initiativeTeam.Color))
+                .AddBlock("starts.")
+                .AddBlock("GO!!", b => b.Color("#00ff00"))
+            )
+            .AddSeparator()
+            .AddLine(line => line.Italic()
+                    .AddBlock("To pick use")
+                    .AddBlock("'!pick 1-7'", block => block.Color("#ffff00")) // '!pick' in yellow
+            )
+            .AddLine(line => line.Italic()
+                    .AddBlock("To ban use")
+                    .AddBlock("'!ban 1-7'", block => block.Color("#ffff00")) // '!ban' in yellow
+            )
+            .AddSeparator();
+        initiationMessage.Send();
+        yield return new WaitForSeconds(1);
 
         // Mark initiation phase as complete
         _isInitiationPhaseComplete = true;
@@ -271,6 +309,79 @@ public class State_Drafting : IState
         }
 
         return tmp;
+    }
+
+
+    public void OnStartRandom()
+    {
+        if (_availableMaps == null || _availableMaps.Count < 2)
+        {
+            ChatApi.SendMessage("Not enough maps in the pool to perform random selection.");
+            return;
+        }
+
+        _isRandomSelectionActive = true;
+        CoroutineManager.Instance.StartExternalCoroutine(RandomSelectionAnimation());
+    }
+
+    private void UpdateRandomSelectionMessage(int currentIndex)
+    {
+        ServerMessage msg = new ServerMessage()
+            .ShowdownHeader()
+            .AddLine(line => line
+                .AddBlock("Random Map Selection...")
+            )
+            .AddSeparator();
+
+        for (int i = 0; i < _availableMaps.Count; i++)
+        {
+            OnlineZeeplevel level = _availableMaps[i];
+
+            if (i == currentIndex)
+            {
+                msg.AddLine(line => line.AddBlock($"> {level.Name}", block => block.Bold().Color("#ffff00"))); // Highlight current selection
+            }
+            else
+            {
+                msg.AddLine(line => line.AddBlock(level.Name)); // Normal display
+            }
+        }
+
+        msg.AddSeparator();
+        msg.Send();
+    }
+
+    private IEnumerator RandomSelectionAnimation()
+    {
+        float delay = 0.10f;
+        int selectedIndex = 0;
+
+        // Loop through the available maps with a slowing down effect
+        for (int i = 0; i < MaxSpinLoops; i++)
+        {
+            selectedIndex = (selectedIndex + 1) % _availableMaps.Count;
+            UpdateRandomSelectionMessage(selectedIndex);
+            delay += 0.1f; // Slow down the iteration
+
+            yield return new WaitForSeconds(delay);
+        }
+
+        // Final selection made
+        SelectRandomMap(_availableMaps[selectedIndex]);
+        _isRandomSelectionActive = false;
+        Execute();
+    }
+
+    private void SelectRandomMap(OnlineZeeplevel selectedLevel)
+    {
+        ChatApi.SendMessage($"Randomly selected map: {selectedLevel.Name}");
+
+        _showdown.Match.CurrentDraft.PickedLevels.Add(
+            new DraftAction(
+                selectedLevel,
+                new Team("Showdown", "Showdown", "#ff0000"),
+                true
+            ));
     }
 
     private void HandleDraft(bool isBan, ulong steamId, string levelIndexStr)

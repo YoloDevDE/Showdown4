@@ -73,7 +73,7 @@ public class State_PreRacing : IState
             )
             .AddSeparator()
             .AddLine(line => line
-                    .AddBlock("Race starts in: ")
+                    .AddBlock("Race starts in:")
                     .AddBlock($"{secondsRemaining} seconds", f => f.Bold().Color("#ff0000")) // Red countdown
             )
             .AddSeparator()
