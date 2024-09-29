@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Showdown4.Commands;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistClient;
-using ZeepkistNetworking;
 using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
@@ -97,17 +97,23 @@ public class State_ReadyCheck : IState
             .AddLine(line => line
                 .AddBlock("Picked Maps:"));
 
-        for (int index = 0; index < _Showdown.Match.CurrentDraft.PickedLevels.Count; index++)
+        int round = 1;
+        foreach (DraftAction pickedLevel in _Showdown.Match.Drafts.SelectMany(matchDraft => matchDraft.PickedLevels))
         {
-            int index1 = index;
             msg.AddLine(line =>
             {
-                OnlineZeeplevel level = _Showdown.Match.CurrentDraft.PickedLevels[index1].Level;
+                if (round <= _Showdown.Match.RoundCounter())
+                {
+                    line.StrikeThrough();
+                }
+
                 line
-                    .AddBlock($"Round {index1 + 1}:")
-                    .AddBlock($"'{level.Name}'", block => block.Color("#00ffff")
-                    )
+                    .AddBlock($"Round {round}:")
+                    .AddBlock($"'{pickedLevel.Level.Name}'", block => block.Color("#00ffff"))
+                    .AddBlock("picked by", block => block.Indent("600%"))
+                    .AddBlock($"{pickedLevel.Team.GetColoredTag()}")
                     .Bold();
+                round++;
             });
         }
 

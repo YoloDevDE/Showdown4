@@ -21,6 +21,7 @@ public class Match
     public List<Draft> Drafts { get; } = new List<Draft>();
     public Draft CurrentDraft => Drafts[^1];
     public Round CurrentRound => Rounds[^1];
+    public List<OnlineZeeplevel> TrackedLevels { get; } = [];
     public Team Initiative { get; set; }
     public Team NonInitiative => Initiative == TeamA ? TeamB : TeamA;
 

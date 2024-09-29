@@ -12,7 +12,7 @@ internal class State_PostRacing : IState
         StateMachine = stateMachine;
     }
 
-    private ShowdownStateMachine _showdownStateMachine => StateMachine as ShowdownStateMachine;
+    private ShowdownStateMachine _Showdown => StateMachine as ShowdownStateMachine;
 
 
     public IStateMachine StateMachine { get; }
@@ -24,44 +24,52 @@ internal class State_PostRacing : IState
 
     public void Execute()
     {
-        Team winnerTeam = _showdownStateMachine.Match.CurrentRound.GetWinnerTeam;
+        Team winnerTeam = _Showdown.Match.CurrentRound.GetWinnerTeam;
         winnerTeam.AddWin();
 
         // Get the current round index
-        int currentRoundCounter = _showdownStateMachine.Match.RoundCounter();
+        int currentRoundCounter = _Showdown.Match.RoundCounter();
 
         // Default message in case of an error
-        string nextLevelMessage = "Upcoming -> ";
-
+        string nextLevelMessage = "";
         // Check if the current round index is within the range of picked levels
-        if (currentRoundCounter < _showdownStateMachine.Match.CurrentDraft.PickedLevels.Count)
+        if (currentRoundCounter < _Showdown.Match.CurrentDraft.PickedLevels.Count)
         {
+            DraftAction nextLevel = _Showdown.Match.CurrentDraft.PickedLevels[_Showdown.Match.RoundCounter()];
             // If valid, show the next level's name
-            nextLevelMessage +=
-                $"Round {currentRoundCounter + 1}<br>{_showdownStateMachine.Match.CurrentDraft.PickedLevels[currentRoundCounter].Level.Name}<br>picked by '{_showdownStateMachine.Match.CurrentDraft.PickedLevels[currentRoundCounter].Team.GetTag()}'";
+            nextLevelMessage += new ChatMessage.Builder().TextLine($"Starting Round {_Showdown.Match.RoundCounter() + 1}").NewLine()
+                .DashedLine().NewLine()
+                .TextLine($"Level '{nextLevel.Level.Name}'").NewLine()
+                .TextLine($"picked by {nextLevel.Team.GetTag()}")
+                .Build().Message;
         }
         else if (winnerTeam.Wins > 1)
         {
-            nextLevelMessage += "Intermission";
+            nextLevelMessage += "Upcoming -> Intermission";
         }
         else
         {
-            nextLevelMessage += "Draftphase II";
+            nextLevelMessage +=
+                new ChatMessage.Builder().TextLine("Upcoming -> Draftphase II").NewLine()
+                    .DashedLine().NewLine()
+                    .TextLine($"First Draft: {_Showdown.Match.Initiative.GetTag()}").NewLine()
+                    .TextLine("Prepare yourself! It will start almost immediately!")
+                    .Build().Message;
         }
+
 
         // Create a cool and separated chat message using your original ChatMessage class
         ChatApi.SendMessage(
             new ChatMessage.Builder()
                 .ClearChat()
                 .DashedLine().NewLine() // Dashed separator
-                .CenterTextLine($"Round {currentRoundCounter} finished!").NewLine() // Centered round completion message
-                .TextLine($"'{winnerTeam.GetNameWithTag()}' scored!").NewLine() // Display the winning team
+                .TextLine($"Round {currentRoundCounter} over!").NewLine() // Centered round completion message
+                .TextLine($"{winnerTeam.GetTag()} scored").NewLine() // Display the winning team
                 .DashedLine().NewLine() // Dashed line separating content
-                .TextLine("Current Standings:").NewLine() // Standings section
-                .TextLine($"{_showdownStateMachine.Match.Score()}").NewLine() // Display the score
-                .DashedLine().NewLine() // Dashed line to separate next section
                 .TextLine(nextLevelMessage).NewLine() // Show the next level or intermission
-                .DashedLine().Build().Message); // Final dashed line for closure
+                .DashedLine().NewLine() // Dashed line to separate next section
+                .TextLine($"{_Showdown.Match.Score()}") // Display the score
+                .Build().Message); // Final dashed line for closure
     }
 
     public void Exit()

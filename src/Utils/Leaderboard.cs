@@ -60,7 +60,7 @@ public class Leaderboard
             {
                 line.FontSize(25)
                     .AddBlock($"#{position}", f => f.Bold().Color(position == 1 ? "#FFD700" : "#C0C0C0"))
-                    .AddBlock($"{team.GetTag()}", f => f.Bold().Color(team.Color));
+                    .AddBlock($"{team.GetTag()}".PadRight(6), f => f.Bold().Color(team.Color));
 
 
                 List<Racer> sortedRacers = team.Racers

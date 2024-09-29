@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Linq;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
-using ZeepkistNetworking;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
@@ -65,19 +65,20 @@ public class State_PreRacing : IState
     private void UpdateCountdownMessage(int secondsRemaining)
     {
         ServerMessage msg = new ServerMessage()
-            .ShowdownHeader()
-            .AddLine(line => line
-                .AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
-                .AddBlock("VS")
-                .AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color))
-            )
-            .AddSeparator()
-            .AddLine(line => line
-                    .AddBlock("Race starts in:")
-                    .AddBlock($"{secondsRemaining} seconds", f => f.Bold().Color("#ff0000")) // Red countdown
-            )
-            .AddSeparator()
-            .AddMessage(ShowPickedMaps());
+                .ShowdownHeader()
+                .AddLine(line => line
+                    .AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
+                    .AddBlock("VS")
+                    .AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color))
+                )
+                .AddSeparator()
+                .AddMessage(ShowPickedMaps())
+                .AddSeparator()
+                .AddLine(line => line
+                        .AddBlock("Race starts in:")
+                        .AddBlock($"{secondsRemaining} seconds", f => f.Bold().Color("#ff0000")) // Red countdown
+                )
+            ;
 
         msg.Send();
     }
@@ -89,21 +90,27 @@ public class State_PreRacing : IState
 
     private ServerMessage ShowPickedMaps()
     {
-        ServerMessage msg = new ServerMessage();
-        msg
+        ServerMessage msg = new ServerMessage()
             .AddLine(line => line
                 .AddBlock("Picked Maps:"));
-        for (int index = 0; index < _Showdown.Match.CurrentDraft.PickedLevels.Count; index++)
+
+        int round = 1;
+        foreach (DraftAction pickedLevel in _Showdown.Match.Drafts.SelectMany(matchDraft => matchDraft.PickedLevels))
         {
-            int index1 = index;
             msg.AddLine(line =>
             {
-                OnlineZeeplevel level = _Showdown.Match.CurrentDraft.PickedLevels[index1].Level;
+                if (round <= _Showdown.Match.RoundCounter())
+                {
+                    line.StrikeThrough();
+                }
+
                 line
-                    .AddBlock($"Round {(_Showdown.Match.RoundCounter() < 2 ? index1 + 1 : index1 + 3)}:")
-                    .AddBlock($"'{level.Name}'", block => block.Color("#00ffff")
-                    )
+                    .AddBlock($"Round {round}:")
+                    .AddBlock($"'{pickedLevel.Level.Name}'", block => block.Color("#00ffff"))
+                    .AddBlock("picked by", block => block.Indent("600%"))
+                    .AddBlock($"{pickedLevel.Team.GetColoredTag()}")
                     .Bold();
+                round++;
             });
         }
 
@@ -112,11 +119,17 @@ public class State_PreRacing : IState
 
     private void OnRoundEnd()
     {
+        DraftAction nextLevel = _Showdown.Match.CurrentDraft.PickedLevels.First();
         ChatApi.SendMessage(
             new ChatMessage.Builder().ClearChat()
                 .DashedLine().NewLine()
-                .CenterTextLine($"Starting Round {_Showdown.Match.RoundCounter() + 1}").NewLine()
-                .DashedLine().Build().Message
+                .TextLine($"Starting Round {_Showdown.Match.RoundCounter() + 1}").NewLine()
+                .DashedLine().NewLine()
+                .TextLine($"Level '{nextLevel.Level.Name}'").NewLine()
+                .TextLine($"picked by {nextLevel.Team.GetTag()}").NewLine()
+                .DashedLine().NewLine()
+                .TextLine($"{_Showdown.Match.Score()}")
+                .Build().Message
         );
     }
 }

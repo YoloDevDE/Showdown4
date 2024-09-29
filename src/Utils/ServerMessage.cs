@@ -184,6 +184,13 @@ public class ServerMessage
             return this;
         }
 
+        public LineBuilder StrikeThrough()
+        {
+            openingTag.Add("<s>");
+            closingTag.Add("</s>");
+            return this;
+        }
+
         public LineBuilder Color(string color)
         {
             openingTag.Add($"<color={color}>");
