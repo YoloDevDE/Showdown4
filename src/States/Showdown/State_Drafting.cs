@@ -285,10 +285,14 @@ public class State_Drafting : IState
         Draft currentDraft = _showdown.Match.CurrentDraft;
         Team currentTeam = currentDraft.GetCurrentTeam();
 
-        if (currentTeam.Racers.All(racer => racer.SteamId != steamId))
+        if (!player.IsLocal)
+
         {
-            ChatApi.SendMessage($"{playerName} is not a member of the current drafting team.");
-            return;
+            if (currentTeam.Racers.All(racer => racer.SteamId != steamId))
+            {
+                ChatApi.SendMessage($"{playerName} is not a member of the current drafting team.");
+                return;
+            }
         }
 
         if (!int.TryParse(levelIndexStr, out int levelIndex) || levelIndex < 1 || levelIndex > 7 || levelIndex > currentDraft.AllLevels.Count)
@@ -348,12 +352,6 @@ public class State_Drafting : IState
 
     public void OnStartRandom()
     {
-        if (_availableMaps == null || _availableMaps.Count < 2)
-        {
-            ChatApi.SendMessage("Not enough maps in the pool to perform random selection.");
-            return;
-        }
-
         _isRandomSelectionActive = true;
         CoroutineManager.Instance.StartExternalCoroutine(RandomSelectionAnimation());
     }
