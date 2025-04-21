@@ -16,9 +16,8 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 
     public Match Match { get; set; }
 
-    // Always return new instances for InitialState and FinalState
-    public IState InitialState => new State_Showdown_Starting(this);
-    public IState FinalState => new State_Match_End(this);
+    public IState InitialState => new State_ShowdownStarted(this);
+    public IState FinalState => new State_MatchOver(this);
     public IState CurrentState { get; set; }
     public List<ITransition> Transitions { get; set; }
 
@@ -28,27 +27,34 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
     {
         IStateMachine stateMachine = this;
         Transitions = new List<ITransition>();
-        // Transitions use new instances directly
+
         stateMachine
-            .AddTransition(new State_Showdown_Starting(this), new State_WaitingForHoF(this),
+            .AddTransition(new State_ShowdownStarted(this), new State_WaitingForIntermission(this),
                 () => !LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
-            .AddTransition(new State_Showdown_Starting(this), new State_SetupMatch(this),
+            .AddTransition(new State_ShowdownStarted(this), new State_SetupMatch(this),
                 () => LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
-            .AddTransition(new State_WaitingForHoF(this), new State_SetupMatch(this))
+            .AddTransition(new State_WaitingForIntermission(this), new State_SetupMatch(this))
             .AddTransition(new State_SetupMatch(this), new State_LinkRacers(this))
             .AddTransition(new State_LinkRacers(this), new State_SelectInitiative(this))
-            .AddTransition(new State_SelectInitiative(this), new State_Drafting(this))
-            .AddTransition(new State_Drafting(this), new State_ReadyCheck(this))
-            .AddTransition(new State_ReadyCheck(this), new State_PreRacing(this))
-            .AddTransition(new State_PreRacing(this), new State_Racing(this))
-            .AddTransition(new State_Racing(this), new State_PostRacing(this))
-            .AddTransition(new State_PostRacing(this), new State_Racing(this),
+            .AddTransition(new State_SelectInitiative(this), new State_PreDraftCountdown(this))
+            .AddTransition(new State_PreDraftCountdown(this), new State_Drafting(this))
+            .AddTransition(new State_Drafting(this), new State_DraftComplete(this),
+                () => Match.CurrentDraft.IsDraftComplete())
+            .AddTransition(new State_Drafting(this), new State_DraftIncomplete(this),
+                () => !Match.CurrentDraft.IsDraftComplete())
+            .AddTransition(new State_DraftComplete(this), new State_PreRoundReadyCheck(this))
+            .AddTransition(new State_DraftIncomplete(this), new State_RandomMapSelection(this))
+            .AddTransition(new State_RandomMapSelection(this), new State_PreRoundReadyCheck(this))
+            .AddTransition(new State_PreRoundReadyCheck(this), new State_PreRoundCountdown(this))
+            .AddTransition(new State_PreRoundCountdown(this), new State_RoundStarted(this))
+            .AddTransition(new State_RoundStarted(this), new State_RoundEnded(this))
+            .AddTransition(new State_RoundEnded(this), new State_RoundStarted(this),
                 () => Match.RoundCounter() < 2)
-            .AddTransition(new State_PostRacing(this), new State_Drafting(this),
+            .AddTransition(new State_RoundEnded(this), new State_Drafting(this),
                 () => Match.RoundCounter() >= 2 && Match.TeamA.Wins < 2 && Match.TeamB.Wins < 2)
-            .AddTransition(new State_PostRacing(this), new State_Match_End(this),
+            .AddTransition(new State_RoundEnded(this), new State_MatchOver(this),
                 () => Match.TeamA.Wins >= 2 || Match.TeamB.Wins >= 2)
-            .AddTransition(new State_Match_End(this), new State_WaitingForHoF(this));
+            .AddTransition(new State_MatchOver(this), new State_WaitingForIntermission(this));
     }
 
     public void InvokeFinish()

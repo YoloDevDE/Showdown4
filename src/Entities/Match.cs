@@ -18,10 +18,9 @@ public class Match
     public Team TeamB { get; set; }
     public List<Round> Rounds { get; } = [];
 
-    public List<Draft> Drafts { get; } = new List<Draft>();
-    public Draft CurrentDraft => Drafts[^1];
-    public Round CurrentRound => Rounds[^1];
-    public List<OnlineZeeplevel> TrackedLevels { get; } = [];
+    public List<Draft> Drafts { get; } = [];
+    public Draft CurrentDraft => Drafts.Last();
+    public Round CurrentRound => Rounds.Last();
     public Team Initiative { get; set; }
     public Team NonInitiative => Initiative == TeamA ? TeamB : TeamA;
 

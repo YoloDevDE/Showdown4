@@ -1,14 +1,13 @@
 ﻿using System;
 using Showdown4.Commands;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
 
 namespace Showdown4.States.Showdown;
 
 public class State_LinkRacers : IState
 {
-    private const int CountdownDuration = 5;
+    private const int FINISH_STATE_COUNTDOWN = 5;
     private Team _currentTeam;
     private bool _isCountdownRunning;
 
@@ -65,11 +64,11 @@ public class State_LinkRacers : IState
         if (!_isCountdownRunning)
         {
             _isCountdownRunning = true;
-            CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-                CountdownDuration,
+            TimerUtility.StartCountdown(
+                FINISH_STATE_COUNTDOWN,
                 UpdateServerMessage,
                 InvokeFinish // Move to next state when countdown finishes
-            ));
+            );
         }
     }
 

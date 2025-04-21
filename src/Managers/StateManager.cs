@@ -1,6 +1,8 @@
 ﻿using Showdown4.States;
 using UnityEngine;
 
+namespace Showdown4.Managers;
+
 public class StateManager : MonoBehaviour
 {
     private static StateManager _instance;

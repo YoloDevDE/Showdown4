@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Showdown4.States.Showdown;
+namespace Showdown4.States;
 
 public class Transition : ITransition
 {
@@ -19,7 +19,16 @@ public class Transition : ITransition
 
     public bool CanTransition()
     {
-        return _condition(); // Evaluate the condition
+        try
+        {
+            return _condition(); // Evaluate the condition
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+
+        return false;
     }
 
     public void OnTransition()

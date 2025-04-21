@@ -1,22 +1,23 @@
 ﻿using System;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
-public class State_Match_End : IState
+public class State_MatchOver : IState
 {
     private bool countdownStarted;
     private int countdownTime = 60; // Countdown duration set to 60 seconds
 
-    public State_Match_End(IStateMachine stateMachine)
+    public State_MatchOver(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
 
     public ShowdownStateMachine Showdown => (ShowdownStateMachine)StateMachine;
+
+
     public IStateMachine StateMachine { get; }
 
     public event Action Finished;
@@ -24,17 +25,13 @@ public class State_Match_End : IState
     public void Enter()
     {
         ChatApi.SendMessage("/timeset 86400");
-        if (!countdownStarted)
-        {
-            countdownStarted = true;
 
-            // Use CountdownTimer to manage the countdown
-            CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-                countdownTime,
-                remainingTime => UpdateCountdownMessage(remainingTime), // onTick action
-                InvokeFinish // onComplete action
-            ));
-        }
+        // Use TimerUtility to manage the countdown
+        TimerUtility.StartCountdown(
+            countdownTime,
+            UpdateCountdownMessage, // onTick action
+            InvokeFinish // onComplete action
+        );
     }
 
     public void Execute()

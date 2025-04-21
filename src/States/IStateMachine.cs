@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using Showdown4.Managers;
-using Showdown4.States.Showdown;
 using Debug = UnityEngine.Debug;
 
 namespace Showdown4.States;
@@ -45,7 +44,7 @@ public interface IStateMachine
             CurrentState.Finished -= OnCurrentStateFinished;
             try
             {
-                CoroutineManager.Instance.StopAllExternalCoroutines();
+                CoroutineManager.StopAllCoroutines();
             }
             catch (Exception e)
             {

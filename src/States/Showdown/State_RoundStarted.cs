@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistClient;
@@ -10,18 +8,19 @@ using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-public class State_Racing : IState
+public class State_RoundStarted : IState
 {
     private Round _currentRound;
     private Leaderboard _leaderboard;
     private Team _teamA, _teamB;
 
-    public State_Racing(IStateMachine stateMachine)
+    public State_RoundStarted(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
 
     private ShowdownStateMachine _Showdown => StateMachine as ShowdownStateMachine;
+
 
     public IStateMachine StateMachine { get; }
 
@@ -46,8 +45,10 @@ public class State_Racing : IState
                 .DashedLine().NewLine()
                 .TextLine("Good Luck, Have Fun! :smile:").Build().Message
         );
-        // Start the cool race intro message for the first 10 seconds
-        CoroutineManager.Instance.StartExternalCoroutine(DisplayRaceIntroMessage());
+        TimerUtility.StartCountdown(
+            10,
+            DisplayRaceIntroMessage,
+            SendTeamLeaderboard);
     }
 
     public void Execute()
@@ -98,10 +99,7 @@ public class State_Racing : IState
         leaderboardMessage.Send();
     }
 
-    // Coroutine for showing the cool intro message for the first 10 seconds
-// Coroutine for showing the cool intro message for the first 10 seconds
-// Coroutine for showing the cool intro message for the first 10 seconds
-    private IEnumerator DisplayRaceIntroMessage()
+    private void DisplayRaceIntroMessage(int countdown)
     {
         ServerMessage introMessage = new ServerMessage()
                 .ShowdownHeader()
@@ -141,8 +139,6 @@ public class State_Racing : IState
 
         introMessage.AddSeparator(_teamA.GetNameWithTag().Length + 4 + _teamB.GetNameWithTag().Length);
         introMessage.Send();
-
-        yield return new WaitForSeconds(10);
 
         // After 10 seconds, clear the intro message and proceed to the normal race flow
         ChatApi.SendMessage(new ChatMessage.Builder().ClearChat().Build().Message);

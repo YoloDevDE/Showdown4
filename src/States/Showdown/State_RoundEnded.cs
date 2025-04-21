@@ -5,9 +5,9 @@ using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-internal class State_PostRacing : IState
+internal class State_RoundEnded : IState
 {
-    public State_PostRacing(IStateMachine stateMachine)
+    public State_RoundEnded(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }

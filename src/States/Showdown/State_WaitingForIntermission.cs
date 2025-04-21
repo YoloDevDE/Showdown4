@@ -5,9 +5,9 @@ using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-public class State_WaitingForHoF : IState
+public class State_WaitingForIntermission : IState
 {
-    public State_WaitingForHoF(IStateMachine stateMachine)
+    public State_WaitingForIntermission(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -40,6 +40,6 @@ public class State_WaitingForHoF : IState
 
     private void OnRoundStarted()
     {
-        Finished?.Invoke();
+        InvokeFinish();
     }
 }

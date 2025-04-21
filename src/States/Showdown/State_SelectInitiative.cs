@@ -127,44 +127,6 @@ public class State_SelectInitiative : IState
         // Confirm the selected team for initiative
         _selectedTeam = _teams[_currentSelectionIndex];
         _Showdown.Match.Initiative = _selectedTeam;
-
-        // Lock the input after the selection
-        _isLocked = true;
-
-        // Start the countdown using CountdownTimer
-        CoroutineManager.Instance.StartExternalCoroutine(
-            CountdownTimer.Start(CountdownDuration, UpdateCountdownMessage, Finished)
-        );
-    }
-
-    private void UpdateCountdownMessage(int countdownTime)
-    {
-        // Send or append the countdown message to the server
-        ServerMessage msg =
-            ServerMessageThing()
-                .AddSeparator()
-                .AddLine(line => line.AddBlock($"Initiative has been given to {_selectedTeam.GetColoredTagAndName()}"))
-                .AddLine(line => line
-                    .AddBlock($"{_selectedTeam.GetTag()}", f => f.Color(_selectedTeam.Color))
-                    .AddBlock("will start to draft after the countdown!"))
-                .AddSeparator()
-                .AddLine(line => line.Italic()
-                        .AddBlock("To pick use")
-                        .AddBlock("'!pick 1-7'", block => block.Color("#ffff00")) // '!pick' in yellow
-                )
-                .AddLine(line => line.Italic()
-                        .AddBlock("To ban use")
-                        .AddBlock("'!ban 1-7'", block => block.Color("#ffff00")) // '!ban' in yellow
-                )
-                .AddSeparator()
-                .AddLine(line => line
-                    .AddBlock("Continue to")
-                    .AddBlock("'Draftphase I'", block => block.Color("#ffff00"))
-                    .AddBlock("in")
-                    .AddBlock($"{countdownTime}", block => block.Color("#00ff00"))
-                    .AddBlock("seconds...")
-                );
-
-        msg.Send();
+        InvokeFinish();
     }
 }

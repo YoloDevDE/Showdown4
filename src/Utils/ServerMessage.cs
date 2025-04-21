@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using ZeepSDK.Chat;
 
@@ -18,6 +19,8 @@ public class ServerMessage
 
     private string suffix = "</align>" +
                             "</size>";
+
+    public static string ServermessagesPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Zeepkist", "Mods", "Showdown", "Servermessages");
 
     public override string ToString()
     {
@@ -112,29 +115,30 @@ public class ServerMessage
 
     public ServerMessage ShowdownHeader(bool inline = false)
     {
-        if (inline)
-        {
-            return new ServerMessage()
-                .AddInLine(line => line
-                    .AddBlock("Showdown", b => b.Color("#ff0000"))
-                    .AddBlock("Season", b => b.Color("#ffffff"))
-                    .AddBlock("4", b => b.Color("#ff8800"))
-                    .Bold().AllCaps().FontSize(40)
-                );
-        }
+        Action<LineBuilder> lineBuilder = line => line
+            .AddBlock("Showdown", b => b.Color("#ff0000"))
+            .AddBlock("Season", b => b.Color("#ffffff"))
+            .AddBlock("V", b => b.Color("#ff8800"))
+            .Bold().AllCaps().FontSize(40);
 
-        return new ServerMessage()
-            .AddLine(line => line
-                .AddBlock("Showdown", b => b.Color("#ff0000"))
-                .AddBlock("Season", b => b.Color("#ffffff"))
-                .AddBlock("4", b => b.Color("#ff8800"))
-                .Bold().AllCaps().FontSize(40)
-            );
+        return inline
+            ? new ServerMessage().AddInLine(lineBuilder)
+            : new ServerMessage().AddLine(lineBuilder);
     }
 
     public void Send()
     {
-        // Simulating sending a message
+        // Ensure directory exists
+        Directory.CreateDirectory(ServermessagesPath);
+
+        // Count existing files and generate new filename
+        int fileCount = Directory.GetFiles(ServermessagesPath).Length;
+        string filename = Path.Combine(ServermessagesPath, $"message_{fileCount + 1}.txt");
+
+        // Save message to file
+        File.WriteAllText(filename, ToString());
+
+        // Send message to chat
         Console.WriteLine(ToString());
         ChatApi.SendMessage(ToString());
     }
@@ -197,6 +201,7 @@ public class ServerMessage
             closingTag.Add("</color>");
             return this;
         }
+
 
         public LineBuilder AllCaps()
         {
@@ -330,6 +335,7 @@ public class ServerMessage
             contentBuilder.Insert(0, $"<color={color}>").Append("</color>");
             return this;
         }
+
 
         public BlockBuilder FontSize(int size)
         {

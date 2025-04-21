@@ -6,9 +6,9 @@ using ZeepSDK.Level;
 
 namespace Showdown4.States.Showdown;
 
-public class State_Showdown_Starting : IState
+public class State_ShowdownStarted : IState
 {
-    public State_Showdown_Starting(IStateMachine stateMachine)
+    public State_ShowdownStarted(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }

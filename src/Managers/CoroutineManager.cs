@@ -1,6 +1,6 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace Showdown4.Managers;
@@ -8,54 +8,85 @@ namespace Showdown4.Managers;
 public class CoroutineManager : MonoBehaviour
 {
     private static CoroutineManager _instance;
-    private readonly List<Coroutine> _activeCoroutines = new List<Coroutine>();
+    private readonly List<IEnumerator> _activeCoroutines = new List<IEnumerator>();
 
     public static CoroutineManager Instance
     {
         get
         {
-            if (_instance == null)
+            if (_instance)
             {
-                GameObject obj = new GameObject("CoroutineManager");
-                _instance = obj.AddComponent<CoroutineManager>();
-                DontDestroyOnLoad(obj); // Optional: Keeps this object across scenes
+                return _instance;
             }
 
+            _instance = Plugin.Instance.gameObject.AddComponent<CoroutineManager>();
             return _instance;
         }
     }
 
-    public Coroutine StartExternalCoroutine(IEnumerator coroutine)
+    public static IEnumerator AddCoroutine(IEnumerator coroutine)
     {
-        StopAllExternalCoroutines();
-        Coroutine startedCoroutine = StartCoroutine(coroutine);
-        _activeCoroutines.Add(startedCoroutine); // Track the coroutine
-        return startedCoroutine;
+        return Instance.StartAndTrackCoroutine(coroutine);
     }
 
-    public void StopExternalCoroutine(Coroutine coroutine)
+    public static void RemoveCoroutine(IEnumerator coroutine)
     {
-        if (coroutine == null || !_activeCoroutines.Contains(coroutine))
-        {
-            return;
-        }
-
-        StopCoroutine(coroutine);
-        _activeCoroutines.Remove(coroutine); // Remove it from the list
+        Instance.StopAndRemoveCoroutine(coroutine);
     }
 
-    public void StopAllExternalCoroutines()
+    private IEnumerator StartAndTrackCoroutine(IEnumerator coroutine)
     {
-        if (_activeCoroutines == null || _activeCoroutines.Count == 0)
-        {
-            return;
-        }
+        IEnumerator newCoroutine = RunCoroutine(coroutine);
+        _activeCoroutines.Add(coroutine);
+        StartCoroutine(newCoroutine);
+        return coroutine;
+    }
 
-        foreach (Coroutine coroutine in _activeCoroutines.Where(coroutine => coroutine != null))
+    private void StopAndRemoveCoroutine(IEnumerator coroutine)
+    {
+        if (_activeCoroutines.Contains(coroutine))
         {
             StopCoroutine(coroutine);
+            _activeCoroutines.Remove(coroutine);
+        }
+    }
+
+    private IEnumerator RunCoroutine(IEnumerator coroutine)
+    {
+        yield return StartCoroutine(coroutine);
+        RemoveFinishedCoroutine(coroutine);
+    }
+
+    private void RemoveFinishedCoroutine(IEnumerator coroutine)
+    {
+        if (coroutine == null)
+        {
+            throw new ArgumentNullException("Coroutine must not be null");
         }
 
-        _activeCoroutines.Clear(); // Clear the list once all are stopped
+        if (_activeCoroutines.Contains(coroutine))
+        {
+            _activeCoroutines.Remove(coroutine);
+        }
+    }
+
+    public new static void StopAllCoroutines()
+    {
+        if (Instance._activeCoroutines == null)
+        {
+            return;
+        }
+
+        foreach (IEnumerator coroutine in Instance._activeCoroutines)
+        {
+            if (coroutine == null)
+            {
+                continue;
+            }
+
+            Instance.StopCoroutine(coroutine);
+        }
+
+        Instance._activeCoroutines.Clear();
     }
 }

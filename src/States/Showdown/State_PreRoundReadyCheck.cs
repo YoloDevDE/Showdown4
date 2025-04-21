@@ -1,22 +1,19 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Commands;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
-using UnityEngine;
 using ZeepkistClient;
 using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
-public class State_ReadyCheck : IState
+public class State_PreRoundReadyCheck : IState
 {
     private HashSet<ulong> _readyPlayers; // Store the IDs of players who are ready
 
-    public State_ReadyCheck(IStateMachine stateMachine)
+    public State_PreRoundReadyCheck(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -135,10 +132,13 @@ public class State_ReadyCheck : IState
         ChatApi.SendMessage("All players are ready.");
 
         // Display message in the server with a 2-second delay before proceeding
-        CoroutineManager.Instance.StartExternalCoroutine(ReadyCountdown());
+        TimerUtility.StartCountdown(
+            2,
+            ReadyCountdown,
+            InvokeFinish);
     }
 
-    private IEnumerator ReadyCountdown()
+    private void ReadyCountdown(int countdownTick)
     {
         ServerMessage msg = ShowPickedMaps()
             .AddSeparator()
@@ -149,8 +149,8 @@ public class State_ReadyCheck : IState
             ZeepkistNetworkPlayer player = playerEntry.Value;
             bool isReady = _readyPlayers.Contains(player.SteamID);
             msg.AddLine(line => line
-                .AddBlock($"{player.Username}: ", block => block.Bold())
-                .AddBlock(isReady ? "Ready" : "Not Ready", block => block.Color(isReady ? "#00ff00" : "#ff0000"))
+                .AddBlock($"{player.Username}:")
+                .AddBlock(isReady ? "    Ready" : "Not Ready", block => block.Color(isReady ? "#00ff00" : "#ff0000"))
             );
         }
 
@@ -160,11 +160,5 @@ public class State_ReadyCheck : IState
                 .AddBlock("Everyone ready. Prepare for battle!", block => block.Color("#00ff00").Bold()))
             .AddSeparator();
         msg.Send();
-
-        // Wait for 2 seconds before transitioning to the next state
-        yield return new WaitForSeconds(2);
-
-        // Proceed to the next state
-        Finished?.Invoke();
     }
 }

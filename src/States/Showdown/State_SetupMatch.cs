@@ -173,9 +173,7 @@ public class State_SetupMatch : IState
         if (_selectedTeamA != null && _selectedTeamB != null)
         {
             _isCountdownActive = true;
-
-            // Start the countdown using CountdownTimer.Start
-            CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
+            TimerUtility.StartCountdown(
                 CountdownDuration, // Duration of the countdown
                 remainingSeconds =>
                 {
@@ -183,7 +181,7 @@ public class State_SetupMatch : IState
                     Execute(); // Action to update message during countdown
                 },
                 InvokeFinish // Action when countdown completes
-            ));
+            );
         }
     }
 

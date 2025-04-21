@@ -19,8 +19,8 @@
         <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
         <PackageReference Include="BepInEx.Core" Version="5.*"/>
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
-        <PackageReference Include="Zeepkist.GameLibs" Version="16.999.333-alpha"/>
-        <PackageReference Include="ZeepSDK" Version="1.36.1"/>
+        <PackageReference Include="Zeepkist.GameLibs" Version="16.73.1720"/>
+        <PackageReference Include="ZeepSDK" Version="1.42.3"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">

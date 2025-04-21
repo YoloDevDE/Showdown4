@@ -1,23 +1,23 @@
 ﻿using System;
 using System.Linq;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-public class State_PreRacing : IState
+public class State_PreRoundCountdown : IState
 {
     private Team _teamA, _teamB;
 
-    public State_PreRacing(IStateMachine stateMachine)
+    public State_PreRoundCountdown(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
 
     private ShowdownStateMachine _Showdown => (ShowdownStateMachine)StateMachine;
+
 
     public IStateMachine StateMachine { get; }
 
@@ -32,11 +32,11 @@ public class State_PreRacing : IState
         RacingApi.LevelLoaded += OnLevelLoaded;
 
         // Use the new CountdownTimer
-        CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
+        TimerUtility.StartCountdown(
             10, // Countdown duration
             UpdateCountdownMessage, // Action on tick
             SkipToNextLevel // Action on completion
-        ));
+        );
     }
 
     public void Execute()
