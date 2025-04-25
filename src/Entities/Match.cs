@@ -32,7 +32,7 @@ public class Match
 
     public string Score()
     {
-        return $"{TeamA.GetTag()} {TeamA.Wins}:{TeamB.Wins} {TeamB.GetTag()}";
+        return $"{TeamA.GetColoredTag()} {TeamA.Wins}:{TeamB.Wins} {TeamB.GetColoredTag()}";
     }
 
     public void AddRound(Round round)
@@ -56,5 +56,20 @@ public class Match
     public int RoundCounter()
     {
         return Rounds.Count;
+    }
+
+    public Team GetTeamBySteamId(ulong steamId)
+    {
+        if (TeamA.Racers.Any(player => player.SteamId == steamId))
+        {
+            return TeamA;
+        }
+
+        if (TeamB.Racers.Any(player => player.SteamId == steamId))
+        {
+            return TeamB;
+        }
+
+        return null;
     }
 }

@@ -8,7 +8,7 @@ namespace Showdown4.States.Showdown;
 
 public class State_LinkRacers : IState
 {
-    private const int CountdownDuration = 5;
+    private const int CountdownDuration = 3;
     private Team _currentTeam;
     private bool _isCountdownRunning;
 

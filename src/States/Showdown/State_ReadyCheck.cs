@@ -8,7 +8,6 @@ using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistClient;
-using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
@@ -70,7 +69,7 @@ public class State_ReadyCheck : IState
             _readyPlayers.Add(steamId); // Mark player as ready
 
             // Send a message confirming the player's readiness
-            ChatApi.SendMessage($"{ZeepkistNetworkService.GetSteamNameFromSteamId(steamId)} is ready!");
+            ChatMessage.SendCustomMessage($"{ZeepkistNetworkService.GetSteamNameFromSteamId(steamId)} is ready!");
 
             // Check if all players are ready
             if (_readyPlayers.Count >= ZeepkistNetwork.Players.Count)
@@ -132,7 +131,7 @@ public class State_ReadyCheck : IState
     private void ConfirmReady()
     {
         // Notify that all players are ready
-        ChatApi.SendMessage("All players are ready.");
+        ChatMessage.SendCustomMessage("All players are ready.");
 
         // Display message in the server with a 2-second delay before proceeding
         CoroutineManager.Instance.StartExternalCoroutine(ReadyCountdown());

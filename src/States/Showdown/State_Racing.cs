@@ -37,10 +37,10 @@ public class State_Racing : IState
         ZeepkistNetwork.PlayerResultsChanged += OnLeaderBoardUpdated;
         RacingApi.RoundEnded += OnRoundEnd;
 
-        ChatApi.SendMessage(
+        ChatMessage.SendCustomMessage(
             new ChatMessage.Builder().ClearChat()
                 .DashedLine().NewLine()
-                .TextLine($"Round {_Showdown.Match.RoundCounter()} started").NewLine()
+                .TextLine($"<b>{(_Showdown.Match.RoundCounter() == 3 ? "Tiebreaker" : $"Round {_Showdown.Match.RoundCounter()}")}</b> started").NewLine()
                 .DashedLine().NewLine()
                 .TextLine($"{_Showdown.Match.Score()}").NewLine()
                 .DashedLine().NewLine()
@@ -88,6 +88,13 @@ public class State_Racing : IState
             return;
         }
 
+        // ZeepkistNetworkPlayer zeepkistNetworkPlayer;
+        // zeepkistNetworkPlayer = new ZeepkistNetworkPlayer(0,0, "", 0f, "", false);
+        // ZeepkistNetwork.AddPlayer(zeepkistNetworkPlayer);
+        // ZeepkistNetwork.CustomLeaderBoard_SetPlayerTimeOnLeaderboard(0, 99999999f, false);
+
+        ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(netRacer.SteamID, null, $"<nobr><color={_Showdown.Match.GetTeamBySteamId(netRacer.SteamID).Color ?? "#ffffff"}>" + netRacer.GetTaggedUsername() + "</color></nobr>",
+            null, null, null);
         _currentRound.AddResult(result);
         SendTeamLeaderboard();
     }
@@ -103,8 +110,8 @@ public class State_Racing : IState
 // Coroutine for showing the cool intro message for the first 10 seconds
     private IEnumerator DisplayRaceIntroMessage()
     {
-        ServerMessage introMessage = new ServerMessage()
-                .ShowdownHeader()
+        ServerMessage introMessage = new ServerMessage("center")
+                .ShowdownHeader(false, "center")
                 .AddLine(line => line
                     .AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
                     .AddBlock("VS")
@@ -145,7 +152,7 @@ public class State_Racing : IState
         yield return new WaitForSeconds(10);
 
         // After 10 seconds, clear the intro message and proceed to the normal race flow
-        ChatApi.SendMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+        ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
         SendTeamLeaderboard();
     }
 }

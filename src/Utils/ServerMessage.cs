@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using ZeepSDK.Chat;
 
 namespace Showdown4.Utils;
@@ -13,11 +14,16 @@ public class ServerMessage
 
     private int lineCount; // To track the number of lines
 
-    private string prefix = "<size=\"30%\">" +
-                            "<align=\"left\">";
+    private string prefix;
 
     private string suffix = "</align>" +
                             "</size>";
+
+    public ServerMessage(string alignment = "left")
+    {
+        prefix = $"<size=\"20%\">" +
+                 $"<align=\"{alignment}\">";
+    }
 
     public override string ToString()
     {
@@ -88,7 +94,7 @@ public class ServerMessage
 
     public ServerMessage AddSeparator(int length = 20)
     {
-        messageBuilder.Append($"<s><color=#00000000>{new string('-', length)}</color></s>");
+        messageBuilder.Append($"<color=#00000000>{new string('-', length)}</color>");
         AppendLineBreak();
         return this;
     }
@@ -110,26 +116,16 @@ public class ServerMessage
         }
     }
 
-    public ServerMessage ShowdownHeader(bool inline = false)
-    {
-        if (inline)
-        {
-            return new ServerMessage()
-                .AddInLine(line => line
-                    .AddBlock("Showdown", b => b.Color("#ff0000"))
-                    .AddBlock("Season", b => b.Color("#ffffff"))
-                    .AddBlock("4", b => b.Color("#ff8800"))
-                    .Bold().AllCaps().FontSize(40)
-                );
-        }
 
-        return new ServerMessage()
-            .AddLine(line => line
-                .AddBlock("Showdown", b => b.Color("#ff0000"))
-                .AddBlock("Season", b => b.Color("#ffffff"))
-                .AddBlock("4", b => b.Color("#ff8800"))
-                .Bold().AllCaps().FontSize(40)
-            );
+    public ServerMessage ShowdownHeader(bool inline = false, string alignment = "left")
+    {
+        Action<LineBuilder> headerBuilder = line => line
+            .AddBlock("Showdown", b => b.Gradients("#9d3acb", "#6e43ca", "#b29d64", "#ffffff"))
+            .AddBlock("Season", b => b.Color("#ffffff"))
+            .AddBlock("V", b => b.Color("#b29d64"))
+            .Bold().AllCaps().FontSize(40);
+
+        return inline ? new ServerMessage(alignment).AddInLine(headerBuilder) : new ServerMessage(alignment).AddLine(headerBuilder);
     }
 
     public void Send()
@@ -149,11 +145,10 @@ public class ServerMessage
         // Overload for AddBlock without customization
         public LineBuilder AddBlock(string text)
         {
-            lineContent.Append(text + " ");
-            return this;
+            return AddBlock(text, _ => { }); // Use empty customizer
         }
 
-        // Add blocks to the line with customization
+        // Add blocks to the line with customization 
         public LineBuilder AddBlock(string text, Action<BlockBuilder> customizer)
         {
             BlockBuilder blockBuilder = new BlockBuilder(text + " ");
@@ -269,7 +264,88 @@ public class ServerMessage
 
         public BlockBuilder(string text)
         {
+            // int maxLength = 70;
+            // if (text.Length > maxLength)
+            // {
+            //     text = text.Substring(0, maxLength-3) + "..."; // Truncate the text if it's too long'
+            // }
+
             contentBuilder = new StringBuilder(text);
+        }
+
+        public BlockBuilder Gradients(params string[] colors)
+        {
+            if (colors == null || colors.Length < 2)
+            {
+                return this;
+            }
+
+            // Validate hex codes
+            foreach (string color in colors)
+            {
+                string cleanColor = color.TrimStart('#');
+                if (!Regex.IsMatch(cleanColor, "^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{4}$|^[0-9A-Fa-f]{6}$|^[0-9A-Fa-f]{8}$"))
+                {
+                    return this;
+                }
+            }
+
+            string content = ExtractTextContent(contentBuilder.ToString(), out string before, out string after);
+            StringBuilder gradientText = new StringBuilder();
+            int textLength = content.Length;
+
+            for (int i = 0; i < textLength; i++)
+            {
+                float progress = (float)i / (textLength - 1);
+                int colorIndex = (int)(progress * (colors.Length - 1));
+                float colorProgress = progress * (colors.Length - 1) - colorIndex;
+
+                string startColor = colors[colorIndex].TrimStart('#');
+                string endColor = colors[Math.Min(colorIndex + 1, colors.Length - 1)].TrimStart('#');
+                string interpolatedColor = InterpolateColors(startColor, endColor, colorProgress);
+
+                gradientText.Append($"<color=#{interpolatedColor}>{content[i]}</color>");
+            }
+
+            contentBuilder.Clear();
+            contentBuilder.Append(before);
+            contentBuilder.Append(gradientText.ToString());
+            contentBuilder.Append(after);
+            return this;
+        }
+
+        private string InterpolateColors(string startColor, string endColor, float progress)
+        {
+            int r1 = Convert.ToInt32(startColor.Substring(0, 2), 16);
+            int g1 = Convert.ToInt32(startColor.Substring(2, 2), 16);
+            int b1 = Convert.ToInt32(startColor.Substring(4, 2), 16);
+
+            int r2 = Convert.ToInt32(endColor.Substring(0, 2), 16);
+            int g2 = Convert.ToInt32(endColor.Substring(2, 2), 16);
+            int b2 = Convert.ToInt32(endColor.Substring(4, 2), 16);
+
+            int r = (int)(r1 + (r2 - r1) * progress);
+            int g = (int)(g1 + (g2 - g1) * progress);
+            int b = (int)(b1 + (b2 - b1) * progress);
+
+            return $"{r:X2}{g:X2}{b:X2}";
+        }
+
+        private string ExtractTextContent(string input, out string before, out string after)
+        {
+            int startIndex = input.LastIndexOf('>') + 1;
+            int endIndex = input.IndexOf("</", StringComparison.Ordinal);
+
+            if (startIndex >= 0 && endIndex >= 0)
+            {
+                before = input.Substring(0, startIndex);
+                after = input.Substring(endIndex);
+                return input.Substring(startIndex, endIndex - startIndex);
+            }
+
+            before = "";
+            after = "";
+            return input;
         }
 
         public BlockBuilder WrapWithTag(string tag)
@@ -328,6 +404,12 @@ public class ServerMessage
         public BlockBuilder Color(string color)
         {
             contentBuilder.Insert(0, $"<color={color}>").Append("</color>");
+            return this;
+        }
+
+        public BlockBuilder Mark(string color)
+        {
+            contentBuilder.Insert(0, $"<mark={color}>").Append("</color>");
             return this;
         }
 

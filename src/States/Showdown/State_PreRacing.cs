@@ -120,13 +120,13 @@ public class State_PreRacing : IState
     private void OnRoundEnd()
     {
         DraftAction nextLevel = _Showdown.Match.CurrentDraft.PickedLevels.First();
-        ChatApi.SendMessage(
+        ChatMessage.SendCustomMessage(
             new ChatMessage.Builder().ClearChat()
                 .DashedLine().NewLine()
-                .TextLine($"Starting Round {_Showdown.Match.RoundCounter() + 1}").NewLine()
+                .TextLine($"Starting <b>{(_Showdown.Match.RoundCounter() + 1 == 3 ? "Tiebreaker" : $"Round {_Showdown.Match.RoundCounter() + 1}")}</b>").NewLine()
                 .DashedLine().NewLine()
-                .TextLine($"Level '{nextLevel.Level.Name}'").NewLine()
-                .TextLine($"picked by {nextLevel.Team.GetTag()}").NewLine()
+                .TextLine($"Level <color=#00ffff>'{nextLevel.Level.Name}'</color>").NewLine()
+                .TextLine($"picked by {nextLevel.Team.GetColoredTag()}").NewLine()
                 .DashedLine().NewLine()
                 .TextLine($"{_Showdown.Match.Score()}")
                 .Build().Message

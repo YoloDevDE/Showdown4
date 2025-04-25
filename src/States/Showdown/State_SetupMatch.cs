@@ -41,7 +41,7 @@ public class State_SetupMatch : IState
         ChatApi.SendMessage("/timeset 86400");
         if (_teams.Count == 0)
         {
-            ChatApi.SendMessage("No teams found in the JSON file.");
+            ChatMessage.SendCustomMessage("No teams found in the JSON file.");
         }
 
         StateManager.Instance.SetCurrentState(this);
@@ -117,17 +117,33 @@ public class State_SetupMatch : IState
         {
             Team team = _teams[index];
 
-            if (team == _selectedTeamA || team == _selectedTeamB)
+
+            if (index == _currentSelectionIndex && (team == _selectedTeamA || team == _selectedTeamB))
             {
-                serverMessage.AddLine(line => line.AddBlock($"{index}: " + team.GetColoredTagAndName(), block => block.Strikethrough()));
+                serverMessage.AddLine(line => line
+                    .AddBlock($"{(team == _selectedTeamA ? "A" : "B")} > {index}: ", block => block.Color("#00ff00"))
+                    .AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
+                    .Bold().Underline());
+            }
+            else if (team == _selectedTeamA || team == _selectedTeamB)
+            {
+                serverMessage.AddLine(line => line
+                    .AddBlock($"{(team == _selectedTeamA ? "A" : "B")}   {index}: ")
+                    .AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
+                    .Bold().Underline());
             }
             else if (index == _currentSelectionIndex)
             {
-                serverMessage.AddLine(line => line.AddBlock($"> {index}: " + team.GetColoredTagAndName(), block => block.Bold().Color("#ffff00")));
+                serverMessage.AddLine(line => line
+                    .AddBlock($"  > {index}: ", block => block.Color("#ffff00"))
+                    .AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
+                    .Bold());
             }
             else
             {
-                serverMessage.AddLine(line => line.AddBlock($"{index}: " + team.GetColoredTagAndName()));
+                serverMessage.AddLine(line => line
+                    .AddBlock($"    {index}: ")
+                    .AddBlock(team.GetNameWithTag(), block => block.Color(team.Color)));
             }
         }
 
@@ -157,7 +173,7 @@ public class State_SetupMatch : IState
         else if (_selectedTeamB == null && selectedTeam != _selectedTeamA)
         {
             _selectedTeamB = selectedTeam;
-            ChatApi.SendMessage($"Teams selected: {_selectedTeamA.GetTag()} vs {_selectedTeamB.GetTag()}. Press space to confirm.");
+            ChatMessage.SendCustomMessage($"Teams selected: {_selectedTeamA.GetTag()} vs {_selectedTeamB.GetTag()}. Press space to confirm.");
         }
     }
 
@@ -165,7 +181,7 @@ public class State_SetupMatch : IState
     {
         _selectedTeamA = null;
         _selectedTeamB = null;
-        ChatApi.SendMessage("Team selections have been reset.");
+        ChatMessage.SendCustomMessage("Team selections have been reset.");
     }
 
     private void StartCountdown()
@@ -189,7 +205,7 @@ public class State_SetupMatch : IState
 
     private void ConfirmTeams()
     {
-        ChatApi.SendMessage($"Teams confirmed: {_selectedTeamA.GetTag()} vs {_selectedTeamB.GetTag()}.");
+        ChatMessage.SendCustomMessage($"Teams confirmed: {_selectedTeamA.GetTag()} vs {_selectedTeamB.GetTag()}.");
         Showdown.Match = new Match(_selectedTeamA, _selectedTeamB);
     }
 }

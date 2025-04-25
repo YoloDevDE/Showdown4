@@ -19,11 +19,18 @@ public class Team
     public string Color { get; set; }
     public int Picks { get; set; } = 1;
     public int Bans { get; set; } = 2;
+    public bool MissedDraft { get; set; } = false;
     public List<Racer> Racers { get; set; }
 
     public int MaxTeamSize { get; set; } = 2;
 
     public string GetNameWithTag()
+    {
+        string shortName = Name.Length > 32 ? $"{Name[..32]}..." : Name;
+        return $"{GetTag()} {shortName}";
+    }
+
+    public string GetFullNameWithTag()
     {
         return $"{GetTag()} {Name}";
     }

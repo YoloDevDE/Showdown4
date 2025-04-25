@@ -50,7 +50,7 @@ public class State_Match_End : IState
                 .AddBlock("Match Over!", block => block.Bold().Color("#ff0000"))
             )
             .AddLine(line => line
-                .AddBlock($"{winnerTeam.GetColoredTagAndName()} ", block => block.Bold())
+                .AddBlock($"{winnerTeam.GetFullNameWithTag()} ", block => block.Color(winnerTeam.Color).Bold())
                 .AddBlock("won the Match! :party:", block => block.Color("#FFD700"))
             )
             .AddLine(line => line

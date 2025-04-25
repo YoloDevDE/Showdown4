@@ -65,11 +65,12 @@ public class Draft
 
     public void BanLevel(OnlineZeeplevel level)
     {
-        if (IsPickPhase)
+        if (IsPickPhase && !otherTeam.MissedDraft)
         {
-            throw new InvalidOperationException($"{otherTeam.GetTag()} has picked a level and therefore you can't ban a level anymore.");
+            throw new InvalidOperationException($"{otherTeam.GetColoredTag()} has picked a level and therefore you can't ban a level anymore.");
         }
 
+        GetOtherTeam().MissedDraft = false;
         if (currentTeam.Bans <= 0)
         {
             throw new InvalidOperationException("You have no more bans left.");
