@@ -119,7 +119,7 @@ public class State_LinkRacers : IState
                 .AddSeparator()
                 .AddLine(line => line
                     .AddBlock("Waiting for all racers of")
-                    .AddBlock($"{_currentTeam.GetTag()} ", format => format.Color($"{_currentTeam.Color}").Bold())
+                    .AddBlock($"{_currentTeam.GetColoredTag()}", format => format.Color($"{_currentTeam.Color}").Bold())
                     .AddBlock("to link with their team by writing")
                     .AddBlock("'!link'", format => format.Color("#ffff00").Bold())
                     .AddBlock("in the chat.")
@@ -127,11 +127,11 @@ public class State_LinkRacers : IState
                 .AddSeparator()
                 .AddLine("Currently linked racers:")
                 .AddLine(line => line
-                    .AddBlock($"{_teamA.GetTag()} ", format => format.Color(_teamA.Color))
+                    .AddBlock($"{_teamA.GetColoredTag()} ", format => format.Color(_teamA.Color))
                     .AddBlock($"{_teamA.GetLinkedRacersToString()}")
                 )
                 .AddLine(line => line
-                    .AddBlock($"{_teamB.GetTag()} ", format => format.Color(_teamB.Color))
+                    .AddBlock($"{_teamB.GetColoredTag()} ", format => format.Color(_teamB.Color))
                     .AddBlock($"{_teamB.GetLinkedRacersToString()}")
                 )
             ;

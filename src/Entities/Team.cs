@@ -81,7 +81,7 @@ public class Team
     }
 
     // New method to get the tag and name with TMP color tags
-    public string GetColoredTagAndName()
+    public string GetFullColoredTagAndName()
     {
         return $"<color={Color}>{GetTag()} {Name}</color>";
     }

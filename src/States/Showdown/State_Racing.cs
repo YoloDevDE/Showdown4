@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistClient;
+using ZeepkistNetworking;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
@@ -71,16 +73,17 @@ public class State_Racing : IState
         InvokeFinish();
     }
 
-    private void OnLeaderBoardUpdated(ZeepkistNetworkPlayer netRacer)
+    private void OnLeaderBoardUpdated(ZeepkistNetworkPlayer player)
     {
-        if (netRacer?.CurrentResult == null)
+        List<LeaderboardItem> leaderboardItems = ZeepkistNetwork.Leaderboard;
+        if (player?.CurrentResult == null)
         {
             ChatApi.AddLocalMessage("Error: Received an invalid racer or result.");
             return;
         }
 
-        Racer racer = new Racer(netRacer.SteamID, netRacer.Username);
-        Result result = new Result(racer, netRacer.CurrentResult.Time);
+        Racer racer = new Racer(player.SteamID, player.Username);
+        Result result = new Result(racer, player.CurrentResult.Time);
 
         if (_currentRound == null)
         {
@@ -88,15 +91,65 @@ public class State_Racing : IState
             return;
         }
 
-        // ZeepkistNetworkPlayer zeepkistNetworkPlayer;
-        // zeepkistNetworkPlayer = new ZeepkistNetworkPlayer(0,0, "", 0f, "", false);
-        // ZeepkistNetwork.AddPlayer(zeepkistNetworkPlayer);
-        // ZeepkistNetwork.CustomLeaderBoard_SetPlayerTimeOnLeaderboard(0, 99999999f, false);
 
-        ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(netRacer.SteamID, null, $"<nobr><color={_Showdown.Match.GetTeamBySteamId(netRacer.SteamID).Color ?? "#ffffff"}>" + netRacer.GetTaggedUsername() + "</color></nobr>",
-            null, null, null);
+        // ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(player.SteamID, null, $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
+        //     null, null, null);
+        // Remove the override
+        ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
+            player.SteamID,
+            "<color=#00ff00>" +
+            result.Time.GetFormattedTime() +
+            "</color>",
+            $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
+            null,
+            null,
+            null
+        );
+        CoroutineManager.Instance.StartExternalCoroutine(ShowTimeDifferencesTemporarily(player, (float)result.Time));
+
         _currentRound.AddResult(result);
         SendTeamLeaderboard();
+    }
+
+    private IEnumerator ShowTimeDifferencesTemporarily(ZeepkistNetworkPlayer player, float time)
+    {
+        // Get the first place time to calculate differences
+        float firstPlaceTime = ZeepkistNetwork.Leaderboard[0].Time;
+
+        // Find player's position in leaderboard (1-based index)
+        int position = ZeepkistNetwork.Leaderboard
+                           .FindIndex(item => item.SteamID == player.SteamID) +
+                       1;
+
+        // Only show for positions after 1st place
+        if (position > 1)
+        {
+            float timeDiff = time - firstPlaceTime;
+            string formattedDiff = $"+{TimeSpan.FromSeconds(timeDiff):mm\\:ss\\.fff}";
+
+            // Set the time difference in green
+            ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
+                player.SteamID,
+                $"<color=#ffff00>{formattedDiff}</color>", // Time override
+                $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
+                null, // Name color override
+                null, // Medal override
+                null // Position override
+            );
+
+            // Wait 5 seconds
+            yield return new WaitForSeconds(5f);
+
+            // Remove the override
+            ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
+                player.SteamID,
+                null,
+                $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
+                null,
+                null,
+                null
+            );
+        }
     }
 
     private void SendTeamLeaderboard()

@@ -25,7 +25,7 @@ public class Leaderboard
         // .AddLine(line =>
         // {
         //     line.Color("#999999")
-        //         .FontSize(20)
+        //         .Size(20)
         //         .AddBlock("Winner decided by:", f => f.Color("#ffffff"));
         //     int i = 0;
         //     foreach (WinningMethod winningMethod in Enum.GetValues(typeof(WinningMethod)))

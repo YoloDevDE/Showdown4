@@ -18,7 +18,7 @@ public class ChatMessage
 
     public static void SendCustomMessage(string message, params ulong[] steamIds)
     {
-        foreach (ulong steamId in steamIds)
+        foreach (ulong steamId in steamIds.Distinct())
         {
             ZeepkistNetwork.SendCustomChatMessage(false, steamId, "<br><color=#E0E0E0><size=-2>" + message + "</size></color>", "--------SHOWDOWN--------</align>");
         }

@@ -33,6 +33,13 @@ public class CoroutineManager : MonoBehaviour
         return startedCoroutine;
     }
 
+    public Coroutine AddExternalCoroutine(IEnumerator coroutine)
+    {
+        Coroutine startedCoroutine = StartCoroutine(coroutine);
+        _activeCoroutines.Add(startedCoroutine); // Track the coroutine
+        return startedCoroutine;
+    }
+
     public void StopExternalCoroutine(Coroutine coroutine)
     {
         if (coroutine == null || !_activeCoroutines.Contains(coroutine))

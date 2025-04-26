@@ -10,7 +10,7 @@ namespace Showdown4.States.Showdown;
 
 public class State_SetupMatch : IState
 {
-    private const int CountdownDuration = 5; // Countdown in seconds
+    private const int CountdownDuration = 2; // Countdown in seconds
     private int _currentSelectionIndex;
     private bool _isCountdownActive;
     private int _remainingSeconds;
@@ -173,7 +173,7 @@ public class State_SetupMatch : IState
         else if (_selectedTeamB == null && selectedTeam != _selectedTeamA)
         {
             _selectedTeamB = selectedTeam;
-            ChatMessage.SendCustomMessage($"Teams selected: {_selectedTeamA.GetTag()} vs {_selectedTeamB.GetTag()}. Press space to confirm.");
+            ChatMessage.SendCustomMessage($"Teams selected: {_selectedTeamA.GetColoredTag()} vs {_selectedTeamB.GetColoredTag()}. Press space to confirm.");
         }
     }
 
@@ -205,7 +205,7 @@ public class State_SetupMatch : IState
 
     private void ConfirmTeams()
     {
-        ChatMessage.SendCustomMessage($"Teams confirmed: {_selectedTeamA.GetTag()} vs {_selectedTeamB.GetTag()}.");
+        ChatMessage.SendCustomMessage($"Teams confirmed: {_selectedTeamA.GetFullColoredTagAndName()} vs {_selectedTeamB.GetFullColoredTagAndName()}.");
         Showdown.Match = new Match(_selectedTeamA, _selectedTeamB);
     }
 }

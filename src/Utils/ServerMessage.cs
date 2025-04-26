@@ -51,6 +51,7 @@ public class ServerMessage
         return this;
     }
 
+
     public ServerMessage AddInLine(Action<LineBuilder> line)
     {
         LineBuilder lineBuilder = new LineBuilder();
@@ -117,13 +118,14 @@ public class ServerMessage
     }
 
 
-    public ServerMessage ShowdownHeader(bool inline = false, string alignment = "left")
+    public ServerMessage ShowdownHeader(bool inline = false, string alignment = "left", int size = 40)
     {
         Action<LineBuilder> headerBuilder = line => line
-            .AddBlock("Showdown", b => b.Gradients("#9d3acb", "#6e43ca", "#b29d64", "#ffffff"))
+            .AddBlockNoSpace("<br>", b => b.Size(0))
+            .AddBlockNoSpace("Showdown ", b => b.Gradients("#9d3acb", "#6e43ca", "#b29d64", "#ffffff"))
             .AddBlock("Season", b => b.Color("#ffffff"))
             .AddBlock("V", b => b.Color("#b29d64"))
-            .Bold().AllCaps().FontSize(40);
+            .Bold().AllCaps().FontSize(size);
 
         return inline ? new ServerMessage(alignment).AddInLine(headerBuilder) : new ServerMessage(alignment).AddLine(headerBuilder);
     }
@@ -152,6 +154,19 @@ public class ServerMessage
         public LineBuilder AddBlock(string text, Action<BlockBuilder> customizer)
         {
             BlockBuilder blockBuilder = new BlockBuilder(text + " ");
+            customizer(blockBuilder);
+            lineContent.Append(blockBuilder.BuildInline());
+            return this;
+        }
+
+        public LineBuilder AddBlockNoSpace(string text)
+        {
+            return AddBlockNoSpace(text, _ => { }); // Use empty customizer
+        }
+
+        public LineBuilder AddBlockNoSpace(string text, Action<BlockBuilder> customizer)
+        {
+            BlockBuilder blockBuilder = new BlockBuilder(text);
             customizer(blockBuilder);
             lineContent.Append(blockBuilder.BuildInline());
             return this;
@@ -227,6 +242,13 @@ public class ServerMessage
         {
             openingTag.Add($"<indent=\"{value}%\">");
             closingTag.Add("</indent>");
+            return this;
+        }
+
+        public LineBuilder NoBreak()
+        {
+            openingTag.Add("<nobr>");
+            closingTag.Add("</nobr>");
             return this;
         }
 
@@ -413,7 +435,7 @@ public class ServerMessage
             return this;
         }
 
-        public BlockBuilder FontSize(int size)
+        public BlockBuilder Size(int size)
         {
             contentBuilder.Insert(0, $"<size=\"{size}%\">").Append("</size>");
             return this;
@@ -441,11 +463,6 @@ public class ServerMessage
         public string BuildInline()
         {
             return contentBuilder.ToString();
-        }
-
-        public void Size(int p0)
-        {
-            throw new NotImplementedException();
         }
     }
 }
