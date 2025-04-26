@@ -14,6 +14,7 @@ namespace Showdown4.States.Showdown;
 
 public class State_Racing : IState
 {
+    private readonly Dictionary<ulong, int> _previousPositions = new Dictionary<ulong, int>();
     private Round _currentRound;
     private Leaderboard _leaderboard;
     private Team _teamA, _teamB;
@@ -105,7 +106,7 @@ public class State_Racing : IState
             null,
             null
         );
-        CoroutineManager.Instance.StartExternalCoroutine(ShowTimeDifferencesTemporarily(player, (float)result.Time));
+        CoroutineManager.Instance.AddExternalCoroutine(ShowTimeDifferencesTemporarily(player, (float)result.Time));
 
         _currentRound.AddResult(result);
         SendTeamLeaderboard();
@@ -117,39 +118,51 @@ public class State_Racing : IState
         float firstPlaceTime = ZeepkistNetwork.Leaderboard[0].Time;
 
         // Find player's position in leaderboard (1-based index)
-        int position = ZeepkistNetwork.Leaderboard
-                           .FindIndex(item => item.SteamID == player.SteamID) +
-                       1;
+        int currentPosition = ZeepkistNetwork.Leaderboard.FindIndex(item => item.SteamID == player.SteamID) + 1;
+
+        // Calculate position change
+        string positionChange = null;
+        if (_previousPositions.TryGetValue(player.SteamID, out int previousPosition))
+        {
+            int change = previousPosition - currentPosition;
+            if (change != 0)
+            {
+                string color = change > 0 ? "#00ff00" : "#ff0000"; // Green for improvement, red for loss
+                positionChange = $"<color={color}>{(change > 0 ? "+" : "")}{change}</color>";
+            }
+        }
+
+        _previousPositions[player.SteamID] = currentPosition;
 
         // Only show for positions after 1st place
-        if (position > 1)
+        if (currentPosition > 1)
         {
             float timeDiff = time - firstPlaceTime;
             string formattedDiff = $"+{TimeSpan.FromSeconds(timeDiff):mm\\:ss\\.fff}";
 
-            // Set the time difference in green
+            // Set the time difference in yellow and position change
             ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
                 player.SteamID,
                 $"<color=#ffff00>{formattedDiff}</color>", // Time override
                 $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
                 null, // Name color override
-                null, // Medal override
+                positionChange, // Position change indicator
                 null // Position override
             );
-
-            // Wait 5 seconds
-            yield return new WaitForSeconds(5f);
-
-            // Remove the override
-            ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
-                player.SteamID,
-                null,
-                $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
-                null,
-                null,
-                null
-            );
         }
+
+        // Wait 5 seconds
+        yield return new WaitForSeconds(5f);
+
+        // Remove the override
+        ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
+            player.SteamID,
+            null,
+            $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
+            null,
+            null,
+            null
+        );
     }
 
     private void SendTeamLeaderboard()

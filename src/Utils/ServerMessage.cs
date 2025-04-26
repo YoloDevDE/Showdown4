@@ -125,7 +125,7 @@ public class ServerMessage
             .AddBlockNoSpace("Showdown ", b => b.Gradients("#9d3acb", "#6e43ca", "#b29d64", "#ffffff"))
             .AddBlock("Season", b => b.Color("#ffffff"))
             .AddBlock("V", b => b.Color("#b29d64"))
-            .Bold().AllCaps().FontSize(size);
+            .Bold().AllCaps().Size(size);
 
         return inline ? new ServerMessage(alignment).AddInLine(headerBuilder) : new ServerMessage(alignment).AddLine(headerBuilder);
     }
@@ -215,7 +215,7 @@ public class ServerMessage
             return this;
         }
 
-        public LineBuilder FontSize(int size)
+        public LineBuilder Size(int size)
         {
             openingTag.Add($"<size=\"{size}%\">");
             closingTag.Add("</size>");

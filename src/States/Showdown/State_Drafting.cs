@@ -68,7 +68,7 @@ public class State_Drafting : IState
         }
 
         ServerMessage DraftMessage = new ServerMessage().ShowdownHeader(true)
-            .AddLine(l => l.FontSize(30).Bold().AddBlock(_showdown.Match.ScoreColored()).Indent("600%"));
+            .AddLine(l => l.Size(30).Bold().AddBlock(_showdown.Match.ScoreColored()).Indent("600%"));
 
         if (_showdown.Match.CurrentDraft.IsDraftComplete())
         {
@@ -225,12 +225,12 @@ public class State_Drafting : IState
         yield return new WaitForSeconds(1.5f);
 
 
-        initiationMessage.AddLine(l => l.FontSize(30).Bold().AddBlock(_showdown.Match.ScoreWithFullNameColoredAndPadded()).NoBreak());
+        initiationMessage.AddLine(l => l.Size(30).Bold().AddBlock(_showdown.Match.ScoreWithFullNameColoredAndPadded()).NoBreak());
         initiationMessage.Send();
         yield return new WaitForSeconds(1.5f);
         initiationMessage = initiationMessage
             .AddLine(line =>
-                line.AddBlock("Draftphase I", builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40))
+                line.AddBlock(DraftphaseString(), builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40))
             );
         initiationMessage.Send();
         yield return new WaitForSeconds(1.5f);
@@ -254,7 +254,7 @@ public class State_Drafting : IState
         bool isTimeRunningLow = _draftCountdownTime <= 10;
 
         tmp.AddLine(line =>
-            line.AddBlock("Draftphase I", builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40))
+            line.AddBlock(DraftphaseString(), builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40))
         ).AddSeparator(0).AddLine(line =>
         {
             line.AddBlock($"{_showdown.Match.CurrentDraft.GetCurrentTeam().GetTag()}", block => block.Color(_showdown.Match.CurrentDraft.GetCurrentTeam().Color))
@@ -279,9 +279,21 @@ public class State_Drafting : IState
     {
         ServerMessage tmp = new ServerMessage();
 
-        tmp.AddLine(line => { line.AddBlock("Draftphase I", builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40)).AddBlock("- Draft complete!"); });
+        tmp.AddLine(line => line
+            .AddBlock(DraftphaseString(), builder => builder
+                .Gradients("#b19d63", "#FFFFFF", "#b19d63")
+            )
+            .AddBlock("-")
+            .AddBlock("complete!", builder => builder.Color("#00ff00"))
+            .Bold().AllCaps().Size(40));
+
 
         return tmp;
+    }
+
+    private string DraftphaseString()
+    {
+        return _showdown.Match.Rounds.Count <= 2 ? "Draftphase I" : "Draftphase II";
     }
 
     private ServerMessage GetDraftLevelList()
