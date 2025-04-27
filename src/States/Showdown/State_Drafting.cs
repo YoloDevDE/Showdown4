@@ -65,7 +65,7 @@ public class State_Drafting : IState
         }
 
         ServerMessage DraftMessage = new ServerMessage().ShowdownHeader(true)
-            .AddLine(l => l.Size(30).Bold().AddBlock(_showdown.Match.ScoreColored()).Indent("550%"));
+            .AddLine(l => l.Size(30).Bold().AddBlock(_showdown.Match.ScoreColored()).Indent("590%"));
 
         if (_showdown.Match.CurrentDraft.IsDraftComplete())
         {

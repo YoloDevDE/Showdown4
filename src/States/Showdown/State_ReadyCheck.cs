@@ -44,6 +44,10 @@ public class State_ReadyCheck : IState
     {
         ServerMessage msg = ShowPickedMaps()
             .AddSeparator()
+            .AddInLine(line => line
+                .AddBlock("Remaining Time:")
+                .AddBlock($"{TimeFormatter.FormatDuration(_remainingTime)}", block => block.Color("#ff0000"))
+            )
             .AddLine(line => line.AddBlock("Ready Status:"));
 
         foreach (KeyValuePair<uint, ZeepkistNetworkPlayer> playerEntry in ZeepkistNetwork.Players)
@@ -133,7 +137,7 @@ public class State_ReadyCheck : IState
                 line
                     .AddBlock($"Round {round}:")
                     .AddBlock($"'{pickedLevel.Level.Name}'", block => block.Color("#00ffff"))
-                    .AddBlock("picked by", block => block.Indent("550%"))
+                    .AddBlock("picked by", block => block.Indent("590%"))
                     .AddBlock($"{pickedLevel.Team.GetColoredTag()}")
                     .Bold();
                 round++;

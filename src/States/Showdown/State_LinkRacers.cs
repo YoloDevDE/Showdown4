@@ -115,10 +115,11 @@ public class State_LinkRacers : IState
 
     private void OnUnLinkRacerToTeam(ulong steamId)
     {
-        _currentTeam.RemoveRacer(steamId); // Add racer to current team
+        _teamA.RemoveRacer(steamId);
+        _teamB.RemoveRacer(steamId);
 
 
-        CheckIfRacersAreLinked(); // Check again after each link
+        CheckIfRacersAreLinked();
     }
 
     private ServerMessage ServerMessageLinkedRacers()

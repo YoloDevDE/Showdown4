@@ -107,7 +107,7 @@ public class State_PreRacing : IState
                 line
                     .AddBlock($"Round {round}:")
                     .AddBlock($"'{pickedLevel.Level.Name}'", block => block.Color("#00ffff"))
-                    .AddBlock("picked by", block => block.Indent("550%"))
+                    .AddBlock("picked by", block => block.Indent("590%"))
                     .AddBlock($"{pickedLevel.Team.GetColoredTag()}")
                     .Bold();
                 round++;

@@ -110,7 +110,7 @@ public class State_SetupMatch : IState
         // ServerMessage showing the team selection
         ServerMessage serverMessage = new ServerMessage()
             .ShowdownHeader()
-            .AddLine(line => line.AddBlock("Setup Match"))
+            .AddLine(line => line.AddBlock("Setup Match", builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40)))
             .AddSeparator();
 
         for (int index = 0; index < _teams.Count; index++)
