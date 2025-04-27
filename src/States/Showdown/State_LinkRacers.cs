@@ -29,6 +29,7 @@ public class State_LinkRacers : IState
     public void Enter()
     {
         CommandLinkRacer.CommandInvoked += OnLinkRacerToTeam;
+        CommandUnLinkRacer.CommandInvoked += OnUnLinkRacerToTeam;
         ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
     }
 
@@ -41,6 +42,7 @@ public class State_LinkRacers : IState
     public void Exit()
     {
         CommandLinkRacer.CommandInvoked -= OnLinkRacerToTeam;
+        CommandUnLinkRacer.CommandInvoked -= OnUnLinkRacerToTeam;
     }
 
     public void InvokeFinish()
@@ -52,6 +54,8 @@ public class State_LinkRacers : IState
     {
         if (_teamA.Racers.Count >= _teamA.MaxTeamSize && _teamB.Racers.Count >= _teamB.MaxTeamSize)
         {
+            CommandLinkRacer.CommandInvoked -= OnLinkRacerToTeam;
+            CommandUnLinkRacer.CommandInvoked -= OnUnLinkRacerToTeam;
             StartCountdown();
         }
         else
@@ -105,6 +109,17 @@ public class State_LinkRacers : IState
         Racer racer = new Racer(steamId, steamName);
         _currentTeam.AddRacer(racer); // Add racer to current team
 
+
+        CheckIfRacersAreLinked(); // Check again after each link
+    }
+
+    private void OnUnLinkRacerToTeam(ulong steamId)
+    {
+        string steamName = ZeepkistNetworkService.GetSteamNameFromSteamId(steamId);
+        Racer racer = new Racer(steamId, steamName);
+        _currentTeam.RemoveRacer(racer); // Add racer to current team
+
+
         CheckIfRacersAreLinked(); // Check again after each link
     }
 
@@ -119,14 +134,14 @@ public class State_LinkRacers : IState
                 )
                 .AddSeparator()
                 .AddLine(line => line
-                    .AddBlock("Waiting for all racers of")
+                    .AddBlock("To join team ")
                     .AddBlock($"{_currentTeam.GetColoredTag()}", format => format.Color($"{_currentTeam.Color}").Bold())
-                    .AddBlock("to link with their team by writing")
+                    .AddBlock(", type ")
                     .AddBlock("'!link'", format => format.Color("#ffff00").Bold())
-                    .AddBlock("in the chat.")
+                    .AddBlock(" in chat")
                 )
                 .AddSeparator()
-                .AddLine("Currently linked racers:")
+                .AddLine("Members in each team:")
                 .AddLine(line => line
                     .AddBlock($"{_teamA.GetColoredTag()} ", format => format.Color(_teamA.Color))
                     .AddBlock($"{_teamA.GetLinkedRacersToString()}")

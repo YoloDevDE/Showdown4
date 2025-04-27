@@ -7,7 +7,7 @@ public class CommandShowdownStart : ILocalChatCommand
 {
     public string Prefix => "/";
     public string Command => "sd start";
-    public string Description => "";
+    public string Description => "Starts the Showdown";
 
     public void Handle(string arguments)
     {

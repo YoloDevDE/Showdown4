@@ -8,7 +8,7 @@ public class CommandReady : IMixedChatCommand
 {
     public string Prefix => "!";
     public string Command => "ready";
-    public string Description => "Ready Check";
+    public string Description => "Confirms if you are ready for showdwon!.";
 
     public void Handle(ulong playerId, string arguments)
     {

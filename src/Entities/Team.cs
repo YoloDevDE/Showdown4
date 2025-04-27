@@ -53,6 +53,16 @@ public class Team
         }
     }
 
+    public void RemoveRacer(Racer racer)
+    {
+        if (racer == null || !Racers.Contains(racer))
+        {
+            return;
+        }
+
+        Racers.Remove(racer);
+    }
+
     public string GetLinkedRacersToString()
     {
         string result = "none";

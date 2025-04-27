@@ -62,21 +62,19 @@ public class Plugin : BaseUnityPlugin
 
     private void RegisterCommands()
     {
-        ChatCommandApi.RegisterLocalChatCommand<CommandSetupMatch>();
-        ChatCommandApi.RegisterLocalChatCommand<CommandStartMatch>();
         ChatCommandApi.RegisterLocalChatCommand<CommandFinishState>();
         ChatCommandApi.RegisterLocalChatCommand<CommandStartRandom>();
-        ChatCommandApi.RegisterLocalChatCommand<CommandCreateTeam>();
+        // ChatCommandApi.RegisterLocalChatCommand<CommandCreateTeam>();
         ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStart>();
         ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStop>();
-        ChatCommandApi.RegisterLocalChatCommand<CommandStopMatch>();
         ChatCommandApi.RegisterMixedChatCommand<CommandLinkRacer>();
+        ChatCommandApi.RegisterMixedChatCommand<CommandUnLinkRacer>();
         ChatCommandApi.RegisterMixedChatCommand<CommandReady>();
 
         ChatCommandApi.RegisterMixedChatCommand<CommandPick>();
         ChatCommandApi.RegisterMixedChatCommand<CommandBan>();
 
-        CommandCreateTeam.CommandInvoked += CreateTeam;
+        // CommandCreateTeam.CommandInvoked += CreateTeam;
     }
 
     public void CreateTeam(string args)

@@ -1,5 +1,6 @@
 ﻿using System;
 using ZeepkistClient;
+using ZeepSDK.Chat;
 using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
@@ -17,6 +18,7 @@ public class CommandLinkRacer : IMixedChatCommand
 
     public void Handle(string arguments)
     {
+        ChatApi.SendMessage(Prefix + Command + " " + arguments);
         Handle(ZeepkistNetwork.LocalPlayer.SteamID, arguments);
     }
 
