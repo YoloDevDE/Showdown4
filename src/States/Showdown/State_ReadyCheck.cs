@@ -31,6 +31,7 @@ public class State_ReadyCheck : IState
     {
         _readyPlayers = new HashSet<ulong>();
         CommandReady.CommandInvoked += OnReady;
+        ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
     }
 
     public void Execute()
@@ -68,8 +69,6 @@ public class State_ReadyCheck : IState
         {
             _readyPlayers.Add(steamId); // Mark player as ready
 
-            // Send a message confirming the player's readiness
-            ChatMessage.SendCustomMessage($"{ZeepkistNetworkService.GetSteamNameFromSteamId(steamId)} is ready!");
 
             // Check if all players are ready
             if (_readyPlayers.Count >= ZeepkistNetwork.Players.Count)
@@ -109,7 +108,7 @@ public class State_ReadyCheck : IState
                 line
                     .AddBlock($"Round {round}:")
                     .AddBlock($"'{pickedLevel.Level.Name}'", block => block.Color("#00ffff"))
-                    .AddBlock("picked by", block => block.Indent("600%"))
+                    .AddBlock("picked by", block => block.Indent("550%"))
                     .AddBlock($"{pickedLevel.Team.GetColoredTag()}")
                     .Bold();
                 round++;
@@ -131,7 +130,7 @@ public class State_ReadyCheck : IState
     private void ConfirmReady()
     {
         // Notify that all players are ready
-        ChatMessage.SendCustomMessage("All players are ready.");
+        ChatMessage.SendCustomMessage("All players are ready! GL HF");
 
         // Display message in the server with a 2-second delay before proceeding
         CoroutineManager.Instance.StartExternalCoroutine(ReadyCountdown());
@@ -161,8 +160,10 @@ public class State_ReadyCheck : IState
         msg.Send();
 
         // Wait for 2 seconds before transitioning to the next state
-        yield return new WaitForSeconds(2);
-
+        yield return new WaitForSeconds(3);
+        // Notify that all players are ready
+        ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+        ChatMessage.SendCustomMessage("Racing starts in <color=#ff0000>10</color> seconds");
         // Proceed to the next state
         Finished?.Invoke();
     }

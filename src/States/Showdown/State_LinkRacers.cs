@@ -29,6 +29,7 @@ public class State_LinkRacers : IState
     public void Enter()
     {
         CommandLinkRacer.CommandInvoked += OnLinkRacerToTeam;
+        ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
     }
 
     public void Execute()

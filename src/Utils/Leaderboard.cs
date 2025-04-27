@@ -21,7 +21,7 @@ public class Leaderboard
 
         ServerMessage msg = new ServerMessage()
             .ShowdownHeader(true)
-            .AddLine(l => l.Size(30).Bold().AddBlock(match.ScoreColored()).Indent("600%"));
+            .AddLine(l => l.Size(30).Bold().AddBlock(match.ScoreColored()).Indent("550%"));
         // .AddLine(line =>
         // {
         //     line.Color("#999999")

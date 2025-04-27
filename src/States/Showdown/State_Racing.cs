@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
@@ -15,6 +16,7 @@ namespace Showdown4.States.Showdown;
 public class State_Racing : IState
 {
     private readonly Dictionary<ulong, int> _previousPositions = new Dictionary<ulong, int>();
+    private readonly Dictionary<ulong, double> _previousTimes = new Dictionary<ulong, double>();
     private Round _currentRound;
     private Leaderboard _leaderboard;
     private Team _teamA, _teamB;
@@ -47,7 +49,8 @@ public class State_Racing : IState
                 .DashedLine().NewLine()
                 .TextLine($"{_Showdown.Match.Score()}").NewLine()
                 .DashedLine().NewLine()
-                .TextLine("Good Luck, Have Fun! :smile:").Build().Message
+                .TextLine("Good Luck, Have Fun! :smile:").NewLine()
+                .TextLine("<i><color=#c0c0c0>This message disappears in 15 seconds</color></i>").Build().Message
         );
         // Start the cool race intro message for the first 10 seconds
         CoroutineManager.Instance.StartExternalCoroutine(DisplayRaceIntroMessage());
@@ -76,7 +79,6 @@ public class State_Racing : IState
 
     private void OnLeaderBoardUpdated(ZeepkistNetworkPlayer player)
     {
-        List<LeaderboardItem> leaderboardItems = ZeepkistNetwork.Leaderboard;
         if (player?.CurrentResult == null)
         {
             ChatApi.AddLocalMessage("Error: Received an invalid racer or result.");
@@ -93,15 +95,10 @@ public class State_Racing : IState
         }
 
 
-        // ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(player.SteamID, null, $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
-        //     null, null, null);
-        // Remove the override
         ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
             player.SteamID,
-            "<color=#00ff00>" +
-            result.Time.GetFormattedTime() +
-            "</color>",
-            $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
+            $"<color=#00ff00>{result.Time.GetFormattedTime()}</color>",
+            $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() + "</color></nobr>",
             null,
             null,
             null
@@ -114,58 +111,86 @@ public class State_Racing : IState
 
     private IEnumerator ShowTimeDifferencesTemporarily(ZeepkistNetworkPlayer player, float time)
     {
-        // Get the first place time to calculate differences
-        float firstPlaceTime = ZeepkistNetwork.Leaderboard[0].Time;
+        List<LeaderboardItem> ingameLeaderboard = ZeepkistNetwork.Leaderboard
+            .OrderBy(leaderboard => leaderboard.Time)
+            .ToList();
 
-        // Find player's position in leaderboard (1-based index)
-        int currentPosition = ZeepkistNetwork.Leaderboard.FindIndex(item => item.SteamID == player.SteamID) + 1;
-
-        // Calculate position change
-        string positionChange = null;
-        if (_previousPositions.TryGetValue(player.SteamID, out int previousPosition))
+        Dictionary<ulong, string> positionChanges = new Dictionary<ulong, string>();
+        for (int index = 0; index < ingameLeaderboard.Count; index++)
         {
-            int change = previousPosition - currentPosition;
-            if (change != 0)
+            int position = index + 1;
+            LeaderboardItem currentLeaderboardItem = ingameLeaderboard[index];
+
+            string positionChange = null;
+            if (_previousPositions.TryGetValue(currentLeaderboardItem.SteamID, out int previousPosition))
             {
-                string color = change > 0 ? "#00ff00" : "#ff0000"; // Green for improvement, red for loss
-                positionChange = $"<color={color}>{(change > 0 ? "+" : "")}{change}</color>";
+                int change = previousPosition - position;
+                if (change != 0)
+                {
+                    string color = change > 0 ? "#11ff03" : "#a52019";
+                    string sign = change > 0 ? "+" : "";
+                    positionChange = $"<color={color}>{sign}{change}</color>";
+                }
             }
-        }
 
-        _previousPositions[player.SteamID] = currentPosition;
+            positionChanges[currentLeaderboardItem.SteamID] = positionChange;
 
-        // Only show for positions after 1st place
-        if (currentPosition > 1)
-        {
-            float timeDiff = time - firstPlaceTime;
-            string formattedDiff = $"+{TimeSpan.FromSeconds(timeDiff):mm\\:ss\\.fff}";
-
-            // Set the time difference in yellow and position change
+            _previousPositions[currentLeaderboardItem.SteamID] = position;
+            string overrideTimeText = ZeepkistNetwork.GetLeaderboardOverride(currentLeaderboardItem.SteamID).overrideTimeText;
             ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
-                player.SteamID,
-                $"<color=#ffff00>{formattedDiff}</color>", // Time override
-                $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
-                null, // Name color override
-                positionChange, // Position change indicator
-                null // Position override
+                currentLeaderboardItem.SteamID,
+                overrideTimeText,
+                $"<nobr><color={_Showdown.Match.GetTeamBySteamId(currentLeaderboardItem.SteamID).Color}>" +
+                currentLeaderboardItem.Username +
+                "</color></nobr>",
+                positionChange,
+                null,
+                null
             );
         }
 
-        // Wait 5 seconds
-        yield return new WaitForSeconds(5f);
+        // Track player's previous result time
+        if (!_previousTimes.TryGetValue(player.SteamID, out double previousTime))
+        {
+            previousTime = 0;
+        }
 
-        // Remove the override
+        double timeDiff = time - previousTime;
+        string formattedDiff = $"-{TimeSpan.FromSeconds(timeDiff):mm\\:ss\\.fff}";
+        string timeColor = "#11ff03";
+
+
+        // Set the time difference for current player
         ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
             player.SteamID,
-            null,
-            $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color ?? "#ffffff"}>" + player.GetTaggedUsername() + "</color></nobr>",
-            null,
+            $"<color={timeColor}>{formattedDiff}</color>",
+            $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() + "</color></nobr>",
+            positionChanges[player.SteamID] == null ? "<color=#f7dcaa>=0</color>" : positionChanges[player.SteamID],
             null,
             null
         );
+
+        _previousTimes[player.SteamID] = time;
+
+        yield return new WaitForSeconds(5f);
+
+        // Reset all team players' overrides
+        foreach (LeaderboardItem currentLeaderboardItem in ingameLeaderboard)
+        {
+            ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
+                currentLeaderboardItem.SteamID,
+                null,
+                $"<nobr><color={_Showdown.Match.GetTeamBySteamId(currentLeaderboardItem.SteamID).Color}>" +
+                currentLeaderboardItem.Username +
+                "</color></nobr>",
+                null,
+                null,
+                null
+            );
+        }
     }
 
-    private void SendTeamLeaderboard()
+    public void SendTeamLeaderboard()
     {
         ServerMessage leaderboardMessage = _leaderboard.GenerateLeaderboardMessage(_Showdown.Match);
         leaderboardMessage.Send();
@@ -215,7 +240,7 @@ public class State_Racing : IState
         introMessage.AddSeparator(_teamA.GetNameWithTag().Length + 4 + _teamB.GetNameWithTag().Length);
         introMessage.Send();
 
-        yield return new WaitForSeconds(10);
+        yield return new WaitForSeconds(15);
 
         // After 10 seconds, clear the intro message and proceed to the normal race flow
         ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);

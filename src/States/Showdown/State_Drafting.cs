@@ -50,9 +50,6 @@ public class State_Drafting : IState
         _draftCountdownTime = DraftTime;
         _isInitiationPhaseComplete = false;
 
-        CommandBan.CommandInvoked += OnBan;
-        CommandPick.CommandInvoked += OnPick;
-        CommandStartRandom.CommandInvoked += OnStartRandom;
 
         _showdown.Match.AddDraft();
         ChatApi.SendMessage("/settime 86400");
@@ -68,7 +65,7 @@ public class State_Drafting : IState
         }
 
         ServerMessage DraftMessage = new ServerMessage().ShowdownHeader(true)
-            .AddLine(l => l.Size(30).Bold().AddBlock(_showdown.Match.ScoreColored()).Indent("600%"));
+            .AddLine(l => l.Size(30).Bold().AddBlock(_showdown.Match.ScoreColored()).Indent("550%"));
 
         if (_showdown.Match.CurrentDraft.IsDraftComplete())
         {
@@ -217,6 +214,7 @@ public class State_Drafting : IState
     private IEnumerator DelayDraftInitiation()
     {
         ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+        ChatMessage.SendCustomMessage($"<color=#FFA500><b>*** <color=#b19d63>{DraftphaseString()}</color> loading - Please pay attention to the upcoming messages! ***</b></color>");
         ChatApi.SendMessage("/servermessage remove");
         yield return new WaitForSeconds(1.5f);
         ServerMessage initiationMessage = new ServerMessage("center").ShowdownHeader(false, "center", 50);
@@ -242,6 +240,10 @@ public class State_Drafting : IState
             );
         initiationMessage.Send();
         yield return new WaitForSeconds(1.5f);
+
+        CommandBan.CommandInvoked += OnBan;
+        CommandPick.CommandInvoked += OnPick;
+        CommandStartRandom.CommandInvoked += OnStartRandom;
 
         _isInitiationPhaseComplete = true;
 
@@ -293,7 +295,7 @@ public class State_Drafting : IState
 
     private string DraftphaseString()
     {
-        return _showdown.Match.Rounds.Count <= 2 ? "Draftphase I" : "Draftphase II";
+        return _showdown.Match.Rounds.Count > 0 ? "Draftphase II" : "Draftphase I";
     }
 
     private ServerMessage GetDraftLevelList()

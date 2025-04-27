@@ -173,7 +173,7 @@ public class State_SetupMatch : IState
         else if (_selectedTeamB == null && selectedTeam != _selectedTeamA)
         {
             _selectedTeamB = selectedTeam;
-            ChatMessage.SendCustomMessage($"Teams selected: {_selectedTeamA.GetColoredTag()} vs {_selectedTeamB.GetColoredTag()}. Press space to confirm.");
+            ChatMessage.SendCustomMessage($"Teams selected:<br>{_selectedTeamA.GetColoredTag()} vs {_selectedTeamB.GetColoredTag()}.<br>Press space to confirm.");
         }
     }
 
@@ -205,7 +205,7 @@ public class State_SetupMatch : IState
 
     private void ConfirmTeams()
     {
-        ChatMessage.SendCustomMessage($"Teams confirmed: {_selectedTeamA.GetFullColoredTagAndName()} vs {_selectedTeamB.GetFullColoredTagAndName()}.");
+        ChatMessage.SendCustomMessage($"Teams confirmed:<br>{_selectedTeamA.GetFullColoredTagAndName()} vs {_selectedTeamB.GetFullColoredTagAndName()}.");
         Showdown.Match = new Match(_selectedTeamA, _selectedTeamB);
     }
 }
