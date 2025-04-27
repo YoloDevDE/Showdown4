@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Showdown4.Entities;
 
@@ -53,9 +54,10 @@ public class Team
         }
     }
 
-    public void RemoveRacer(Racer racer)
+    public void RemoveRacer(ulong steamId)
     {
-        if (racer == null || !Racers.Contains(racer))
+        Racer racer = Racers.FirstOrDefault(r => r.SteamId == steamId);
+        if (racer == null)
         {
             return;
         }

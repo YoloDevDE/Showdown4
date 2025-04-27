@@ -115,9 +115,7 @@ public class State_LinkRacers : IState
 
     private void OnUnLinkRacerToTeam(ulong steamId)
     {
-        string steamName = ZeepkistNetworkService.GetSteamNameFromSteamId(steamId);
-        Racer racer = new Racer(steamId, steamName);
-        _currentTeam.RemoveRacer(racer); // Add racer to current team
+        _currentTeam.RemoveRacer(steamId); // Add racer to current team
 
 
         CheckIfRacersAreLinked(); // Check again after each link

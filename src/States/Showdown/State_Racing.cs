@@ -9,6 +9,7 @@ using UnityEngine;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using ZeepSDK.Chat;
+using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
@@ -41,7 +42,7 @@ public class State_Racing : IState
 
         ZeepkistNetwork.PlayerResultsChanged += OnLeaderBoardUpdated;
         RacingApi.RoundEnded += OnRoundEnd;
-
+        MultiplayerApi.PlayerJoined += OnPLayerJoined;
         ChatMessage.SendCustomMessage(
             new ChatMessage.Builder().ClearChat()
                 .DashedLine().NewLine()
@@ -64,12 +65,26 @@ public class State_Racing : IState
     public void Exit()
     {
         ZeepkistNetwork.PlayerResultsChanged -= OnLeaderBoardUpdated;
+
+        MultiplayerApi.PlayerJoined -= OnPLayerJoined;
         RacingApi.RoundEnded -= OnRoundEnd;
     }
 
     public void InvokeFinish()
     {
         Finished?.Invoke();
+    }
+
+    private void OnPLayerJoined(ZeepkistNetworkPlayer player)
+    {
+        IEnumerable<Racer> allRacers = _currentRound.teamA.Racers.Concat(_currentRound.teamB.Racers);
+        Racer matchingRacer = allRacers.FirstOrDefault(r => r.SteamId == player.SteamID);
+
+        if (matchingRacer != null)
+        {
+            double personalBest = _currentRound.GetPersonalBest(matchingRacer);
+            ZeepkistNetwork.CustomLeaderBoard_SetPlayerTimeOnLeaderboard(player.SteamID, (float)personalBest, true);
+        }
     }
 
     private void OnRoundEnd()
