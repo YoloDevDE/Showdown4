@@ -137,7 +137,7 @@ public class State_ReadyCheck : IState
                 line
                     .AddBlock($"Round {round}:")
                     .AddBlock($"'{pickedLevel.Level.Name}'", block => block.Color("#00ffff"))
-                    .AddBlock("picked by", block => block.Indent("590%"))
+                    .AddBlock("picked by", block => block.Indent("585%"))
                     .AddBlock($"{pickedLevel.Team.GetColoredTag()}")
                     .Bold();
                 round++;
