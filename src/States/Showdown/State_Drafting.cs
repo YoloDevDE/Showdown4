@@ -20,7 +20,7 @@ public class State_Drafting : IState
     private const int DraftTime = 90;
     private const int Countdown = 3;
     private const int MaxSpinLoops = 30;
-    private const int MinSpinLoops = 8;
+    private const int MinSpinLoops = 29;
 
     private int _draftCompleteCountDownTick = Countdown;
     private int _draftCountdownTime = DraftTime;
@@ -474,9 +474,17 @@ public class State_Drafting : IState
         int selectedIndex = 0;
         int randomLoops = new Random().Next(MinSpinLoops, MaxSpinLoops);
 
-        for (int i = 0; i < randomLoops; i++)
+        for (int i = 0; i < MaxSpinLoops; i++)
         {
-            selectedIndex = (selectedIndex + 1) % _availableMaps.Count;
+            if (new Random().Next(10) == 0) // 10% chance to reverse direction
+            {
+                selectedIndex = (selectedIndex - 1 + _availableMaps.Count) % _availableMaps.Count;
+            }
+            else
+            {
+                selectedIndex = (selectedIndex + 1) % _availableMaps.Count;
+            }
+
             UpdateRandomSelectionMessage(selectedIndex);
             delay += 0.05f;
 
