@@ -84,6 +84,7 @@ public class State_Racing : IState
         {
             double personalBest = _currentRound.GetPersonalBest(matchingRacer);
             ZeepkistNetwork.CustomLeaderBoard_SetPlayerTimeOnLeaderboard(player.SteamID, (float)personalBest, true);
+            ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(player.SteamID, "", $"<nobr><color={_Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() + "</color></nobr>", null, null, null);
         }
     }
 
