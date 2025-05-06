@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Showdown4.Entities;
 
@@ -19,11 +20,18 @@ public class Team
     public string Color { get; set; }
     public int Picks { get; set; } = 1;
     public int Bans { get; set; } = 2;
+    public bool MissedDraft { get; set; } = false;
     public List<Racer> Racers { get; set; }
 
     public int MaxTeamSize { get; set; } = 2;
 
     public string GetNameWithTag()
+    {
+        string shortName = Name.Length > 32 ? $"{Name[..32]}..." : Name;
+        return $"{GetTag()} {shortName}";
+    }
+
+    public string GetFullNameWithTag()
     {
         return $"{GetTag()} {Name}";
     }
@@ -44,6 +52,17 @@ public class Team
         {
             Racers.Add(racer);
         }
+    }
+
+    public void RemoveRacer(ulong steamId)
+    {
+        Racer racer = Racers.FirstOrDefault(r => r.SteamId == steamId);
+        if (racer == null)
+        {
+            return;
+        }
+
+        Racers.Remove(racer);
     }
 
     public string GetLinkedRacersToString()
@@ -74,7 +93,7 @@ public class Team
     }
 
     // New method to get the tag and name with TMP color tags
-    public string GetColoredTagAndName()
+    public string GetFullColoredTagAndName()
     {
         return $"<color={Color}>{GetTag()} {Name}</color>";
     }

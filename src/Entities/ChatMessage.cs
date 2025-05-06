@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using ZeepkistClient;
 
 namespace Showdown4.Entities;
 
@@ -10,6 +11,18 @@ public class ChatMessage
 
     public string Message { get; set; }
 
+    public static void SendCustomMessage(string message)
+    {
+        ZeepkistNetwork.SendCustomChatMessage(true, 0, "<br><color=#E0E0E0><size=-2>" + message + "</size></color>", "--------SHOWDOWN--------");
+    }
+
+    public static void SendCustomMessage(string message, params ulong[] steamIds)
+    {
+        foreach (ulong steamId in steamIds.Distinct())
+        {
+            ZeepkistNetwork.SendCustomChatMessage(false, steamId, "<br><color=#E0E0E0><size=-2>" + message + "</size></color>", "--------SHOWDOWN--------</align>");
+        }
+    }
 
     public class Builder
     {

@@ -59,6 +59,6 @@ public class State_Master_On : IState
     private void OnShowdownStopped()
     {
         Finished?.Invoke();
-        ToastMessenger.LogSuccess("Season 4 stopped");
+        ToastMessenger.LogSuccess("Season 5 stopped");
     }
 }

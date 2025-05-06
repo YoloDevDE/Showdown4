@@ -9,7 +9,7 @@ namespace Showdown4.States.Showdown;
 
 public class State_SelectInitiative : IState
 {
-    private const int CountdownDuration = 20; // Countdown in seconds
+    private const int CountdownDuration = 2; // Countdown in seconds
     private int _currentSelectionIndex; // To track the currently selected team
     private bool _isLocked; // To lock input after selecting initiative
     private Team _selectedTeam; // The team with initiative
@@ -100,7 +100,7 @@ public class State_SelectInitiative : IState
                 .AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color))
             )
             .AddSeparator()
-            .AddLine(line => line.AddBlock("Selecting Initiative"))
+            .AddLine(line => line.AddBlock("Selecting Initiative (Press SPACE to confirm)"))
             .AddSeparator();
 
         for (int index = 0; index < _teams.Count; index++)
@@ -110,12 +110,18 @@ public class State_SelectInitiative : IState
             if (index == _currentSelectionIndex)
             {
                 // Highlight the currently selected team
-                serverMessage.AddLine(line => line.AddBlock($"> {team.GetColoredTagAndName()}", block => block.Bold().Color("#ffff00")));
+                serverMessage.AddLine(line => line
+                    .AddBlock($"> {index}: ", block => block.Color("#ffff00"))
+                    .AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
+                    .Bold());
             }
             else
             {
                 // Show the other team normally
-                serverMessage.AddLine(line => line.AddBlock($"{team.GetColoredTagAndName()}"));
+                serverMessage.AddLine(line => line
+                    .AddBlock($"{index}: ")
+                    .AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
+                );
             }
         }
 
@@ -143,28 +149,11 @@ public class State_SelectInitiative : IState
         ServerMessage msg =
             ServerMessageThing()
                 .AddSeparator()
-                .AddLine(line => line.AddBlock($"Initiative has been given to {_selectedTeam.GetColoredTagAndName()}"))
                 .AddLine(line => line
-                    .AddBlock($"{_selectedTeam.GetTag()}", f => f.Color(_selectedTeam.Color))
-                    .AddBlock("will start to draft after the countdown!"))
-                .AddSeparator()
-                .AddLine(line => line.Italic()
-                        .AddBlock("To pick use")
-                        .AddBlock("'!pick 1-7'", block => block.Color("#ffff00")) // '!pick' in yellow
+                    .AddBlock("Initiative has been given to")
                 )
-                .AddLine(line => line.Italic()
-                        .AddBlock("To ban use")
-                        .AddBlock("'!ban 1-7'", block => block.Color("#ffff00")) // '!ban' in yellow
-                )
-                .AddSeparator()
                 .AddLine(line => line
-                    .AddBlock("Continue to")
-                    .AddBlock("'Draftphase I'", block => block.Color("#ffff00"))
-                    .AddBlock("in")
-                    .AddBlock($"{countdownTime}", block => block.Color("#00ff00"))
-                    .AddBlock("seconds...")
-                );
-
+                    .AddBlock(_selectedTeam.GetNameWithTag(), f => f.Color(_selectedTeam.Color).Bold()));
         msg.Send();
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using ZeepkistClient;
+using ZeepSDK.Chat;
 using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
@@ -8,7 +9,7 @@ public class CommandBan : IMixedChatCommand
 {
     public string Prefix => "!";
     public string Command => "ban";
-    public string Description => "WIP";
+    public string Description => "!ban <levelindex>";
 
     public void Handle(ulong playerId, string arguments)
     {
@@ -17,6 +18,7 @@ public class CommandBan : IMixedChatCommand
 
     public void Handle(string arguments)
     {
+        ChatApi.SendMessage(Prefix + Command + " " + arguments);
         Handle(ZeepkistNetwork.LocalPlayer.SteamID, arguments);
     }
 

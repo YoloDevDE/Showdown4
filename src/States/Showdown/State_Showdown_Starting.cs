@@ -1,7 +1,6 @@
 ﻿using System;
 using Showdown4.Entities;
 using Showdown4.Managers;
-using ZeepSDK.Chat;
 using ZeepSDK.Level;
 
 namespace Showdown4.States.Showdown;
@@ -36,12 +35,12 @@ public class State_Showdown_Starting : IState
                 tmp = "Already on HoF :smile:";
             }
 
-            ChatApi.SendMessage(new ChatMessage.Builder()
+            ChatMessage.SendCustomMessage(new ChatMessage.Builder()
                 .ClearChat()
                 .NewLine()
                 .DashedLine()
                 .NewLine()
-                .TextLine("Showdown Season 4 started")
+                .TextLine("Showdown Season 5 started")
                 .NewLine()
                 .DashedLine()
                 .NewLine()

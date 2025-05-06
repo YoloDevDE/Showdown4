@@ -21,11 +21,11 @@ public class Leaderboard
 
         ServerMessage msg = new ServerMessage()
             .ShowdownHeader(true)
-            .AddLine(l => l.FontSize(30).Bold().AddBlock(match.ScoreColored()).Indent("600%"));
+            .AddLine(l => l.Size(30).Bold().AddBlock(match.ScoreColored()).Indent("585%"));
         // .AddLine(line =>
         // {
         //     line.Color("#999999")
-        //         .FontSize(20)
+        //         .Size(20)
         //         .AddBlock("Winner decided by:", f => f.Color("#ffffff"));
         //     int i = 0;
         //     foreach (WinningMethod winningMethod in Enum.GetValues(typeof(WinningMethod)))
@@ -58,7 +58,7 @@ public class Leaderboard
 
             msg.AddLine(line =>
             {
-                line.FontSize(25)
+                line.Size(25)
                     .AddBlock($"#{position}", f => f.Bold().Color(position == 1 ? "#FFD700" : "#C0C0C0"))
                     .AddBlock($"{team.GetTag()}".PadRight(6), f => f.Bold().Color(team.Color));
 

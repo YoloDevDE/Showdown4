@@ -1,6 +1,5 @@
 ﻿using System;
 using Showdown4.Entities;
-using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
@@ -39,8 +38,8 @@ internal class State_PostRacing : IState
             // If valid, show the next level's name
             nextLevelMessage += new ChatMessage.Builder().TextLine($"Starting Round {_Showdown.Match.RoundCounter() + 1}").NewLine()
                 .DashedLine().NewLine()
-                .TextLine($"Level '{nextLevel.Level.Name}'").NewLine()
-                .TextLine($"picked by {nextLevel.Team.GetTag()}")
+                .TextLine($"Level <color=#00ffff>'{nextLevel.Level.Name}'</color>").NewLine()
+                .TextLine($"picked by {nextLevel.Team.GetColoredTag()}")
                 .Build().Message;
         }
         else if (winnerTeam.Wins > 1)
@@ -49,22 +48,23 @@ internal class State_PostRacing : IState
         }
         else
         {
+            _Showdown.Match.Initiative = _Showdown.Match.NonInitiative;
             nextLevelMessage +=
                 new ChatMessage.Builder().TextLine("Upcoming -> Draftphase II").NewLine()
                     .DashedLine().NewLine()
-                    .TextLine($"First Draft: {_Showdown.Match.Initiative.GetTag()}").NewLine()
+                    .TextLine($"Initiative: {_Showdown.Match.Initiative.GetColoredTag()}").NewLine()
                     .TextLine("Prepare yourself! It will start almost immediately!")
                     .Build().Message;
         }
 
 
         // Create a cool and separated chat message using your original ChatMessage class
-        ChatApi.SendMessage(
+        ChatMessage.SendCustomMessage(
             new ChatMessage.Builder()
                 .ClearChat()
                 .DashedLine().NewLine() // Dashed separator
-                .TextLine($"Round {currentRoundCounter} over!").NewLine() // Centered round completion message
-                .TextLine($"{winnerTeam.GetTag()} scored").NewLine() // Display the winning team
+                .TextLine($"<b>Round {currentRoundCounter}</b> over!").NewLine() // Centered round completion message
+                .TextLine($"{winnerTeam.GetColoredTag()} scored").NewLine() // Display the winning team
                 .DashedLine().NewLine() // Dashed line separating content
                 .TextLine(nextLevelMessage).NewLine() // Show the next level or intermission
                 .DashedLine().NewLine() // Dashed line to separate next section

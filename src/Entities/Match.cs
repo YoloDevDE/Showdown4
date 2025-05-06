@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Managers;
 using ZeepkistNetworking;
@@ -25,6 +26,17 @@ public class Match
     public Team Initiative { get; set; }
     public Team NonInitiative => Initiative == TeamA ? TeamB : TeamA;
 
+    public string ScoreWithFullNameColored()
+    {
+        return $"{TeamA.GetFullColoredTagAndName()} {TeamA.Wins}:{TeamB.Wins} {TeamB.GetFullColoredTagAndName()}";
+    }
+
+    public string ScoreWithFullNameColoredAndPadded()
+    {
+        int maxLength = Math.Max(TeamA.GetFullColoredTagAndName().Length, TeamB.GetFullColoredTagAndName().Length);
+        return $"{TeamA.GetFullColoredTagAndName().PadLeft(maxLength)} {TeamA.Wins}:{TeamB.Wins} {TeamB.GetFullColoredTagAndName().PadRight(maxLength)}";
+    }
+
     public string ScoreColored()
     {
         return $"<color={TeamA.Color}>{TeamA.GetTag()}</color> {TeamA.Wins}:{TeamB.Wins} <color={TeamB.Color}>{TeamB.GetTag()}</color>";
@@ -32,7 +44,12 @@ public class Match
 
     public string Score()
     {
-        return $"{TeamA.GetTag()} {TeamA.Wins}:{TeamB.Wins} {TeamB.GetTag()}";
+        return $"{TeamA.GetColoredTag()} {TeamA.Wins}:{TeamB.Wins} {TeamB.GetColoredTag()}";
+    }
+
+    public string ScoreOnly()
+    {
+        return $"{TeamA.Wins}:{TeamB.Wins}";
     }
 
     public void AddRound(Round round)
@@ -56,5 +73,20 @@ public class Match
     public int RoundCounter()
     {
         return Rounds.Count;
+    }
+
+    public Team GetTeamBySteamId(ulong steamId)
+    {
+        if (TeamA.Racers.Any(player => player.SteamId == steamId))
+        {
+            return TeamA;
+        }
+
+        if (TeamB.Racers.Any(player => player.SteamId == steamId))
+        {
+            return TeamB;
+        }
+
+        return null;
     }
 }

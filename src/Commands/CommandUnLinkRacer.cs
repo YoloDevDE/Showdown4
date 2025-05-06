@@ -1,24 +1,26 @@
 ﻿using System;
 using ZeepkistClient;
+using ZeepSDK.Chat;
 using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
 
-public class CommandPick : IMixedChatCommand
+public class CommandUnLinkRacer : IMixedChatCommand
 {
     public string Prefix => "!";
-    public string Command => "pick";
-    public string Description => "!pick <levelindex>";
+    public string Command => "unlink";
+    public string Description => "WIP";
 
     public void Handle(ulong playerId, string arguments)
     {
-        CommandInvoked?.Invoke(playerId, arguments);
+        CommandInvoked?.Invoke(playerId);
     }
 
     public void Handle(string arguments)
     {
+        ChatApi.SendMessage(Prefix + Command + " " + arguments);
         Handle(ZeepkistNetwork.LocalPlayer.SteamID, arguments);
     }
 
-    public static event Action<ulong, string> CommandInvoked;
+    public static event Action<ulong> CommandInvoked;
 }

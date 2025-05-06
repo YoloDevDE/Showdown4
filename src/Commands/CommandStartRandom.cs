@@ -7,7 +7,7 @@ public class CommandStartRandom : ILocalChatCommand
 {
     public string Prefix => "/";
     public string Command => "sd random";
-    public string Description => "WIP";
+    public string Description => "Chooses a random map when the Draft is incomplete";
 
     public void Handle(string arguments)
     {
