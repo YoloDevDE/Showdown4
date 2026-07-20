@@ -5,14 +5,14 @@ namespace Showdown4.Commands;
 
 public class CommandShowdownStart : ILocalChatCommand
 {
-    public string Prefix => "/";
-    public string Command => "sd start";
-    public string Description => "Starts the Showdown";
+	public string Prefix => "/";
+	public string Command => "sd start";
+	public string Description => "Starts the Showdown";
 
-    public void Handle(string arguments)
-    {
-        CommandInvoked?.Invoke();
-    }
+	public void Handle(string arguments)
+	{
+		CommandInvoked?.Invoke();
+	}
 
-    public static event Action CommandInvoked;
+	public static event Action CommandInvoked;
 }

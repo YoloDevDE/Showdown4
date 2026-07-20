@@ -5,65 +5,66 @@ using ZeepSDK.Level;
 
 namespace Showdown4.States.Showdown;
 
-public class State_Showdown_Starting : IState
+public class StateShowdownStarting : IState
 {
-    public State_Showdown_Starting(IStateMachine stateMachine)
-    {
-        StateMachine = stateMachine;
-    }
+	public StateShowdownStarting(IStateMachine stateMachine)
+	{
+		StateMachine = stateMachine;
+	}
 
-    public IStateMachine StateMachine { get; }
-    public event Action Finished;
+	public IStateMachine StateMachine { get; }
+	public event Action Finished;
 
-    public void Enter()
-    {
-    }
+	public void Enter()
+	{
+	}
 
-    public void Execute()
-    {
-        string tmp = "";
-        try
-        {
-            PlaylistManager.SetServerPlaylist(Plugin.IntermissionLevelPlaylistName.Value);
-            if (!LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
-            {
-                tmp = "Skipping to HoF...";
-                Managers.LobbyManager.SkipToLevel(0);
-            }
-            else
-            {
-                tmp = "Already on HoF :smile:";
-            }
+	public void Execute()
+	{
+		var tmp = "";
+		try
+		{
+			PlaylistManager.SetServerPlaylist(Plugin.IntermissionLevelPlaylistName.Value);
+			if (!LevelApi.CurrentLevel.UID.Equals(
+				    PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
+			{
+				tmp = "Skipping to HoF...";
+				Managers.LobbyManager.SkipToLevel(0);
+			}
+			else
+			{
+				tmp = "Already on HoF :smile:";
+			}
 
-            ChatMessage.SendCustomMessage(new ChatMessage.Builder()
-                .ClearChat()
-                .NewLine()
-                .DashedLine()
-                .NewLine()
-                .TextLine("Showdown Season 5 started")
-                .NewLine()
-                .DashedLine()
-                .NewLine()
-                .TextLine(tmp)
-                .Build().Message);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-        finally
-        {
-            Finished?.Invoke();
-        }
-    }
+			ChatMessage.SendCustomMessage(new ChatMessage.Builder()
+				.ClearChat()
+				.NewLine()
+				.DashedLine()
+				.NewLine()
+				.TextLine("Showdown Season 6 started")
+				.NewLine()
+				.DashedLine()
+				.NewLine()
+				.TextLine(tmp)
+				.Build().Message);
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine(e);
+			throw;
+		}
+		finally
+		{
+			Finished?.Invoke();
+		}
+	}
 
-    public void Exit()
-    {
-    }
+	public void Exit()
+	{
+	}
 
-    public void InvokeFinish()
-    {
-        Finished?.Invoke();
-    }
+	public void InvokeFinish()
+	{
+		Finished?.Invoke();
+	}
 }

@@ -1,89 +1,89 @@
 ﻿using System;
-using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
-public class State_Match_End : IState
+public class StateMatchEnd : IState
 {
-    private bool countdownStarted;
-    private int countdownTime = 60; // Countdown duration set to 60 seconds
+	private bool _countdownStarted;
+	private int _countdownTime = 60; // Countdown duration set to 60 seconds
 
-    public State_Match_End(IStateMachine stateMachine)
-    {
-        StateMachine = stateMachine;
-    }
+	public StateMatchEnd(IStateMachine stateMachine)
+	{
+		StateMachine = stateMachine;
+	}
 
-    public ShowdownStateMachine Showdown => (ShowdownStateMachine)StateMachine;
-    public IStateMachine StateMachine { get; }
+	public ShowdownStateMachine Showdown => (ShowdownStateMachine)StateMachine;
+	public IStateMachine StateMachine { get; }
 
-    public event Action Finished;
+	public event Action Finished;
 
-    public void Enter()
-    {
-        ChatApi.SendMessage("/timeset 86400");
-        if (!countdownStarted)
-        {
-            countdownStarted = true;
+	public void Enter()
+	{
+		ChatApi.SendMessage("/timeset 86400");
+		if (!_countdownStarted)
+		{
+			_countdownStarted = true;
 
-            // Use CountdownTimer to manage the countdown
-            CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-                countdownTime,
-                remainingTime => UpdateCountdownMessage(remainingTime), // onTick action
-                InvokeFinish // onComplete action
-            ));
-        }
-    }
+			// Use CountdownTimer to manage the countdown
+			CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
+				_countdownTime,
+				remainingTime => UpdateCountdownMessage(remainingTime), // onTick action
+				InvokeFinish // onComplete action
+			));
+		}
+	}
 
-    public void Execute()
-    {
-        // We don't need to send this message every second manually now, since it's handled in `UpdateCountdownMessage`
-        Team winnerTeam = Showdown.Match.CurrentRound.GetWinnerTeam;
+	public void Execute()
+	{
+		// We don't need to send this message every second manually now, since it's handled in `UpdateCountdownMessage`
+		var winnerTeam = Showdown.Match.CurrentRound.GetWinnerTeam;
 
-        // Decorated ServerMessage without emotes
-        ServerMessage msg = new ServerMessage()
-            .ShowdownHeader()
-            .AddSeparator()
-            .AddLine(line => line
-                .AddBlock("Match Over!", block => block.Bold().Color("#ff0000"))
-            )
-            .AddLine(line => line
-                .AddBlock($"{winnerTeam.GetFullNameWithTag()} ", block => block.Color(winnerTeam.Color).Bold())
-                .AddBlock("won the Match! :party:", block => block.Color("#FFD700"))
-            )
-            .AddLine(line => line
-                    .AddBlock("Final Score: ", block => block.Bold().Color("#ffffff"))
-                    .AddBlock(Showdown.Match.ScoreColored()) // Green for the final score
-            )
-            .AddSeparator()
-            .AddLine(line => line
-                .AddBlock("You can now join us in Discord for an interview :smile:")
-            )
-            .AddLine(line => line
-                .AddBlock("Teams will get kicked after")
-                .AddBlock($"{countdownTime}", block => block.Bold().Color(countdownTime <= 10 ? "#ff0000" : "#00ff00"))
-                .AddBlock("seconds.")
-            )
-            .AddSeparator();
+		// Decorated ServerMessage without emotes
+		var msg = new ServerMessage()
+			.ShowdownHeader()
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock("Match Over!", block => block.Bold().Color("#ff0000"))
+			)
+			.AddLine(line => line
+				.AddBlock($"{winnerTeam.GetFullNameWithTag()} ", block => block.Color(winnerTeam.Color).Bold())
+				.AddBlock("won the Match! :party:", block => block.Color("#FFD700"))
+			)
+			.AddLine(line => line
+					.AddBlock("Final Score: ", block => block.Bold().Color("#ffffff"))
+					.AddBlock(Showdown.Match.ScoreColored()) // Green for the final score
+			)
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock("You can now join us in Discord for an interview :smile:")
+			)
+			.AddLine(line => line
+				.AddBlock("Teams will get kicked after")
+				.AddBlock($"{_countdownTime}",
+					block => block.Bold().Color(_countdownTime <= 10 ? "#ff0000" : "#00ff00"))
+				.AddBlock("seconds.")
+			)
+			.AddSeparator();
 
-        msg.Send();
-    }
+		msg.Send();
+	}
 
-    public void Exit()
-    {
-        // No extra cleanup required here
-    }
+	public void Exit()
+	{
+		// No extra cleanup required here
+	}
 
-    public void InvokeFinish()
-    {
-        Finished?.Invoke();
-    }
+	public void InvokeFinish()
+	{
+		Finished?.Invoke();
+	}
 
-    private void UpdateCountdownMessage(int remainingTime)
-    {
-        countdownTime = remainingTime;
-        Execute(); // This will send the updated message with the countdown
-    }
+	private void UpdateCountdownMessage(int remainingTime)
+	{
+		_countdownTime = remainingTime;
+		Execute(); // This will send the updated message with the countdown
+	}
 }

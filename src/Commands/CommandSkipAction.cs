@@ -4,11 +4,11 @@ using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
 
-public class CommandReady : IMixedChatCommand
+public class CommandSkipAction : IMixedChatCommand
 {
 	public string Prefix => "!";
-	public string Command => "ready";
-	public string Description => "Confirms if you are ready for showdwon!.";
+	public string Command => "skip";
+	public string Description => "!skip";
 
 	public void Handle(ulong playerId, string arguments)
 	{

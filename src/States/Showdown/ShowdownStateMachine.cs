@@ -9,50 +9,52 @@ namespace Showdown4.States.Showdown;
 
 public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 {
-    public ShowdownStateMachine()
-    {
-        Transitions = new List<ITransition>();
-    }
+	public ShowdownStateMachine()
+	{
+		Transitions = new List<ITransition>();
+	}
 
-    public Match Match { get; set; }
+	public Match Match { get; set; }
 
-    // Always return new instances for InitialState and FinalState
-    public IState InitialState => new State_Showdown_Starting(this);
-    public IState FinalState => new State_Match_End(this);
-    public IState CurrentState { get; set; }
-    public List<ITransition> Transitions { get; set; }
+	// Always return new instances for InitialState and FinalState
+	public IState InitialState => new StateShowdownStarting(this);
+	public IState FinalState => new StateMatchEnd(this);
+	public IState CurrentState { get; set; }
+	public List<ITransition> Transitions { get; set; }
 
-    public event Action StateMachineFinished;
+	public event Action StateMachineFinished;
 
-    public void InitTransitions()
-    {
-        IStateMachine stateMachine = this;
-        Transitions = new List<ITransition>();
-        // Transitions use new instances directly
-        stateMachine
-            .AddTransition(new State_Showdown_Starting(this), new State_WaitingForHoF(this),
-                () => !LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
-            .AddTransition(new State_Showdown_Starting(this), new State_SetupMatch(this),
-                () => LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
-            .AddTransition(new State_WaitingForHoF(this), new State_SetupMatch(this))
-            .AddTransition(new State_SetupMatch(this), new State_LinkRacers(this))
-            .AddTransition(new State_LinkRacers(this), new State_SelectInitiative(this))
-            .AddTransition(new State_SelectInitiative(this), new State_Drafting(this))
-            .AddTransition(new State_Drafting(this), new State_ReadyCheck(this))
-            .AddTransition(new State_ReadyCheck(this), new State_PreRacing(this))
-            .AddTransition(new State_PreRacing(this), new State_Racing(this))
-            .AddTransition(new State_Racing(this), new State_PostRacing(this))
-            .AddTransition(new State_PostRacing(this), new State_Racing(this),
-                () => Match.RoundCounter() < 2)
-            .AddTransition(new State_PostRacing(this), new State_Drafting(this),
-                () => Match.RoundCounter() >= 2 && Match.TeamA.Wins < 2 && Match.TeamB.Wins < 2)
-            .AddTransition(new State_PostRacing(this), new State_Match_End(this),
-                () => Match.TeamA.Wins >= 2 || Match.TeamB.Wins >= 2)
-            .AddTransition(new State_Match_End(this), new State_WaitingForHoF(this));
-    }
+	public void InitTransitions()
+	{
+		IStateMachine stateMachine = this;
+		Transitions = new List<ITransition>();
+		// Transitions use new instances directly
+		stateMachine
+			.AddTransition(new StateShowdownStarting(this), new StateWaitingForHoF(this),
+				() => !LevelApi.CurrentLevel.UID.Equals(
+					PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
+			.AddTransition(new StateShowdownStarting(this), new StateSetupMatch(this),
+				() => LevelApi.CurrentLevel.UID.Equals(
+					PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
+			.AddTransition(new StateWaitingForHoF(this), new StateSetupMatch(this))
+			.AddTransition(new StateSetupMatch(this), new StateLinkRacers(this))
+			.AddTransition(new StateLinkRacers(this), new StateSelectInitiative(this))
+			.AddTransition(new StateSelectInitiative(this), new StateDrafting(this))
+			.AddTransition(new StateDrafting(this), new StateReadyCheck(this))
+			.AddTransition(new StateReadyCheck(this), new StatePreRacing(this))
+			.AddTransition(new StatePreRacing(this), new StateRacing(this))
+			.AddTransition(new StateRacing(this), new StatePostRacing(this))
+			.AddTransition(new StatePostRacing(this), new StateRacing(this),
+				() => Match.RoundCounter() < 2)
+			.AddTransition(new StatePostRacing(this), new StateDrafting(this),
+				() => Match.RoundCounter() >= 2 && Match.TeamA.Wins < 2 && Match.TeamB.Wins < 2)
+			.AddTransition(new StatePostRacing(this), new StateMatchEnd(this),
+				() => Match.TeamA.Wins >= 2 || Match.TeamB.Wins >= 2)
+			.AddTransition(new StateMatchEnd(this), new StateWaitingForHoF(this));
+	}
 
-    public void InvokeFinish()
-    {
-        StateMachineFinished?.Invoke();
-    }
+	public void InvokeFinish()
+	{
+		StateMachineFinished?.Invoke();
+	}
 }

@@ -5,90 +5,84 @@ namespace Showdown4.Entities;
 
 public class ChatMessage
 {
-    private ChatMessage()
-    {
-    }
+	private ChatMessage()
+	{
+	}
 
-    public string Message { get; set; }
+	public string Message { get; set; }
 
-    public static void SendCustomMessage(string message)
-    {
-        ZeepkistNetwork.SendCustomChatMessage(true, 0, "<br><color=#E0E0E0><size=-2>" + message + "</size></color>", "--------SHOWDOWN--------");
-    }
+	public static void SendCustomMessage(string message)
+	{
+		ZeepkistNetwork.SendCustomChatMessage(true, 0, "<br><color=#E0E0E0><size=-2>" + message + "</size></color>",
+			"--------SHOWDOWN--------");
+	}
 
-    public static void SendCustomMessage(string message, params ulong[] steamIds)
-    {
-        foreach (ulong steamId in steamIds.Distinct())
-        {
-            ZeepkistNetwork.SendCustomChatMessage(false, steamId, "<br><color=#E0E0E0><size=-2>" + message + "</size></color>", "--------SHOWDOWN--------</align>");
-        }
-    }
+	public static void SendCustomMessage(string message, params ulong[] steamIds)
+	{
+		foreach (var steamId in steamIds.Distinct())
+			ZeepkistNetwork.SendCustomChatMessage(false, steamId,
+				"<br><color=#E0E0E0><size=-2>" + message + "</size></color>", "--------SHOWDOWN--------</align>");
+	}
 
-    public class Builder
-    {
-        private readonly ChatMessage _chatMessage = new ChatMessage();
+	public class Builder
+	{
+		private readonly ChatMessage _chatMessage = new();
 
-        private int maxLineWidth = 16;
+		private int _maxLineWidth = 16;
 
-        public Builder DashedLine()
-        {
-            string dash = "-";
-            int count = 16;
-            _chatMessage.Message += string.Concat(Enumerable.Repeat(dash, count));
-            return this;
-        }
+		public Builder DashedLine()
+		{
+			var dash = "-";
+			var count = 16;
+			_chatMessage.Message += string.Concat(Enumerable.Repeat(dash, count));
+			return this;
+		}
 
-        public Builder ClearChat()
-        {
-            string br = "<br>";
-            int count = 50;
-            _chatMessage.Message += string.Concat(Enumerable.Repeat(br, count));
-            return this;
-        }
+		public Builder ClearChat()
+		{
+			var br = "<br>";
+			var count = 50;
+			_chatMessage.Message += string.Concat(Enumerable.Repeat(br, count));
+			return this;
+		}
 
-        public Builder NewLine()
-        {
-            _chatMessage.Message += "<br>";
-            return this;
-        }
+		public Builder NewLine()
+		{
+			_chatMessage.Message += "<br>";
+			return this;
+		}
 
-        public Builder TextLine(string text)
-        {
-            _chatMessage.Message += text;
-            if (text.Length > maxLineWidth)
-            {
-                maxLineWidth = text.Length;
-            }
+		public Builder TextLine(string text)
+		{
+			_chatMessage.Message += text;
+			if (text.Length > _maxLineWidth) _maxLineWidth = text.Length;
 
-            return this;
-        }
+			return this;
+		}
 
-        public Builder CenterTextLine(string text)
-        {
-            // Berechnung der Anzahl der Leerzeichen auf beiden Seiten
-            int padding = (maxLineWidth - text.Length) / 2;
+		public Builder CenterTextLine(string text)
+		{
+			// Berechnung der Anzahl der Leerzeichen auf beiden Seiten
+			var padding = (_maxLineWidth - text.Length) / 2;
 
-            // Falls die maxLineWidth kleiner als die Textlänge ist, wird kein Padding hinzugefügt
-            if (padding > 0)
-            {
-                _chatMessage.Message += new string(' ', padding) + text + new string(' ', padding);
-                // Wenn die Länge ungerade ist, ein zusätzliches Leerzeichen rechts hinzufügen
-                if ((maxLineWidth - text.Length) % 2 != 0)
-                {
-                    _chatMessage.Message += " ";
-                }
-            }
-            else
-            {
-                _chatMessage.Message += text;
-            }
+			// Falls die maxLineWidth kleiner als die Textlänge ist, wird kein Padding hinzugefügt
+			if (padding > 0)
+			{
+				_chatMessage.Message += new string(' ', padding) + text + new string(' ', padding);
+				// Wenn die Länge ungerade ist, ein zusätzliches Leerzeichen rechts hinzufügen
+				if ((_maxLineWidth - text.Length) % 2 != 0) _chatMessage.Message += " ";
+			}
+			else
+			{
+				_chatMessage.Message += text;
+			}
 
-            return this;
-        }
+			return this;
+		}
 
-        public ChatMessage Build()
-        {
-            return _chatMessage;
-        }
-    }
+		public ChatMessage Build()
+		{
+			return _chatMessage;
+		}
+	}
 }

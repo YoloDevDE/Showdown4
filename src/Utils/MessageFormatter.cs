@@ -6,75 +6,76 @@ namespace Showdown4.Utils;
 
 public static class MessageFormatter
 {
-    private const int _keyMaxWidth = 30; // Max Länge des Teamnamens, anpassbar
-    private const int _valueMaxWidth = 10; // Max Länge der Zeit, anpassbar
+	private const int KeyMaxWidth = 30; // Max Länge des Teamnamens, anpassbar
+	private const int ValueMaxWidth = 10; // Max Länge der Zeit, anpassbar
 
-    public static string AlignKeyValue(string key, string value)
-    {
-        return AlignKeyValue(key, _keyMaxWidth, value, _valueMaxWidth);
-    }
+	public static string AlignKeyValue(string key, string value)
+	{
+		return AlignKeyValue(key, KeyMaxWidth, value, ValueMaxWidth);
+	}
 
 
-    public static string AlignKeyValue(string key, int keyMaxWidth, string value, int valueMaxWidth)
-    {
-        string paddedTeamName = key.PadRight(keyMaxWidth);
-        string paddedTime = value.PadLeft(valueMaxWidth);
-        return $"{paddedTeamName} : {paddedTime}";
-    }
+	public static string AlignKeyValue(string key, int keyMaxWidth, string value, int valueMaxWidth)
+	{
+		var paddedTeamName = key.PadRight(keyMaxWidth);
+		var paddedTime = value.PadLeft(valueMaxWidth);
+		return $"{paddedTeamName} : {paddedTime}";
+	}
 
-    public static string ClearChat()
-    {
-        string br = "<br>";
-        int count = 40;
-        return string.Concat(Enumerable.Repeat(br, count));
-    }
+	public static string ClearChat()
+	{
+		var br = "<br>";
+		var count = 40;
+		return string.Concat(Enumerable.Repeat(br, count));
+	}
 
-    // public static string FormatRoundResult(Round round)
-    // {
-    //     RoundEvaluator roundEvaluator = round.RoundEvaluator;
-    //     string headline = $"Round {round.RoundNumber} Results:";
-    //     string line1 = AlignKeyValue("#1: " + roundEvaluator.CurrentWinner.GetTag(), 6, roundEvaluator.GetAverageTime(roundEvaluator.CurrentWinner).GetFormattedTime(), 10);
-    //     string line2 = AlignKeyValue("#2: " + roundEvaluator.CurrentLoser.GetTag(), 6, roundEvaluator.GetAverageTime(roundEvaluator.CurrentLoser).GetFormattedTime(), 10);
-    //     return PrintLine() + headline + "<br>" + line1 + "<br>" + line2;
-    // }
+	// public static string FormatRoundResult(Round round)
+	// {
+	//     RoundEvaluator roundEvaluator = round.RoundEvaluator;
+	//     string headline = $"Round {round.RoundNumber} Results:";
+	//     string line1 = AlignKeyValue("#1: " + roundEvaluator.CurrentWinner.GetTag(), 6, roundEvaluator.GetAverageTime(roundEvaluator.CurrentWinner).GetFormattedTime(), 10);
+	//     string line2 = AlignKeyValue("#2: " + roundEvaluator.CurrentLoser.GetTag(), 6, roundEvaluator.GetAverageTime(roundEvaluator.CurrentLoser).GetFormattedTime(), 10);
+	//     return PrintLine() + headline + "<br>" + line1 + "<br>" + line2;
+	// }
 
-    public static string PrintLine()
-    {
-        string dash = "-";
-        int count = 16;
-        return string.Concat(Enumerable.Repeat(dash, count));
-    }
+	public static string PrintLine()
+	{
+		var dash = "-";
+		var count = 16;
+		return string.Concat(Enumerable.Repeat(dash, count));
+	}
 
-    public static string PrintBreak()
-    {
-        return "<br>";
-    }
+	public static string PrintBreak()
+	{
+		return "<br>";
+	}
 
-    public static string FormatTimestamp(double time)
-    {
-        if (time <= 0)
-        {
-            return "--:--.---";
-        }
+	public static string FormatTimestamp(double time)
+	{
+		if (time <= 0) return "--:--.---";
 
-        return time.GetFormattedTime();
-    }
+		return time.GetFormattedTime();
+	}
 
-    public static string FormatTimestampDifference(double time)
-    {
-        // Überprüfen, ob die Zeit negativ ist und ein entsprechendes Vorzeichen setzen
-        char sign = time > 0 ? '-' : time < 0 ? '+' : '\u00b1';
+	public static string FormatTimestampDifference(double time)
+	{
+		// Überprüfen, ob die Zeit negativ ist und ein entsprechendes Vorzeichen setzen
+		var sign = time > 0
+			? '-'
+			: time < 0
+				? '+'
+				: '\u00b1';
 
-        // Umwandeln der Zeit in einen absoluten Wert, um das Vorzeichen bei der Formatierung zu ignorieren
-        double absoluteTime = Math.Abs(time);
+		// Umwandeln der Zeit in einen absoluten Wert, um das Vorzeichen bei der Formatierung zu ignorieren
+		var absoluteTime = Math.Abs(time);
 
-        // Erstellen einer CultureInfo Instanz, die immer den Punkt als Dezimaltrennzeichen verwendet
-        CultureInfo culture = CultureInfo.InvariantCulture;
+		// Erstellen einer CultureInfo Instanz, die immer den Punkt als Dezimaltrennzeichen verwendet
+		var culture = CultureInfo.InvariantCulture;
 
-        // Formatieren der Zeit in Sekunden mit drei Dezimalstellen
-        string formattedTime = absoluteTime.ToString("00.000", culture);
+		// Formatieren der Zeit in Sekunden mit drei Dezimalstellen
+		var formattedTime = absoluteTime.ToString("00.000", culture);
 
-        // Zusammenfügen des Vorzeichens mit der formatierten Zeit
-        return $"{sign}{formattedTime}";
-    }
+		// Zusammenfügen des Vorzeichens mit der formatierten Zeit
+		return $"{sign}{formattedTime}";
+	}
 }

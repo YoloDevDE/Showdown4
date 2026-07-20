@@ -2,11 +2,11 @@
 
 public interface ITransition
 {
-    IState From { get; }
-    IState To { get; }
+	IState From { get; }
+	IState To { get; }
 
-    // Condition to check if transition is valid
-    bool CanTransition();
+	// Condition to check if transition is valid
+	bool CanTransition();
 
-    void OnTransition(); // Optional: Logic to run during transition
+	void OnTransition(); // Optional: Logic to run during transition
 }

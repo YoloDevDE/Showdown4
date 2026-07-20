@@ -5,41 +5,40 @@ using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-public class State_WaitingForHoF : IState
+public class StateWaitingForHoF : IState
 {
-    public State_WaitingForHoF(IStateMachine stateMachine)
-    {
-        StateMachine = stateMachine;
-    }
+	public StateWaitingForHoF(IStateMachine stateMachine)
+	{
+		StateMachine = stateMachine;
+	}
 
-    public IStateMachine StateMachine { get; }
-    public event Action Finished;
+	public IStateMachine StateMachine { get; }
+	public event Action Finished;
 
-    public void Enter()
-    {
-        RacingApi.RoundStarted += OnRoundStarted;
-    }
+	public void Enter()
+	{
+		RacingApi.RoundStarted += OnRoundStarted;
+	}
 
-    public void Execute()
-    {
-        if (LevelApi.CurrentLevel.UID.Equals(PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
-        {
-            OnRoundStarted();
-        }
-    }
+	public void Execute()
+	{
+		if (LevelApi.CurrentLevel.UID.Equals(
+			    PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
+			OnRoundStarted();
+	}
 
-    public void Exit()
-    {
-        RacingApi.RoundStarted -= OnRoundStarted;
-    }
+	public void Exit()
+	{
+		RacingApi.RoundStarted -= OnRoundStarted;
+	}
 
-    public void InvokeFinish()
-    {
-        Finished?.Invoke();
-    }
+	public void InvokeFinish()
+	{
+		Finished?.Invoke();
+	}
 
-    private void OnRoundStarted()
-    {
-        Finished?.Invoke();
-    }
+	private void OnRoundStarted()
+	{
+		Finished?.Invoke();
+	}
 }

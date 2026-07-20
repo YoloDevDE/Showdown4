@@ -2,168 +2,160 @@
 using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Utils;
-using ZeepkistNetworking;
 
 namespace Showdown4.Entities;
 
 public class Round
 {
-    public readonly Team teamA;
-    public readonly Team teamB;
-    public List<Team> TeamsSortedByWinAsc;
+	public readonly Team TeamA;
+	public readonly Team TeamB;
+	public List<Team> TeamsSortedByWinAsc;
 
-    public Round(Team teamA, Team teamB)
-    {
-        Leaderboard = new Dictionary<ulong, Result>();
-        this.teamA = teamA;
-        this.teamB = teamB;
-    }
+	public Round(Team teamA, Team teamB)
+	{
+		Leaderboard = new Dictionary<ulong, Result>();
+		TeamA = teamA;
+		TeamB = teamB;
+	}
 
-    public bool IsRoundOver { get; private set; } = false;
-    public OnlineZeeplevel OnlineZeeplevel { get; }
+	public Team PickedLevel { get; }
 
-    // Store the method used to determine the winner
-    public WinningMethod WinningMethod { get; private set; }
+	public bool IsRoundOver { get; private set; } = false;
 
-    public Dictionary<ulong, Result> Leaderboard { get; set; }
 
-    public Team GetWinnerTeam => GetTeamsSortedByWinnerAsc().First();
+	// Store the method used to determine the winner
+	public WinningMethod WinningMethod { get; private set; }
 
-    public void AddResult(Result result)
-    {
-        if (Leaderboard.TryAdd(result.Racer.SteamId, result))
-        {
-            return;
-        }
+	public Dictionary<ulong, Result> Leaderboard { get; set; }
 
-        if (result.Time < Leaderboard[result.Racer.SteamId].Time)
-        {
-            Leaderboard[result.Racer.SteamId] = result;
-        }
-    }
+	public Team GetWinnerTeam => GetTeamsSortedByWinnerAsc().First();
 
-    public double GetPersonalBest(Racer racer)
-    {
-        return Leaderboard.ContainsKey(racer.SteamId) ? Leaderboard[racer.SteamId].Time : double.MaxValue;
-    }
+	public void AddResult(Result result)
+	{
+		if (Leaderboard.TryAdd(result.Racer.SteamId, result)) return;
 
-    private double GetCumulativeTimeOfTeam(Team team)
-    {
-        return team.Racers
-            .Select(racer => GetPersonalBest(racer))
-            .Where(personalBest => personalBest < double.MaxValue)
-            .Sum();
-    }
+		if (result.Time < Leaderboard[result.Racer.SteamId].Time) Leaderboard[result.Racer.SteamId] = result;
+	}
 
-    public double GetAvgTimeOfTeam(Team team)
-    {
-        int finishers = GetFinishersCount(team);
-        return finishers > 0 ? GetCumulativeTimeOfTeam(team) / finishers : 0.0;
-    }
+	public double GetPersonalBest(Racer racer)
+	{
+		return Leaderboard.ContainsKey(racer.SteamId) ? Leaderboard[racer.SteamId].Time : double.MaxValue;
+	}
 
-    public int GetFinishersCount(Team team)
-    {
-        return team.Racers.Count(racer => Leaderboard.ContainsKey(racer.SteamId));
-    }
+	private double GetCumulativeTimeOfTeam(Team team)
+	{
+		return team.Racers
+			.Select(racer => GetPersonalBest(racer))
+			.Where(personalBest => personalBest < double.MaxValue)
+			.Sum();
+	}
 
-    public void Evaluate(out List<Team> teams)
-    {
-        TeamsSortedByWinAsc = new List<Team>(CompareFinishers() ??
-                                             CompareCumulativeTeamTimes() ??
-                                             CompareIndividualPlacements() ??
-                                             SelectRandomWinner());
-        teams = TeamsSortedByWinAsc;
-    }
+	public double GetAvgTimeOfTeam(Team team)
+	{
+		var finishers = GetFinishersCount(team);
+		return finishers > 0 ? GetCumulativeTimeOfTeam(team) / finishers : 0.0;
+	}
 
-    public List<Team> GetTeamsSortedByWinnerAsc()
-    {
-        if (TeamsSortedByWinAsc == null)
-        {
-            Evaluate(out List<Team> teams);
-        }
+	public int GetFinishersCount(Team team)
+	{
+		return team.Racers.Count(racer => Leaderboard.ContainsKey(racer.SteamId));
+	}
 
-        return TeamsSortedByWinAsc;
-    }
+	public void Evaluate(out List<Team> teams)
+	{
+		TeamsSortedByWinAsc = new List<Team>(CompareFinishers() ??
+		                                     CompareCumulativeTeamTimes() ??
+		                                     CompareIndividualPlacements() ??
+		                                     SelectRandomWinner());
+		teams = TeamsSortedByWinAsc;
+	}
 
-    private List<Team> CompareFinishers()
-    {
-        int finishersA = GetFinishersCount(teamA);
-        int finishersB = GetFinishersCount(teamB);
+	public List<Team> GetTeamsSortedByWinnerAsc()
+	{
+		if (TeamsSortedByWinAsc == null) Evaluate(out var teams);
 
-        if (finishersA > finishersB)
-        {
-            WinningMethod = WinningMethod.Finishers;
-            return new List<Team> { teamA, teamB };
-        }
+		return TeamsSortedByWinAsc;
+	}
 
-        if (finishersB > finishersA)
-        {
-            WinningMethod = WinningMethod.Finishers;
-            return new List<Team> { teamB, teamA };
-        }
+	private List<Team> CompareFinishers()
+	{
+		var finishersA = GetFinishersCount(TeamA);
+		var finishersB = GetFinishersCount(TeamB);
 
-        return null;
-    }
+		if (finishersA > finishersB)
+		{
+			WinningMethod = WinningMethod.Finishers;
+			return new List<Team> { TeamA, TeamB };
+		}
 
-    private List<Team> CompareCumulativeTeamTimes()
-    {
-        double timeA = GetCumulativeTimeOfTeam(teamA);
-        double timeB = GetCumulativeTimeOfTeam(teamB);
+		if (finishersB > finishersA)
+		{
+			WinningMethod = WinningMethod.Finishers;
+			return new List<Team> { TeamB, TeamA };
+		}
 
-        if (timeA < timeB)
-        {
-            WinningMethod = WinningMethod.CumulativeTime;
-            return new List<Team> { teamA, teamB };
-        }
+		return null;
+	}
 
-        if (timeB < timeA)
-        {
-            WinningMethod = WinningMethod.CumulativeTime;
-            return new List<Team> { teamB, teamA };
-        }
+	private List<Team> CompareCumulativeTeamTimes()
+	{
+		var timeA = GetCumulativeTimeOfTeam(TeamA);
+		var timeB = GetCumulativeTimeOfTeam(TeamB);
 
-        return null;
-    }
+		if (timeA < timeB)
+		{
+			WinningMethod = WinningMethod.CumulativeTime;
+			return new List<Team> { TeamA, TeamB };
+		}
 
-    private List<Team> CompareIndividualPlacements()
-    {
-        List<Racer> finishersA = teamA.Racers
-            .Where(racer => Leaderboard.ContainsKey(racer.SteamId))
-            .OrderBy(racer => GetPersonalBest(racer))
-            .ToList();
+		if (timeB < timeA)
+		{
+			WinningMethod = WinningMethod.CumulativeTime;
+			return new List<Team> { TeamB, TeamA };
+		}
 
-        List<Racer> finishersB = teamB.Racers
-            .Where(racer => Leaderboard.ContainsKey(racer.SteamId))
-            .OrderBy(racer => GetPersonalBest(racer))
-            .ToList();
+		return null;
+	}
 
-        int minFinishers = Math.Min(finishersA.Count, finishersB.Count);
+	private List<Team> CompareIndividualPlacements()
+	{
+		var finishersA = TeamA.Racers
+			.Where(racer => Leaderboard.ContainsKey(racer.SteamId))
+			.OrderBy(racer => GetPersonalBest(racer))
+			.ToList();
 
-        for (int i = 0; i < minFinishers; i++)
-        {
-            double timeA = GetPersonalBest(finishersA[i]);
-            double timeB = GetPersonalBest(finishersB[i]);
+		var finishersB = TeamB.Racers
+			.Where(racer => Leaderboard.ContainsKey(racer.SteamId))
+			.OrderBy(racer => GetPersonalBest(racer))
+			.ToList();
 
-            if (timeA < timeB)
-            {
-                WinningMethod = WinningMethod.IndividualPlacements;
-                return new List<Team> { teamA, teamB };
-            }
+		var minFinishers = Math.Min(finishersA.Count, finishersB.Count);
 
-            if (timeB < timeA)
-            {
-                WinningMethod = WinningMethod.IndividualPlacements;
-                return new List<Team> { teamB, teamA };
-            }
-        }
+		for (var i = 0; i < minFinishers; i++)
+		{
+			var timeA = GetPersonalBest(finishersA[i]);
+			var timeB = GetPersonalBest(finishersB[i]);
 
-        return null;
-    }
+			if (timeA < timeB)
+			{
+				WinningMethod = WinningMethod.IndividualPlacements;
+				return new List<Team> { TeamA, TeamB };
+			}
 
-    private List<Team> SelectRandomWinner()
-    {
-        WinningMethod = WinningMethod.RandomSelection;
-        Random random = new Random();
-        return random.Next(2) == 0 ? new List<Team> { teamA, teamB } : new List<Team> { teamB, teamA };
-    }
+			if (timeB < timeA)
+			{
+				WinningMethod = WinningMethod.IndividualPlacements;
+				return new List<Team> { TeamB, TeamA };
+			}
+		}
+
+		return null;
+	}
+
+	private List<Team> SelectRandomWinner()
+	{
+		WinningMethod = WinningMethod.RandomSelection;
+		var random = new Random();
+		return random.Next(2) == 0 ? new List<Team> { TeamA, TeamB } : new List<Team> { TeamB, TeamA };
+	}
 }

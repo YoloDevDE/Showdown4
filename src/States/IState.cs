@@ -4,18 +4,18 @@ namespace Showdown4.States;
 
 public interface IState
 {
-    public IStateMachine StateMachine { get; }
+	public IStateMachine StateMachine { get; }
 
-    public IStateMachine SubStateMachine => null;
+	public IStateMachine SubStateMachine => null;
 
-    event Action Finished;
-    void Enter();
-    void Execute();
+	event Action Finished;
+	void Enter();
+	void Execute();
 
-    void HandleInput()
-    {
-    }
+	void HandleInput()
+	{
+	}
 
-    void Exit();
-    void InvokeFinish();
+	void Exit();
+	void InvokeFinish();
 }

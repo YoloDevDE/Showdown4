@@ -4,5 +4,5 @@ namespace Showdown4.Entities;
 
 public class TeamData
 {
-    public List<Team> Teams { get; set; }
+	public List<Team> Teams { get; set; }
 }
