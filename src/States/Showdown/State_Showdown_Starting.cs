@@ -5,21 +5,17 @@ using ZeepSDK.Level;
 
 namespace Showdown4.States.Showdown;
 
-public class StateShowdownStarting : IState
+public class StateShowdownStarting : ShowdownStateBase
 {
-	public StateShowdownStarting(IStateMachine stateMachine)
-	{
-		StateMachine = stateMachine;
-	}
-
-	public IStateMachine StateMachine { get; }
-	public event Action Finished;
-
-	public void Enter()
+	public StateShowdownStarting(IStateMachine stateMachine) : base(stateMachine)
 	{
 	}
 
-	public void Execute()
+	public override void Enter()
+	{
+	}
+
+	public override void Execute()
 	{
 		string tmp = "";
 		try
@@ -56,16 +52,11 @@ public class StateShowdownStarting : IState
 		}
 		finally
 		{
-			Finished?.Invoke();
+			InvokeFinish();
 		}
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
-	}
-
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
 	}
 }

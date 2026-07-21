@@ -28,6 +28,15 @@ public class Team
 
 	public int MaxTeamSize { get; set; } = 2;
 
+	/// <summary>
+	///     The synthetic "Showdown" team used to attribute auto-/random-picked maps that were not
+	///     chosen by one of the real teams.
+	/// </summary>
+	public static Team CreateShowdownTeam()
+	{
+		return new Team("Showdown", "Showdown", "#ff0000");
+	}
+
 	public string GetNameWithTag()
 	{
 		// string shortName = GetStringCountNoRichTags(Name) > 48 ? $"{Name[..48]}..." : Name;
@@ -51,7 +60,10 @@ public class Team
 					break;
 			}
 
-			if (openCount == 0) result++;
+			if (openCount == 0)
+			{
+				result++;
+			}
 		}
 
 		Debug.Log($"String {str} has {result} characters");
@@ -75,13 +87,19 @@ public class Team
 
 	public void AddRacer(Racer racer)
 	{
-		if (Racers.Count < MaxTeamSize) Racers.Add(racer);
+		if (Racers.Count < MaxTeamSize)
+		{
+			Racers.Add(racer);
+		}
 	}
 
 	public void RemoveRacer(ulong steamId)
 	{
 		Racer racer = Racers.FirstOrDefault(r => r.SteamId == steamId);
-		if (racer == null) return;
+		if (racer == null)
+		{
+			return;
+		}
 
 		Racers.Remove(racer);
 	}
@@ -89,14 +107,20 @@ public class Team
 	public string GetLinkedRacersToString()
 	{
 		string result = "none";
-		if (Racers.Count <= 0) return result;
+		if (Racers.Count <= 0)
+		{
+			return result;
+		}
 
 		result = "";
 		for (int index = 0; index < Racers.Count; index++)
 		{
 			Racer racer = Racers[index];
 			result += racer.SteamName;
-			if (index < Racers.Count - 1) result += ", ";
+			if (index < Racers.Count - 1)
+			{
+				result += ", ";
+			}
 		}
 
 		return result;

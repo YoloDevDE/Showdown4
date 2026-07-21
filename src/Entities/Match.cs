@@ -26,6 +26,10 @@ public class Match
 	public Team Initiative { get; set; }
 	public Team NonInitiative => Initiative == TeamA ? TeamB : TeamA;
 
+	// Draftphase I is the very first draft; every draft after a round has been played is Draftphase II.
+	public bool IsDraftphaseTwo => Rounds.Count > 0;
+	public string DraftphaseName => IsDraftphaseTwo ? "Draftphase II" : "Draftphase I";
+
 	public string ScoreWithFullNameColored()
 	{
 		return $"{TeamA.GetFullColoredTagAndName()} {TeamA.Wins}:{TeamB.Wins} {TeamB.GetFullColoredTagAndName()}";
@@ -65,8 +69,10 @@ public class Match
 		List<OnlineZeeplevel> allLevels =
 			PlaylistManager.GetLocalLevelsByPlaylistName(MyConfig.CompetitionLevelsPlaylistNameConfig.Value);
 		if (Drafts.Count > 0)
+		{
 			unAvaiableLevels =
 				new List<OnlineZeeplevel>(CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
+		}
 
 		Draft draft = new(Initiative, NonInitiative, allLevels, unAvaiableLevels);
 		Drafts.Add(draft);
@@ -79,9 +85,15 @@ public class Match
 
 	public Team GetTeamBySteamId(ulong steamId)
 	{
-		if (TeamA.Racers.Any(player => player.SteamId == steamId)) return TeamA;
+		if (TeamA.Racers.Any(player => player.SteamId == steamId))
+		{
+			return TeamA;
+		}
 
-		if (TeamB.Racers.Any(player => player.SteamId == steamId)) return TeamB;
+		if (TeamB.Racers.Any(player => player.SteamId == steamId))
+		{
+			return TeamB;
+		}
 
 		return null;
 	}

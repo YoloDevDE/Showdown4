@@ -7,21 +7,23 @@ namespace Showdown4.Managers;
 
 public class CoroutineManager : MonoBehaviour
 {
-	private static CoroutineManager _instance;
 	private readonly List<Coroutine> _activeCoroutines = new();
 
 	public static CoroutineManager Instance
 	{
 		get
 		{
-			if (_instance == null)
+			if (field)
 			{
-				GameObject obj = new("CoroutineManager");
-				_instance = obj.AddComponent<CoroutineManager>();
-				DontDestroyOnLoad(obj); // Optional: Keeps this object across scenes
+				return field;
 			}
 
-			return _instance;
+
+			GameObject obj = new("CoroutineManager");
+			field = obj.AddComponent<CoroutineManager>();
+			DontDestroyOnLoad(obj); // Optional: Keeps this object across scenes
+
+			return field;
 		}
 	}
 
@@ -42,7 +44,10 @@ public class CoroutineManager : MonoBehaviour
 
 	public void StopExternalCoroutine(Coroutine coroutine)
 	{
-		if (coroutine == null || !_activeCoroutines.Contains(coroutine)) return;
+		if (coroutine == null || !_activeCoroutines.Contains(coroutine))
+		{
+			return;
+		}
 
 		StopCoroutine(coroutine);
 		_activeCoroutines.Remove(coroutine); // Remove it from the list
@@ -50,7 +55,10 @@ public class CoroutineManager : MonoBehaviour
 
 	public void StopAllExternalCoroutines()
 	{
-		if (_activeCoroutines == null || _activeCoroutines.Count == 0) return;
+		if (_activeCoroutines == null || _activeCoroutines.Count == 0)
+		{
+			return;
+		}
 
 		foreach (Coroutine coroutine in _activeCoroutines.Where(coroutine => coroutine != null))
 			StopCoroutine(coroutine);

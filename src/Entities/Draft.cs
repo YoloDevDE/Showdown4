@@ -45,10 +45,15 @@ public class Draft
 
 	public void PickLevel(OnlineZeeplevel level)
 	{
-		if (CurrentTeam.Picks <= 0) throw new InvalidOperationException("You have no more picks left.");
+		if (CurrentTeam.Picks <= 0)
+		{
+			throw new InvalidOperationException("You have no more picks left.");
+		}
 
 		if (!AvailableLevels.Any(l => l.UID.Equals(level.UID)) || UnAvailableLevels.Any(l => l.UID.Equals(level.UID)))
+		{
 			throw new InvalidOperationException("Level is not available anymore");
+		}
 
 		IsPickPhase = true;
 		PickedLevels.Add(new DraftAction(level, CurrentTeam, true));
@@ -60,14 +65,21 @@ public class Draft
 	public void BanLevel(OnlineZeeplevel level)
 	{
 		if (IsPickPhase && !OtherTeam.MissedDraft)
+		{
 			throw new InvalidOperationException(
 				$"{OtherTeam.GetColoredTag()} has picked a level and therefore you can't ban a level anymore.");
+		}
 
 		GetOtherTeam().MissedDraft = false;
-		if (CurrentTeam.Bans <= 0) throw new InvalidOperationException("You have no more bans left.");
+		if (CurrentTeam.Bans <= 0)
+		{
+			throw new InvalidOperationException("You have no more bans left.");
+		}
 
 		if (!AvailableLevels.Any(l => l.UID.Equals(level.UID)) || UnAvailableLevels.Any(l => l.UID.Equals(level.UID)))
+		{
 			throw new InvalidOperationException("Level is not available anymore");
+		}
 
 		BannedLevels.Add(new DraftAction(level, CurrentTeam, false));
 		AvailableLevels.Remove(level);

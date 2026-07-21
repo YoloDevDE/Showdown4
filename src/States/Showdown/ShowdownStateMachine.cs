@@ -42,7 +42,10 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 			.AddTransition(new StateSetupMatch(this), new StateLinkRacers(this))
 			.AddTransition(new StateLinkRacers(this), new StateSelectInitiative(this))
 			.AddTransition(new StateSelectInitiative(this), new StateDrafting(this))
+			.AddTransition(new StateDrafting(this), new StateDraftIncomplete(this),
+				() => Match.CurrentDraft.PickedLevels.Count == 0)
 			.AddTransition(new StateDrafting(this), new StateReadyCheck(this))
+			.AddTransition(new StateDraftIncomplete(this), new StateReadyCheck(this))
 			.AddTransition(new StateReadyCheck(this), new StatePreRacing(this))
 			.AddTransition(new StatePreRacing(this), new StateRacing(this))
 			.AddTransition(new StateRacing(this), new StatePostRacing(this))

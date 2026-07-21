@@ -55,7 +55,10 @@ public class ChatMessage
 		public Builder TextLine(string text)
 		{
 			_chatMessage.Message += text;
-			if (text.Length > _maxLineWidth) _maxLineWidth = text.Length;
+			if (text.Length > _maxLineWidth)
+			{
+				_maxLineWidth = text.Length;
+			}
 
 			return this;
 		}
@@ -70,7 +73,10 @@ public class ChatMessage
 			{
 				_chatMessage.Message += new string(' ', padding) + text + new string(' ', padding);
 				// Wenn die Länge ungerade ist, ein zusätzliches Leerzeichen rechts hinzufügen
-				if ((_maxLineWidth - text.Length) % 2 != 0) _chatMessage.Message += " ";
+				if ((_maxLineWidth - text.Length) % 2 != 0)
+				{
+					_chatMessage.Message += " ";
+				}
 			}
 			else
 			{

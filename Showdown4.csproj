@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
-        <AssemblyName>Zeepkist Showdown</AssemblyName>
+        <AssemblyName>Showdown4</AssemblyName>
         <Description>Zeepkist plugin that runs the tournament called "Zeepkist Showdown"</Description>
         <Version>1.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

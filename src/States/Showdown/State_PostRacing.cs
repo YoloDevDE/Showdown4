@@ -1,46 +1,40 @@
-﻿using System;
-using Showdown4.Entities;
+﻿using Showdown4.Entities;
+using Showdown4.Utils;
 using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-internal class StatePostRacing : IState
+internal class StatePostRacing : ShowdownStateBase
 {
-	public StatePostRacing(IStateMachine stateMachine)
+	public StatePostRacing(IStateMachine stateMachine) : base(stateMachine)
 	{
-		StateMachine = stateMachine;
 	}
 
-	private ShowdownStateMachine Showdown => StateMachine as ShowdownStateMachine;
-
-
-	public IStateMachine StateMachine { get; }
-
-	public void Enter()
+	public override void Enter()
 	{
 		RacingApi.RoundStarted += OnRoundStarted;
 	}
 
-	public void Execute()
+	public override void Execute()
 	{
-		Team winnerTeam = Showdown.Match.CurrentRound.GetWinnerTeam;
+		Team winnerTeam = Match.CurrentRound.GetWinnerTeam;
 		winnerTeam.AddWin();
 
 		// Get the current round index
-		int currentRoundCounter = Showdown.Match.RoundCounter();
+		int currentRoundCounter = Match.RoundCounter();
 
 		// Default message in case of an error
 		string nextLevelMessage = "";
 		// Check if the current round index is within the range of picked levels
-		if (currentRoundCounter < Showdown.Match.CurrentDraft.PickedLevels.Count)
+		if (currentRoundCounter < Match.CurrentDraft.PickedLevels.Count)
 		{
-			DraftAction nextLevel = Showdown.Match.CurrentDraft.PickedLevels[Showdown.Match.RoundCounter()];
+			DraftAction nextLevel = Match.CurrentDraft.PickedLevels[Match.RoundCounter()];
 			// If valid, show the next level's name
 			nextLevelMessage += new ChatMessage.Builder()
-				.TextLine($"Starting Round {Showdown.Match.RoundCounter() + 1}")
+				.TextLine($"Starting Round {Match.RoundCounter() + 1}")
 				.NewLine()
 				.DashedLine().NewLine()
-				.TextLine($"Level <color=#00ffff>'{nextLevel.Level.Name}'</color>").NewLine()
+				.TextLine($"Level <color={ShowdownColors.Cyan}>'{nextLevel.Level.Name}'</color>").NewLine()
 				.TextLine($"picked by {nextLevel.Team.GetColoredTag()}")
 				.Build().Message;
 		}
@@ -50,11 +44,11 @@ internal class StatePostRacing : IState
 		}
 		else
 		{
-			Showdown.Match.Initiative = Showdown.Match.NonInitiative;
+			Match.Initiative = Match.NonInitiative;
 			nextLevelMessage +=
 				new ChatMessage.Builder().TextLine("Upcoming -> Draftphase II").NewLine()
 					.DashedLine().NewLine()
-					.TextLine($"Initiative: {Showdown.Match.Initiative.GetColoredTag()}").NewLine()
+					.TextLine($"Initiative: {Match.Initiative.GetColoredTag()}").NewLine()
 					.TextLine("Prepare yourself! It will start almost immediately!")
 					.Build().Message;
 		}
@@ -70,25 +64,17 @@ internal class StatePostRacing : IState
 				.DashedLine().NewLine() // Dashed line separating content
 				.TextLine(nextLevelMessage).NewLine() // Show the next level or intermission
 				.DashedLine().NewLine() // Dashed line to separate next section
-				.TextLine($"{Showdown.Match.Score()}") // Display the score
+				.TextLine($"{Match.Score()}") // Display the score
 				.Build().Message); // Final dashed line for closure
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
 		RacingApi.RoundStarted -= OnRoundStarted;
 	}
 
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
-	}
-
-	public event Action Finished;
-
-
 	private void OnRoundStarted()
 	{
-		Finished?.Invoke();
+		InvokeFinish();
 	}
 }

@@ -14,7 +14,7 @@ using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-public class StateRacing : IState
+public class StateRacing : ShowdownStateBase
 {
 	private readonly Dictionary<ulong, int> _previousPositions = new();
 	private readonly Dictionary<ulong, double> _previousTimes = new();
@@ -22,18 +22,11 @@ public class StateRacing : IState
 	private LeaderboardDisplay _leaderboardDisplay;
 	private Team _teamA, _teamB;
 
-	public StateRacing(IStateMachine stateMachine)
+	public StateRacing(IStateMachine stateMachine) : base(stateMachine)
 	{
-		StateMachine = stateMachine;
 	}
 
-	private ShowdownStateMachine Showdown => StateMachine as ShowdownStateMachine;
-
-	public IStateMachine StateMachine { get; }
-
-	public event Action Finished;
-
-	public void Enter()
+	public override void Enter()
 	{
 		_teamA = Showdown.Match.TeamA;
 		_teamB = Showdown.Match.TeamB;
@@ -59,22 +52,17 @@ public class StateRacing : IState
 		CoroutineManager.Instance.StartExternalCoroutine(DisplayRaceIntroMessage());
 	}
 
-	public void Execute()
+	public override void Execute()
 	{
 		_leaderboardDisplay = new LeaderboardDisplay(_currentRound);
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
 		ZeepkistNetwork.PlayerResultsChanged -= OnLeaderBoardUpdated;
 
 		MultiplayerApi.PlayerJoined -= OnPLayerJoined;
 		RacingApi.RoundEnded -= OnRoundEnd;
-	}
-
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
 	}
 
 	private void OnPLayerJoined(ZeepkistNetworkPlayer player)
@@ -85,7 +73,10 @@ public class StateRacing : IState
 		if (matchingRacer != null)
 		{
 			double personalBest = _currentRound.GetPersonalBest(matchingRacer);
-			if (!(personalBest < double.MaxValue)) return;
+			if (!(personalBest < double.MaxValue))
+			{
+				return;
+			}
 
 			ZeepkistNetwork.CustomLeaderBoard_SetPlayerTimeOnLeaderboard(player.SteamID, (float)personalBest, true);
 			ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(player.SteamID, "",
@@ -241,15 +232,21 @@ public class StateRacing : IState
 			introMessage.AddLine(line =>
 			{
 				if (teamARacer != null)
+				{
 					line.AddBlock($"{teamARacer.SteamName}", f => f.Color(_teamA.Color));
+				}
 				else
+				{
 					line.AddBlock(" "); // Empty space for alignment
+				}
 
 
 				if (teamBRacer != null)
+				{
 					line.AddBlock(
 						$"{teamBRacer.SteamName}".PadLeft(1 + _teamA.GetNameWithTag().Length + "VS".Length +
 							_teamB.GetNameWithTag().Length - teamARacer.SteamName.Length), f => f.Color(_teamB.Color));
+				}
 			});
 		}
 

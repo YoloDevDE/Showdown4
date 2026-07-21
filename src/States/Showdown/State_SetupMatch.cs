@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
@@ -8,7 +7,7 @@ using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
-public class StateSetupMatch : IState
+public class StateSetupMatch : ShowdownStateBase
 {
 	private const int CountdownDuration = 2; // Countdown in seconds
 	private int _currentSelectionIndex;
@@ -18,17 +17,11 @@ public class StateSetupMatch : IState
 	private Team _selectedTeamB;
 	private List<Team> _teams;
 
-	public StateSetupMatch(IStateMachine stateMachine)
+	public StateSetupMatch(IStateMachine stateMachine) : base(stateMachine)
 	{
-		StateMachine = stateMachine;
 	}
 
-	public ShowdownStateMachine Showdown => (ShowdownStateMachine)StateMachine;
-	public IStateMachine StateMachine { get; }
-
-	public event Action Finished;
-
-	public void Enter()
+	public override void Enter()
 	{
 		TeamData teamData = Plugin.Storage.LoadFromJson<TeamData>(MyConfig.TeamFileConfig.Value);
 		_teams = teamData?.Teams ?? new List<Team>();
@@ -39,28 +32,26 @@ public class StateSetupMatch : IState
 		_isCountdownActive = false;
 
 		ChatApi.SendMessage("/timeset 86400");
-		if (_teams.Count == 0) ChatMessage.SendCustomMessage("No teams found in the JSON file.");
+		if (_teams.Count == 0)
+		{
+			ChatMessage.SendCustomMessage("No teams found in the JSON file.");
+		}
 
 		StateManager.Instance.SetCurrentState(this);
 		Execute();
 	}
 
-	public void Execute()
+	public override void Execute()
 	{
 		SendServerMessage();
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
 		StateManager.Instance.SetCurrentState(null);
 	}
 
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
-	}
-
-	public void HandleInput()
+	public override void HandleInput()
 	{
 		bool inputDetected = false;
 
@@ -96,7 +87,10 @@ public class StateSetupMatch : IState
 			StartCountdown();
 		}
 
-		if (inputDetected) Execute();
+		if (inputDetected)
+		{
+			Execute();
+		}
 	}
 
 	private void SendServerMessage()
@@ -105,7 +99,8 @@ public class StateSetupMatch : IState
 		ServerMessage serverMessage = new ServerMessage()
 			.ShowdownHeader()
 			.AddLine(line => line.AddBlock("Setup Match",
-				builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40)))
+				builder => builder.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold()
+					.AllCaps().Size(40)))
 			.AddSeparator();
 
 		for (int i = 0; i < _teams.Count; i++)
@@ -114,35 +109,46 @@ public class StateSetupMatch : IState
 			int index = i;
 
 			if (i == _currentSelectionIndex && (team == _selectedTeamA || team == _selectedTeamB))
+			{
 				serverMessage.AddLine(line => line
-					.AddBlock($"{(team == _selectedTeamA ? "A" : "B")} > {index}: ", block => block.Color("#00ff00"))
+					.AddBlock($"{(team == _selectedTeamA ? "A" : "B")} > {index}: ",
+						block => block.Color(ShowdownColors.Green))
 					.AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
 					.Bold().Underline());
+			}
 			else if (team == _selectedTeamA || team == _selectedTeamB)
+			{
 				serverMessage.AddLine(line => line
 					.AddBlock($"{(team == _selectedTeamA ? "A" : "B")}   {index}: ")
 					.AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
 					.Bold().Underline());
+			}
 			else if (i == _currentSelectionIndex)
+			{
 				serverMessage.AddLine(line => line
-					.AddBlock($"  > {index}: ", block => block.Color("#ffff00"))
+					.AddBlock($"  > {index}: ", block => block.Color(ShowdownColors.Yellow))
 					.AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
 					.Bold());
+			}
 			else
+			{
 				serverMessage.AddLine(line => line
 					.AddBlock($"    {index}: ")
 					.AddBlock(team.GetNameWithTag(), block => block.Color(team.Color)));
+			}
 		}
 
 		// Display the countdown if it's active
 		if (_isCountdownActive)
+		{
 			serverMessage.AddSeparator()
 				.AddLine(line => line
 					.AddBlock("Continue to")
-					.AddBlock("'Link Racers'", block => block.Color("#ffff00"))
+					.AddBlock("'Link Racers'", block => block.Color(ShowdownColors.Yellow))
 					.AddBlock("in")
-					.AddBlock($"{_remainingSeconds}", block => block.Color("#00ff00"))
+					.AddBlock($"{_remainingSeconds}", block => block.Color(ShowdownColors.Green))
 					.AddBlock("seconds..."));
+		}
 
 		serverMessage.Send();
 	}

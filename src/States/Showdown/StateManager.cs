@@ -12,7 +12,10 @@ public class StateManager : MonoBehaviour
 	{
 		get
 		{
-			if (_instance) return _instance;
+			if (_instance)
+			{
+				return _instance;
+			}
 
 			GameObject stateManagerObj = new("StateManager");
 			_instance = stateManagerObj.AddComponent<StateManager>();

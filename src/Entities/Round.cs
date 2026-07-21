@@ -32,14 +32,20 @@ public class Round
 
 	public void AddResult(Result result)
 	{
-		if (Leaderboard.TryAdd(result.Racer.SteamId, result)) return;
+		if (Leaderboard.TryAdd(result.Racer.SteamId, result))
+		{
+			return;
+		}
 
-		if (result.Time < Leaderboard[result.Racer.SteamId].Time) Leaderboard[result.Racer.SteamId] = result;
+		if (result.Time < Leaderboard[result.Racer.SteamId].Time)
+		{
+			Leaderboard[result.Racer.SteamId] = result;
+		}
 	}
 
 	public double GetPersonalBest(Racer racer)
 	{
-		return Leaderboard.ContainsKey(racer.SteamId) ? Leaderboard[racer.SteamId].Time : double.MaxValue;
+		return Leaderboard.TryGetValue(racer.SteamId, out Result value) ? value.Time : double.MaxValue;
 	}
 
 	private double GetCumulativeTimeOfTeam(Team team)
@@ -72,7 +78,10 @@ public class Round
 
 	public List<Team> GetTeamsSortedByWinnerAsc()
 	{
-		if (TeamsSortedByWinAsc == null) Evaluate(out List<Team> teams);
+		if (TeamsSortedByWinAsc == null)
+		{
+			Evaluate(out List<Team> teams);
+		}
 
 		return TeamsSortedByWinAsc;
 	}
@@ -88,13 +97,13 @@ public class Round
 			return new List<Team> { TeamA, TeamB };
 		}
 
-		if (finishersB > finishersA)
+		if (finishersB <= finishersA)
 		{
-			WinningMethod = WinningMethod.Finishers;
-			return new List<Team> { TeamB, TeamA };
+			return null;
 		}
 
-		return null;
+		WinningMethod = WinningMethod.Finishers;
+		return new List<Team> { TeamB, TeamA };
 	}
 
 	private List<Team> CompareCumulativeTeamTimes()

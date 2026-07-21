@@ -288,14 +288,19 @@ public class ServerMessage
 
 		public BlockBuilder Gradients(params string[] colors)
 		{
-			if (colors == null || colors.Length < 2) return this;
+			if (colors == null || colors.Length < 2)
+			{
+				return this;
+			}
 
 			// Validate hex codes
 			foreach (string color in colors)
 			{
 				string cleanColor = color.TrimStart('#');
 				if (!Regex.IsMatch(cleanColor, "^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{4}$|^[0-9A-Fa-f]{6}$|^[0-9A-Fa-f]{8}$"))
+				{
 					return this;
+				}
 			}
 
 			string content = ExtractTextContent(_contentBuilder.ToString(), out string before, out string after);

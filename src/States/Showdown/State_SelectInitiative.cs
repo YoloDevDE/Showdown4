@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
@@ -7,7 +6,7 @@ using UnityEngine;
 
 namespace Showdown4.States.Showdown;
 
-public class StateSelectInitiative : IState
+public class StateSelectInitiative : ShowdownStateBase
 {
 	private const int CountdownDuration = 2; // Countdown in seconds
 	private int _currentSelectionIndex; // To track the currently selected team
@@ -15,24 +14,17 @@ public class StateSelectInitiative : IState
 	private Team _selectedTeam; // The team with initiative
 	private List<Team> _teams;
 
-	public StateSelectInitiative(IStateMachine stateMachine)
+	public StateSelectInitiative(IStateMachine stateMachine) : base(stateMachine)
 	{
-		StateMachine = stateMachine;
 	}
 
-	private Team TeamA => Showdown.Match.TeamA;
-	private Team TeamB => Showdown.Match.TeamB;
+	private Team TeamA => Match.TeamA;
+	private Team TeamB => Match.TeamB;
 
-	private ShowdownStateMachine Showdown => (ShowdownStateMachine)StateMachine;
-
-	public IStateMachine StateMachine { get; }
-
-	public event Action Finished;
-
-	public void Enter()
+	public override void Enter()
 	{
 		// Initialize the teams and reset selection
-		_teams = new List<Team> { Showdown.Match.TeamA, Showdown.Match.TeamB };
+		_teams = new List<Team> { Match.TeamA, Match.TeamB };
 		_currentSelectionIndex = 0;
 		_selectedTeam = null;
 		_isLocked = false; // Allow input at the start
@@ -41,27 +33,24 @@ public class StateSelectInitiative : IState
 		StateManager.Instance.SetCurrentState(this);
 	}
 
-	public void Execute()
+	public override void Execute()
 	{
 		ServerMessageThing().Send();
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
 		// Unregister this state from input detection
 		StateManager.Instance.SetCurrentState(null);
 	}
 
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
-	}
-
-	public void HandleInput()
+	public override void HandleInput()
 	{
 		if (_isLocked)
 			// Do nothing if input is locked
+		{
 			return;
+		}
 
 		bool inputDetected = false;
 
@@ -81,7 +70,10 @@ public class StateSelectInitiative : IState
 		}
 
 		// Update the display only if there was input
-		if (inputDetected) Execute();
+		if (inputDetected)
+		{
+			Execute();
+		}
 	}
 
 	private ServerMessage ServerMessageThing()
@@ -104,16 +96,20 @@ public class StateSelectInitiative : IState
 
 			if (index == _currentSelectionIndex)
 				// Highlight the currently selected team
+			{
 				serverMessage.AddLine(line => line
-					.AddBlock($"> {index}: ", block => block.Color("#ffff00"))
+					.AddBlock($"> {index}: ", block => block.Color(ShowdownColors.Yellow))
 					.AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
 					.Bold());
+			}
 			else
 				// Show the other team normally
+			{
 				serverMessage.AddLine(line => line
 					.AddBlock($"{index}: ")
 					.AddBlock(team.GetNameWithTag(), block => block.Color(team.Color))
 				);
+			}
 		}
 
 		return serverMessage;
@@ -130,7 +126,7 @@ public class StateSelectInitiative : IState
 
 		// Start the countdown using CountdownTimer
 		CoroutineManager.Instance.StartExternalCoroutine(
-			CountdownTimer.Start(CountdownDuration, UpdateCountdownMessage, Finished)
+			CountdownTimer.Start(CountdownDuration, UpdateCountdownMessage, InvokeFinish)
 		);
 	}
 

@@ -66,7 +66,10 @@ public interface IStateMachine
 	{
 		foreach (ITransition transition in Transitions)
 		{
-			if (transition.From.GetType().Name != CurrentState.GetType().Name || !transition.CanTransition()) continue;
+			if (transition.From.GetType().Name != CurrentState.GetType().Name || !transition.CanTransition())
+			{
+				continue;
+			}
 
 			Debug.Log(
 				$"Current State: {CurrentState.GetType().Name}, Transitioning to: {transition.To.GetType().Name}");

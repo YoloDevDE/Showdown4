@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Showdown4.Commands;
 using Showdown4.Entities;
 using Showdown4.Managers;
@@ -11,25 +9,20 @@ using ZeepkistClient;
 
 namespace Showdown4.States.Showdown;
 
-public class StateReadyCheck : IState
+public class StateReadyCheck : ShowdownStateBase
 {
 	private const int ReadyCheckDuration = 300; // Countdown in seconds
 	private HashSet<ulong> _readyPlayers; // Store the IDs of players who are ready
 	private int _remainingTime; // Countdown in seconds
 
-	public StateReadyCheck(IStateMachine stateMachine)
+	public StateReadyCheck(IStateMachine stateMachine) : base(stateMachine)
 	{
-		StateMachine = stateMachine;
 	}
 
-	private ShowdownStateMachine Showdown => StateMachine as ShowdownStateMachine;
-	private Team TeamA => Showdown.Match.TeamA;
-	private Team TeamB => Showdown.Match.TeamB;
-	public IStateMachine StateMachine { get; }
+	private Team TeamA => Match.TeamA;
+	private Team TeamB => Match.TeamB;
 
-	public event Action Finished;
-
-	public void Enter()
+	public override void Enter()
 	{
 		_readyPlayers = new HashSet<ulong>();
 		_remainingTime = ReadyCheckDuration;
@@ -40,13 +33,13 @@ public class StateReadyCheck : IState
 		CoroutineManager.Instance.StartExternalCoroutine(TimerCoroutine());
 	}
 
-	public void Execute()
+	public override void Execute()
 	{
 		ServerMessage msg = ShowPickedMaps()
 			.AddSeparator()
 			.AddInLine(line => line
 				.AddBlock("Remaining Time:")
-				.AddBlock($"{TimeFormatter.FormatDuration(_remainingTime)}", block => block.Color("#ff0000"))
+				.AddBlock($"{TimeFormatter.FormatDuration(_remainingTime)}", block => block.Color(ShowdownColors.Red))
 			)
 			.AddLine(line => line.AddBlock("Ready Status:"));
 
@@ -56,22 +49,18 @@ public class StateReadyCheck : IState
 			bool isReady = _readyPlayers.Contains(player.SteamID);
 			msg.AddLine(line => line
 				.AddBlock($"{player.Username}:")
-				.AddBlock(isReady ? "Ready" : "Not Ready", block => block.Color(isReady ? "#00ff00" : "#ff0000"))
+				.AddBlock(isReady ? "Ready" : "Not Ready",
+					block => block.Color(isReady ? ShowdownColors.Green : ShowdownColors.Red))
 			);
 		}
 
 		msg.Send();
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
 		CommandReady.CommandInvoked -= OnReady;
 		_remainingTime = 0; // This will cause the timer coroutine to stop
-	}
-
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
 	}
 
 	private IEnumerator TimerCoroutine()
@@ -101,9 +90,13 @@ public class StateReadyCheck : IState
 
 			// Check if all players are ready
 			if (_readyPlayers.Count >= ZeepkistNetwork.Players.Count)
+			{
 				ConfirmReady(); // All players ready, finish the state
+			}
 			else
+			{
 				Execute(); // Update the ready status in the server message
+			}
 		}
 	}
 
@@ -117,30 +110,11 @@ public class StateReadyCheck : IState
 				.AddBlock($"{TeamB.GetNameWithTag()}", b => b.Color(TeamB.Color))
 			)
 			.AddSeparator()
-			.AddLine(line => line
-				.AddBlock("Picked Maps:"));
-
-		int round = 1;
-		foreach (DraftAction pickedLevel in Showdown.Match.Drafts.SelectMany(matchDraft => matchDraft.PickedLevels))
-			msg.AddLine(line =>
-			{
-				if (round <= Showdown.Match.RoundCounter()) line.StrikeThrough();
-
-				line
-					.AddBlock($"Round {round}:")
-					.AddBlock($"'{pickedLevel.Level.Name}'", block => block.Color("#00ffff"))
-					.AddBlock("picked by", block => block.Indent("585%"))
-					.AddBlock($"{pickedLevel.Team.GetColoredTag()}")
-					.Bold();
-				round++;
-			});
-
-		// Add the ready check instruction at the end
-		msg
+			.AppendPickedMaps(Match)
 			.AddSeparator()
 			.AddLine(line => line
 				.AddBlock("To ready up, type")
-				.AddBlock("'!ready'", b => b.Color("#ffff00").Bold())
+				.AddBlock("'!ready'", b => b.Color(ShowdownColors.Yellow).Bold())
 				.AddBlock("in the chat.")
 			);
 
@@ -168,14 +142,15 @@ public class StateReadyCheck : IState
 			bool isReady = _readyPlayers.Contains(player.SteamID);
 			msg.AddLine(line => line
 				.AddBlock($"{player.Username}: ", block => block.Bold())
-				.AddBlock(isReady ? "Ready" : "Not Ready", block => block.Color(isReady ? "#00ff00" : "#ff0000"))
+				.AddBlock(isReady ? "Ready" : "Not Ready",
+					block => block.Color(isReady ? ShowdownColors.Green : ShowdownColors.Red))
 			);
 		}
 
 		msg
 			.AddSeparator()
 			.AddLine(line => line
-				.AddBlock("Everyone ready. Prepare for battle!", block => block.Color("#00ff00").Bold()))
+				.AddBlock("Everyone ready. Prepare for battle!", block => block.Color(ShowdownColors.Green).Bold()))
 			.AddSeparator();
 		msg.Send();
 
@@ -183,8 +158,8 @@ public class StateReadyCheck : IState
 		yield return new WaitForSeconds(3);
 		// Notify that all players are ready
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
-		ChatMessage.SendCustomMessage("Racing starts in <color=#ff0000>10</color> seconds");
+		ChatMessage.SendCustomMessage($"Racing starts in <color={ShowdownColors.Red}>10</color> seconds");
 		// Proceed to the next state
-		Finished?.Invoke();
+		InvokeFinish();
 	}
 }

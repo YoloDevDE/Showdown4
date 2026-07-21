@@ -83,9 +83,11 @@ public class LeaderboardDisplay
 						// Show the average team time if the winner was determined by cumulative time
 						line.AddBlock($"Time: {averageTime.GetFormattedTime()} ", f => f.Color("#ffffff"));
 						if (position > 1)
+						{
 							line.AddBlock(
 								$"+{(_round.GetAvgTimeOfTeam(sortedTeams[1]) - _round.GetAvgTimeOfTeam(sortedTeams[0])).GetFormattedTime()}",
 								f => f.Color("#ffff00"));
+						}
 
 						break;
 
@@ -99,7 +101,10 @@ public class LeaderboardDisplay
 							line.AddBlock(
 								$"{sortedRacers[j].SteamName} ({_round.GetPersonalBest(sortedRacers[j]).GetFormattedTime()})",
 								f => f.Color("#ffffff"));
-							if (j < sortedRacers.Count - 1) line.AddBlock(", ", f => f.Color("#ffffff"));
+							if (j < sortedRacers.Count - 1)
+							{
+								line.AddBlock(", ", f => f.Color("#ffffff"));
+							}
 						}
 
 						break;
@@ -116,9 +121,11 @@ public class LeaderboardDisplay
 						{
 							line.AddBlock($"Time: {averageTime.GetFormattedTime()} ", f => f.Color("#ffffff"));
 							if (position > 1)
+							{
 								line.AddBlock(
 									$"={(_round.GetAvgTimeOfTeam(sortedTeams[1]) - _round.GetAvgTimeOfTeam(sortedTeams[0])).GetFormattedTime()}",
 									f => f.Color("#f7dcaa"));
+							}
 						}
 
 						break;

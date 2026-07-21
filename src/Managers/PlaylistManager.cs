@@ -40,8 +40,12 @@ public abstract class PlaylistManager
 	public static void SetServerPlaylist(string playlistName)
 	{
 		if (PlaylistApi.Exists(playlistName))
+		{
 			SetServerPlaylist(GetLocalLevelsByPlaylistName(playlistName));
+		}
 		else
+		{
 			throw new InvalidOperationException("Playlist does not exist");
+		}
 	}
 }

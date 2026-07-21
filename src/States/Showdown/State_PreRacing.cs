@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Showdown4.Entities;
+﻿using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
@@ -8,25 +6,18 @@ using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-public class StatePreRacing : IState
+public class StatePreRacing : ShowdownStateBase
 {
 	private Team _teamA, _teamB;
 
-	public StatePreRacing(IStateMachine stateMachine)
+	public StatePreRacing(IStateMachine stateMachine) : base(stateMachine)
 	{
-		StateMachine = stateMachine;
 	}
 
-	private ShowdownStateMachine Showdown => (ShowdownStateMachine)StateMachine;
-
-	public IStateMachine StateMachine { get; }
-
-	public event Action Finished;
-
-	public void Enter()
+	public override void Enter()
 	{
-		_teamA = Showdown.Match.TeamA;
-		_teamB = Showdown.Match.TeamB;
+		_teamA = Match.TeamA;
+		_teamB = Match.TeamB;
 
 		RacingApi.RoundEnded += OnRoundEnd;
 		RacingApi.LevelLoaded += OnLevelLoaded;
@@ -39,21 +30,16 @@ public class StatePreRacing : IState
 		));
 	}
 
-	public void Execute()
+	public override void Execute()
 	{
 		// Set the lobby time to 300 seconds (5 minutes)
 		ChatApi.SendMessage("/settime 300");
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
 		RacingApi.RoundEnded -= OnRoundEnd;
 		RacingApi.LevelLoaded -= OnLevelLoaded;
-	}
-
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
 	}
 
 	private void OnLevelLoaded()
@@ -72,11 +58,12 @@ public class StatePreRacing : IState
 					.AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color))
 				)
 				.AddSeparator()
-				.AddMessage(ShowPickedMaps())
+				.AddMessage(new ServerMessage().AppendPickedMaps(Match))
 				.AddSeparator()
 				.AddLine(line => line
 						.AddBlock("Race starts in:")
-						.AddBlock($"{secondsRemaining} seconds", f => f.Bold().Color("#ff0000")) // Red countdown
+						.AddBlock($"{secondsRemaining} seconds",
+							f => f.Bold().Color(ShowdownColors.Red)) // Red countdown
 				)
 			;
 
@@ -88,44 +75,20 @@ public class StatePreRacing : IState
 		ChatApi.SendMessage("/fs 0"); // Move to the next level
 	}
 
-	private ServerMessage ShowPickedMaps()
-	{
-		ServerMessage msg = new ServerMessage()
-			.AddLine(line => line
-				.AddBlock("Picked Maps:"));
-
-		int round = 1;
-		foreach (DraftAction pickedLevel in Showdown.Match.Drafts.SelectMany(matchDraft => matchDraft.PickedLevels))
-			msg.AddLine(line =>
-			{
-				if (round <= Showdown.Match.RoundCounter()) line.StrikeThrough();
-
-				line
-					.AddBlock($"Round {round}:")
-					.AddBlock($"'{pickedLevel.Level.Name}'", block => block.Color("#00ffff"))
-					.AddBlock("picked by", block => block.Indent("585%"))
-					.AddBlock($"{pickedLevel.Team.GetColoredTag()}")
-					.Bold();
-				round++;
-			});
-
-		return msg;
-	}
-
 	private void OnRoundEnd()
 	{
-		DraftAction nextLevel = Showdown.Match.CurrentDraft.PickedLevels.First();
+		DraftAction nextLevel = Match.CurrentDraft.PickedLevels[0];
 		ChatMessage.SendCustomMessage(
 			new ChatMessage.Builder().ClearChat()
 				.DashedLine().NewLine()
 				.TextLine(
-					$"Starting <b>{(Showdown.Match.RoundCounter() + 1 == 3 ? "Tiebreaker" : $"Round {Showdown.Match.RoundCounter() + 1}")}</b>")
+					$"Starting <b>{(Match.RoundCounter() + 1 == 3 ? "Tiebreaker" : $"Round {Match.RoundCounter() + 1}")}</b>")
 				.NewLine()
 				.DashedLine().NewLine()
-				.TextLine($"Level <color=#00ffff>'{nextLevel.Level.Name}'</color>").NewLine()
+				.TextLine($"Level <color={ShowdownColors.Cyan}>'{nextLevel.Level.Name}'</color>").NewLine()
 				.TextLine($"picked by {nextLevel.Team.GetColoredTag()}").NewLine()
 				.DashedLine().NewLine()
-				.TextLine($"{Showdown.Match.Score()}")
+				.TextLine($"{Match.Score()}")
 				.Build().Message
 		);
 	}

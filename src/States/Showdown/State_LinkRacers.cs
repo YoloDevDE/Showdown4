@@ -1,53 +1,40 @@
-﻿using System;
-using Showdown4.Commands;
+﻿using Showdown4.Commands;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 
 namespace Showdown4.States.Showdown;
 
-public class StateLinkRacers : IState
+public class StateLinkRacers : ShowdownStateBase
 {
 	private const int CountdownDuration = 3;
 	private Team _currentTeam;
 	private bool _isCountdownRunning;
 
-	public StateLinkRacers(IStateMachine stateMachine)
+	public StateLinkRacers(IStateMachine stateMachine) : base(stateMachine)
 	{
-		StateMachine = stateMachine;
 	}
 
-	private Team TeamA => Showdown.Match.TeamA;
-	private Team TeamB => Showdown.Match.TeamB;
+	private Team TeamA => Match.TeamA;
+	private Team TeamB => Match.TeamB;
 
-	private ShowdownStateMachine Showdown => StateMachine as ShowdownStateMachine;
-
-	public IStateMachine StateMachine { get; }
-
-	public event Action Finished;
-
-	public void Enter()
+	public override void Enter()
 	{
 		CommandLinkRacer.CommandInvoked += OnLinkRacerToTeam;
 		CommandUnLinkRacer.CommandInvoked += OnUnLinkRacerToTeam;
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 	}
 
-	public void Execute()
+	public override void Execute()
 	{
 		_currentTeam = TeamA;
 		CheckIfRacersAreLinked();
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
 		CommandLinkRacer.CommandInvoked -= OnLinkRacerToTeam;
 		CommandUnLinkRacer.CommandInvoked -= OnUnLinkRacerToTeam;
-	}
-
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
 	}
 
 	private void CheckIfRacersAreLinked()
@@ -86,17 +73,20 @@ public class StateLinkRacers : IState
 
 		// Append the countdown timer if it's running
 		if (_isCountdownRunning)
+		{
 			msg.AddSeparator()
 				.AddLine(line => line
-					.AddBlock("All Racers are linked to their Teams! ", block => block.Color("#00ff00").Bold()))
+					.AddBlock("All Racers are linked to their Teams! ",
+						block => block.Color(ShowdownColors.Green).Bold()))
 				.AddSeparator()
 				.AddLine(line => line
 					.AddBlock("Continue to")
-					.AddBlock("'Select Initiative'", block => block.Color("#ffff00"))
+					.AddBlock("'Select Initiative'", block => block.Color(ShowdownColors.Yellow))
 					.AddBlock("in")
-					.AddBlock($"{countdownTime}", block => block.Color("#00ff00"))
+					.AddBlock($"{countdownTime}", block => block.Color(ShowdownColors.Green))
 					.AddBlock("seconds...")
 				);
+		}
 
 		msg.Send();
 	}
@@ -134,7 +124,7 @@ public class StateLinkRacers : IState
 					.AddBlock("To join team ")
 					.AddBlock($"{_currentTeam.GetColoredTag()}", format => format.Color($"{_currentTeam.Color}").Bold())
 					.AddBlock(", type ")
-					.AddBlock("'!link'", format => format.Color("#ffff00").Bold())
+					.AddBlock("'!link'", format => format.Color(ShowdownColors.Yellow).Bold())
 					.AddBlock(" in chat")
 				)
 				.AddSeparator()

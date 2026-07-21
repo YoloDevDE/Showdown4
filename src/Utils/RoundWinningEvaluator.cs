@@ -17,13 +17,22 @@ public static class RoundWinningCalculator
 		List<Team> teams;
 
 		teams = CompareFinishers(teamA, teamB, leaderboard, out winningMethod);
-		if (teams != null) return teams;
+		if (teams != null)
+		{
+			return teams;
+		}
 
 		teams = CompareCumulativeTeamTimes(teamA, teamB, leaderboard, out winningMethod);
-		if (teams != null) return teams;
+		if (teams != null)
+		{
+			return teams;
+		}
 
 		teams = CompareIndividualPlacements(teamA, teamB, leaderboard, out winningMethod);
-		if (teams != null) return teams;
+		if (teams != null)
+		{
+			return teams;
+		}
 
 		// Fallback: random selection
 		teams = SelectRandomWinner(teamA, teamB, out winningMethod);

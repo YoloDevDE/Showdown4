@@ -52,7 +52,10 @@ public static class MessageFormatter
 
 	public static string FormatTimestamp(double time)
 	{
-		if (time <= 0) return "--:--.---";
+		if (time <= 0)
+		{
+			return "--:--.---";
+		}
 
 		return time.GetFormattedTime();
 	}

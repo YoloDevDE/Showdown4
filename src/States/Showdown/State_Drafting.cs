@@ -15,83 +15,61 @@ using Random = System.Random;
 
 namespace Showdown4.States.Showdown;
 
-public class StateDrafting : IState
+public class StateDrafting : ShowdownStateBase
 {
 	private const int DraftTime = 90;
 	private const int Countdown = 3;
-	private const int MaxSpinLoops = 30;
-	private const int MinSpinLoops = 29;
 
-	private int _draftCompleteCountDownTick = Countdown;
+	private const int MaxLevelIndex = 7;
+
+	private readonly Random _random = new();
+
 	private int _draftCountdownTime = DraftTime;
-	private bool _hasInitiativeBanned;
 	private bool _isDraftCompleteCountdownStarted;
 	private bool _isInitiationPhaseComplete;
-	private bool _isRandomSelectionActive;
 
-	public StateDrafting(IStateMachine stateMachine)
+	public StateDrafting(IStateMachine stateMachine) : base(stateMachine)
 	{
-		StateMachine = stateMachine;
 	}
 
-	private ShowdownStateMachine Showdown => StateMachine as ShowdownStateMachine;
-	private Team TeamA => Showdown.Match.TeamA;
-	private Team TeamB => Showdown.Match.TeamB;
-	private Team InitiativeTeam => Showdown.Match.Initiative;
+	private Team CurrentTeam => CurrentDraft.GetCurrentTeam();
+	private Team OtherTeam => CurrentDraft.GetOtherTeam();
+	private Team InitiativeTeam => Match.Initiative;
 
-	private List<OnlineZeeplevel> AvailableMaps => Showdown.Match.CurrentDraft.AvailableLevels;
+	private List<OnlineZeeplevel> AvailableMaps => CurrentDraft.AvailableLevels;
 
-	public IStateMachine StateMachine { get; }
-	public event Action Finished;
-
-	public void Enter()
+	public override void Enter()
 	{
 		_isDraftCompleteCountdownStarted = false;
 		_draftCountdownTime = DraftTime;
 		_isInitiationPhaseComplete = false;
 
-
-		Showdown.Match.AddDraft();
+		Match.AddDraft();
 		ChatApi.SendMessage("/settime 86400");
 
 		CoroutineManager.Instance.StartExternalCoroutine(DelayDraftInitiation());
 	}
 
-	public void Execute()
+	public override void Execute()
 	{
-		if (!_isInitiationPhaseComplete) return;
+		if (!_isInitiationPhaseComplete)
+		{
+			return;
+		}
 
 		ServerMessage draftMessage = new ServerMessage().ShowdownHeader(true)
-			.AddLine(l => l.Size(30).Bold().AddBlock(Showdown.Match.ScoreColored()).Indent("585%"));
+			.AddLine(l => l.Size(30).Bold().AddBlock(Match.ScoreColored()).Indent("585%"));
 
-		if (Showdown.Match.CurrentDraft.IsDraftComplete())
+		if (CurrentDraft.IsDraftComplete())
 		{
-			draftMessage.AddMessage(DraftCompleteMessage());
-
-			if (!_isDraftCompleteCountdownStarted)
+			if (!_isDraftCompleteCountdownStarted && HandleDraftComplete())
 			{
-				if (Showdown.Match.CurrentDraft.PickedLevels.Count == 0)
-				{
-					ChatMessage.SendCustomMessage(
-						"Draft incomplete! Waiting for Host to initiate Random Map Selection");
-					CoroutineManager.Instance.StopAllExternalCoroutines();
-				}
-				else
-				{
-					List<OnlineZeeplevel> matchPlaylist =
-						new(
-							Showdown.Match.CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
-					matchPlaylist.Add(PlaylistManager
-						.GetLocalLevelsByPlaylistName(MyConfig.IntermissionLevelPlaylistNameConfig.Value)
-						.First());
-					PlaylistManager.SetServerPlaylist(matchPlaylist);
-
-					_isDraftCompleteCountdownStarted = true;
-					CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(Countdown,
-						OnDraftCompleteTick,
-						InvokeFinish));
-				}
+				// Draft is incomplete - the state machine moves on to StateDraftIncomplete,
+				// so this state must not render or send anything anymore.
+				return;
 			}
+
+			draftMessage.AddMessage(DraftCompleteMessage());
 		}
 		else
 		{
@@ -103,75 +81,135 @@ public class StateDrafting : IState
 			.AddMessage(GetDraftLevelList())
 			.AddSeparator()
 			.AddLine(line =>
-				line.Italic().AddBlock("To pick use").AddBlock("'!pick 1-7'", block => block.Color("#ffff00")))
+				line.Italic().AddBlock("To pick use")
+					.AddBlock("'!pick 1-7'", block => block.Color(ShowdownColors.Yellow)))
 			.AddLine(line =>
-				line.Italic().AddBlock("To ban use").AddBlock("'!ban 1-7'", block => block.Color("#ffff00")))
+				line.Italic().AddBlock("To ban use")
+					.AddBlock("'!ban 1-7'", block => block.Color(ShowdownColors.Yellow)))
 			.Send();
-		if (_draftCountdownTime >= DraftTime && !Showdown.Match.CurrentDraft.IsDraftComplete())
+
+		if (_draftCountdownTime >= DraftTime && !CurrentDraft.IsDraftComplete())
 		{
-			ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
-			// Build history of picks and bans
-			StringBuilder historyMessage = new();
-			foreach (DraftAction draftAction in Showdown.Match.CurrentDraft.BannedLevels.Concat(Showdown.Match
-				         .CurrentDraft
-				         .PickedLevels))
-			{
-				string actionType = draftAction.IsPick ? "picked" : "banned";
-				string actionColor = draftAction.IsPick ? "#00ff00" : "#ff0000";
-				historyMessage.AppendLine($"<color={draftAction.Team.Color}>{draftAction.Team.GetTag()}</color> " +
-				                          $"<color={actionColor}>{actionType}</color> " +
-				                          $"<color=#00ffff>{draftAction.Level.Name}</color>");
-			}
-
-			// Build current turn action description
-			string actionDescription = "";
-			if (Showdown.Match.CurrentDraft.GetCurrentTeam().Picks > 0)
-			{
-				if (Showdown.Match.CurrentDraft.GetOtherTeam().Picks == 0)
-					actionDescription = "It's time to <color=#00ff00><b>pick</b></color> a map!" +
-					                    "<br>Use <color=#ffff00><b>!pick 1-7</b></color> to pick a map.";
-				else
-					actionDescription =
-						"You can <color=#00ff00><b>pick</b></color> or <color=#ff0000><b>ban</b></color> a map!" +
-						"<br>Use <color=#ffff00><b>!pick 1-7</b></color> to pick or <color=#ffff00><b>!ban 1-7</b></color> to ban a map.";
-			}
-			else if (Showdown.Match.CurrentDraft.GetCurrentTeam().Bans > 0)
-			{
-				actionDescription = "You can only <color=#ff0000><b>ban</b></color> a map!" +
-				                    "<br>Use <color=#ffff00><b>!ban 1-7</b></color> to ban a map.";
-			}
-
-			// Send messages
-
-			// First show draft history if any exists
-			if (historyMessage.Length > 0) ChatMessage.SendCustomMessage($"Draft History:<br>{historyMessage}");
-
-			// Then show current turn message
-			ChatMessage.SendCustomMessage(
-				$"@<color={Showdown.Match.CurrentDraft.CurrentTeam.Color}><b>{Showdown.Match.CurrentDraft.GetCurrentTeam().Racers[0].SteamName}</b></color> + @<color={Showdown.Match.CurrentDraft.CurrentTeam.Color}><b>{Showdown.Match.CurrentDraft.GetCurrentTeam().Racers[1].SteamName}</b></color>" +
-				$"<br>Your turn! {actionDescription}" +
-				"<br><color=#888888><i><color=#ffff00>Warning</color>: Your selection will be FINAL and cannot be undone!</i></color>",
-				Showdown.Match.CurrentDraft.GetCurrentTeam().Racers[0].SteamId,
-				Showdown.Match.CurrentDraft.GetCurrentTeam().Racers[1].SteamId);
-			// Send message to team that needs to wait
-			ChatMessage.SendCustomMessage(
-				$"@<color={Showdown.Match.CurrentDraft.GetOtherTeam().Color}><b>{Showdown.Match.CurrentDraft.GetOtherTeam().Racers[0].SteamName}</b></color> + @<color={Showdown.Match.CurrentDraft.GetOtherTeam().Color}><b>{Showdown.Match.CurrentDraft.GetOtherTeam().Racers[1].SteamName}</b></color>" +
-				$"<br><b>Please wait</b> - It's the other team's ({Showdown.Match.CurrentDraft.GetCurrentTeam().GetColoredTag()}) turn to make their selection.",
-				Showdown.Match.CurrentDraft.GetOtherTeam().Racers[0].SteamId,
-				Showdown.Match.CurrentDraft.GetOtherTeam().Racers[1].SteamId);
+			SendTurnAnnouncements();
 		}
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
 		CommandBan.CommandInvoked -= OnBan;
 		CommandPick.CommandInvoked -= OnPick;
-		CommandStartRandom.CommandInvoked -= OnStartRandom;
 	}
 
-	public void InvokeFinish()
+	// Returns true when the draft is incomplete and the state machine should move on
+	// to StateDraftIncomplete instead of completing the draft here.
+	private bool HandleDraftComplete()
 	{
-		Finished?.Invoke();
+		if (CurrentDraft.PickedLevels.Count == 0)
+		{
+			// In Draftphase II the remaining map is auto-picked when only one level is left,
+			// instead of handing over to the incomplete-draft state.
+			if (Match.IsDraftphaseTwo && AvailableMaps.Count == 1)
+			{
+				AutoPickLastRemainingLevel();
+			}
+			else
+			{
+				_isDraftCompleteCountdownStarted = true;
+				InvokeFinish();
+				return true;
+			}
+		}
+
+		List<OnlineZeeplevel> matchPlaylist =
+			new(CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
+		matchPlaylist.Add(PlaylistManager
+			.GetLocalLevelsByPlaylistName(MyConfig.IntermissionLevelPlaylistNameConfig.Value)
+			.First());
+		PlaylistManager.SetServerPlaylist(matchPlaylist);
+
+		_isDraftCompleteCountdownStarted = true;
+		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(Countdown,
+			OnDraftCompleteTick,
+			InvokeFinish));
+		return false;
+	}
+
+	private void SendTurnAnnouncements()
+	{
+		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+
+		string history = BuildDraftHistory();
+		string actionDescription = BuildActionDescription();
+
+		// First show draft history if any exists
+		if (history.Length > 0)
+		{
+			ChatMessage.SendCustomMessage($"Draft History:<br>{history}");
+		}
+
+		Team current = CurrentTeam;
+		Team other = OtherTeam;
+
+		// Then show current turn message to the drafting team
+		ChatMessage.SendCustomMessage(
+			$"@{MentionRacer(current, 0)} + @{MentionRacer(current, 1)}" +
+			$"<br>Your turn! {actionDescription}" +
+			$"<br><color={ShowdownColors.Gray}><i><color={ShowdownColors.Yellow}>Warning</color>: Your selection will be FINAL and cannot be undone!</i></color>",
+			current.Racers[0].SteamId,
+			current.Racers[1].SteamId);
+
+		// Send message to team that needs to wait
+		ChatMessage.SendCustomMessage(
+			$"@{MentionRacer(other, 0)} + @{MentionRacer(other, 1)}" +
+			$"<br><b>Please wait</b> - It's the other team's ({current.GetColoredTag()}) turn to make their selection.",
+			other.Racers[0].SteamId,
+			other.Racers[1].SteamId);
+	}
+
+	private static string MentionRacer(Team team, int index)
+	{
+		return $"<color={team.Color}><b>{team.Racers[index].SteamName}</b></color>";
+	}
+
+	private string BuildDraftHistory()
+	{
+		StringBuilder historyMessage = new();
+		foreach (DraftAction draftAction in CurrentDraft.BannedLevels.Concat(CurrentDraft.PickedLevels))
+		{
+			string actionType = draftAction.IsPick ? "picked" : "banned";
+			string actionColor = draftAction.IsPick ? ShowdownColors.Green : ShowdownColors.Red;
+			historyMessage.AppendLine($"<color={draftAction.Team.Color}>{draftAction.Team.GetTag()}</color> " +
+			                          $"<color={actionColor}>{actionType}</color> " +
+			                          $"<color={ShowdownColors.Cyan}>{draftAction.Level.Name}</color>");
+		}
+
+		return historyMessage.ToString();
+	}
+
+	private string BuildActionDescription()
+	{
+		Team current = CurrentTeam;
+
+		if (current.Picks > 0)
+		{
+			if (OtherTeam.Picks == 0)
+			{
+				return $"It's time to <color={ShowdownColors.Green}><b>pick</b></color> a map!" +
+				       $"<br>Use <color={ShowdownColors.Yellow}><b>!pick 1-7</b></color> to pick a map.";
+			}
+
+			return
+				$"You can <color={ShowdownColors.Green}><b>pick</b></color> or <color={ShowdownColors.Red}><b>ban</b></color> a map!" +
+				$"<br>Use <color={ShowdownColors.Yellow}><b>!pick 1-7</b></color> to pick or <color={ShowdownColors.Yellow}><b>!ban 1-7</b></color> to ban a map.";
+		}
+
+		if (current.Bans > 0)
+		{
+			return $"You can only <color={ShowdownColors.Red}><b>ban</b></color> a map!" +
+			       $"<br>Use <color={ShowdownColors.Yellow}><b>!ban 1-7</b></color> to ban a map.";
+		}
+
+		return "";
 	}
 
 	private void OnDraftTick(int remainingSeconds)
@@ -183,37 +221,36 @@ public class StateDrafting : IState
 	private void OnDraftTimeout()
 	{
 		_draftCountdownTime = DraftTime;
-		Showdown.Match.CurrentDraft.GetCurrentTeam().MissedDraft = true;
-		if (Showdown.Match.CurrentDraft.GetOtherTeam().Bans == 0 &&
-		    Showdown.Match.CurrentDraft.GetOtherTeam().Picks == 0)
+		CurrentTeam.MissedDraft = true;
+
+		if (OtherTeam.Bans == 0 && OtherTeam.Picks == 0)
 		{
-			Team currentTeam = Showdown.Match.CurrentDraft.GetCurrentTeam();
-			OnlineZeeplevel randomLevel = AvailableMaps[new Random().Next(AvailableMaps.Count)];
+			Team currentTeam = CurrentTeam;
+			OnlineZeeplevel randomLevel = AvailableMaps[_random.Next(AvailableMaps.Count)];
 
 			if (currentTeam.Picks > 0)
 			{
-				Showdown.Match.CurrentDraft.PickLevel(randomLevel);
+				CurrentDraft.PickLevel(randomLevel);
 				ChatMessage.SendCustomMessage(
-					$"{currentTeam.GetColoredTag()} has randomly <color=#00ff00>picked</color> <color=#00ffff>{randomLevel.Name}</color>");
+					$"{currentTeam.GetColoredTag()} has randomly <color={ShowdownColors.Green}>picked</color> <color={ShowdownColors.Cyan}>{randomLevel.Name}</color>");
 			}
 			else if (currentTeam.Bans > 0)
 			{
-				Showdown.Match.CurrentDraft.BanLevel(randomLevel);
+				CurrentDraft.BanLevel(randomLevel);
 				ChatMessage.SendCustomMessage(
-					$"{currentTeam.GetColoredTag()} has randomly <color=#ff0000>banned</color> <color=#00ffff>{randomLevel.Name}</color>");
+					$"{currentTeam.GetColoredTag()} has randomly <color={ShowdownColors.Red}>banned</color> <color={ShowdownColors.Cyan}>{randomLevel.Name}</color>");
 			}
 
 			Execute();
 			return;
 		}
 
-		Showdown.Match.CurrentDraft.SwitchTeam();
+		CurrentDraft.SwitchTeam();
 		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(DraftTime, OnDraftTick, OnDraftTimeout));
 	}
 
 	private void OnDraftCompleteTick(int remainingSeconds)
 	{
-		_draftCompleteCountDownTick = remainingSeconds;
 		Execute();
 	}
 
@@ -221,38 +258,34 @@ public class StateDrafting : IState
 	{
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 		ChatMessage.SendCustomMessage(
-			$"<color=#FFA500><b>*** <color=#b19d63>{DraftphaseString()}</color> loading - Please pay attention to the upcoming messages! ***</b></color>");
+			$"<color={ShowdownColors.Orange}><b>*** <color={ShowdownColors.Gold}>{Match.DraftphaseName}</color> loading - Please pay attention to the upcoming messages! ***</b></color>");
 		ChatApi.SendMessage("/servermessage remove");
 		yield return new WaitForSeconds(1.5f);
-		ServerMessage initiationMessage = new ServerMessage("center").ShowdownHeader(false, "center", 50);
 
+		ServerMessage initiationMessage = new ServerMessage("center").ShowdownHeader(false, "center", 50);
 		initiationMessage.Send();
 		yield return new WaitForSeconds(1.5f);
-
 
 		initiationMessage.AddLine(l =>
-			l.Size(30).Bold().AddBlock(Showdown.Match.ScoreWithFullNameColoredAndPadded()).NoBreak());
-		initiationMessage.Send();
-		yield return new WaitForSeconds(1.5f);
-		initiationMessage = initiationMessage
-			.AddLine(line =>
-				line.AddBlock(DraftphaseString(),
-					builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40))
-			);
+			l.Size(30).Bold().AddBlock(Match.ScoreWithFullNameColoredAndPadded()).NoBreak());
 		initiationMessage.Send();
 		yield return new WaitForSeconds(1.5f);
 
-		initiationMessage = initiationMessage
-			.AddLine(line => line
-				.AddBlock($"{InitiativeTeam.GetTag()}", b => b.Color(InitiativeTeam.Color))
-				.AddBlock("has initiative!")
-			);
+		initiationMessage.AddLine(line =>
+			line.AddBlock(Match.DraftphaseName,
+				builder => builder.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold()
+					.AllCaps().Size(40)));
+		initiationMessage.Send();
+		yield return new WaitForSeconds(1.5f);
+
+		initiationMessage.AddLine(line => line
+			.AddBlock($"{InitiativeTeam.GetTag()}", b => b.Color(InitiativeTeam.Color))
+			.AddBlock("has initiative!"));
 		initiationMessage.Send();
 		yield return new WaitForSeconds(1.5f);
 
 		CommandBan.CommandInvoked += OnBan;
 		CommandPick.CommandInvoked += OnPick;
-		CommandStartRandom.CommandInvoked += OnStartRandom;
 
 		_isInitiationPhaseComplete = true;
 
@@ -261,29 +294,34 @@ public class StateDrafting : IState
 
 	private ServerMessage DraftingStateMessage()
 	{
-		ServerMessage tmp = new();
+		Team current = CurrentTeam;
 		bool isTimeRunningLow = _draftCountdownTime <= 10;
 
+		ServerMessage tmp = new();
+
 		tmp.AddLine(line =>
-			line.AddBlock(DraftphaseString(),
-				builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40))
+			line.AddBlock(Match.DraftphaseName,
+				builder => builder.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold()
+					.AllCaps().Size(40))
 		).AddSeparator(0).AddLine(line =>
 		{
-			line.AddBlock($"{Showdown.Match.CurrentDraft.GetCurrentTeam().GetTag()}",
-					block => block.Color(Showdown.Match.CurrentDraft.GetCurrentTeam().Color))
+			line.AddBlock($"{current.GetTag()}", block => block.Color(current.Color))
 				.AddBlock("is drafting:")
 				.AddBlock($"{TimeFormatter.FormatDuration(_draftCountdownTime)}",
-					block => block.Color(isTimeRunningLow ? "#ff0000" : "#ffff00"));
+					block => block.Color(isTimeRunningLow ? ShowdownColors.Red : ShowdownColors.Yellow));
 			if (isTimeRunningLow)
-				line.AddBlock("Time is running low! Make your choice!", block => block.Color("#ffff00").Bold());
+			{
+				line.AddBlock("Time is running low! Make your choice!",
+					block => block.Color(ShowdownColors.Yellow).Bold());
+			}
 		});
 
-		tmp
-			.AddLine(line => line
-				.AddBlock("Picks left:")
-				.AddBlock($"{Showdown.Match.CurrentDraft.GetCurrentTeam().Picks}", block => block.Color("#00ff00"))
-				.AddBlock("| Bans left:")
-				.AddBlock($"{Showdown.Match.CurrentDraft.GetCurrentTeam().Bans}", block => block.Color("#ff0000")));
+		tmp.AddLine(line => line
+			.AddBlock("Picks left:")
+			.AddBlock($"{current.Picks}", block => block.Color(ShowdownColors.Green))
+			.AddBlock("| Bans left:")
+			.AddBlock($"{current.Bans}", block => block.Color(ShowdownColors.Red)));
+
 		return tmp;
 	}
 
@@ -292,58 +330,70 @@ public class StateDrafting : IState
 		ServerMessage tmp = new();
 
 		tmp.AddLine(line => line
-			.AddBlock(DraftphaseString(), builder => builder
-				.Gradients("#b19d63", "#FFFFFF", "#b19d63")
-			)
+			.AddBlock(Match.DraftphaseName,
+				builder => builder.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold))
 			.AddBlock("-")
-			.AddBlock("complete!", builder => builder.Color("#00ff00"))
+			.AddBlock("complete!", builder => builder.Color(ShowdownColors.Green))
 			.Bold().AllCaps().Size(40));
-
 
 		return tmp;
 	}
 
-	private string DraftphaseString()
+	private void AutoPickLastRemainingLevel()
 	{
-		return Showdown.Match.Rounds.Count > 0 ? "Draftphase II" : "Draftphase I";
+		OnlineZeeplevel lastLevel = AvailableMaps[0];
+		CurrentDraft.PickedLevels.Add(new DraftAction(lastLevel, Team.CreateShowdownTeam(), true));
+		ChatMessage.SendCustomMessage(
+			$"Only one map left - automatically <color={ShowdownColors.Green}>picked</color> <color={ShowdownColors.Cyan}>{lastLevel.Name}</color>");
 	}
 
 	private ServerMessage GetDraftLevelList()
 	{
+		Draft draft = CurrentDraft;
 		ServerMessage tmp = new();
 
-		foreach (OnlineZeeplevel level in Showdown.Match.CurrentDraft.AllLevels)
+		foreach (OnlineZeeplevel level in draft.AllLevels)
 			tmp.AddLine(line =>
 			{
 				line.AddBlock(level.Name, block =>
 				{
-					if (Showdown.Match.CurrentDraft.AvailableLevels.All(l => l.Name != level.Name) ||
-					    Showdown.Match.CurrentDraft.UnAvailableLevels.Any(l => l.Name == level.Name))
+					if (draft.AvailableLevels.All(l => l.Name != level.Name) ||
+					    draft.UnAvailableLevels.Any(l => l.Name == level.Name))
+					{
 						block.Strikethrough();
+					}
 
-					if (Showdown.Match.CurrentDraft.UnAvailableLevels.Any(l => l.Name == level.Name))
-						block.Color("#ffff00");
+					if (draft.UnAvailableLevels.Any(l => l.Name == level.Name))
+					{
+						block.Color(ShowdownColors.Yellow);
+					}
 
-					if (Showdown.Match.CurrentDraft.BannedLevels.Any(l => l.Level.Name == level.Name))
-						block.Color("#ff0000");
+					if (draft.BannedLevels.Any(l => l.Level.Name == level.Name))
+					{
+						block.Color(ShowdownColors.Red);
+					}
 
-					if (Showdown.Match.CurrentDraft.PickedLevels.Any(l => l.Level.Name == level.Name))
-						block.Color("#00ff00");
+					if (draft.PickedLevels.Any(l => l.Level.Name == level.Name))
+					{
+						block.Color(ShowdownColors.Green);
+					}
 				});
 
-				DraftAction bannedLevel =
-					Showdown.Match.CurrentDraft.BannedLevels.FirstOrDefault(l => l.Level.Name == level.Name);
-				DraftAction pickedLevel =
-					Showdown.Match.CurrentDraft.PickedLevels.FirstOrDefault(l => l.Level.Name == level.Name);
+				DraftAction bannedLevel = draft.BannedLevels.FirstOrDefault(l => l.Level.Name == level.Name);
+				DraftAction pickedLevel = draft.PickedLevels.FirstOrDefault(l => l.Level.Name == level.Name);
 
 				if (bannedLevel != null)
-					line.AddBlock("banned", block => block.Color("#ff0000").Indent("500%"))
+				{
+					line.AddBlock("banned", block => block.Color(ShowdownColors.Red).Indent("500%"))
 						.AddBlock("by")
 						.AddBlock($"{bannedLevel.Team.GetTag()}", block => block.Color(bannedLevel.Team.Color));
+				}
 				else if (pickedLevel != null)
-					line.AddBlock("picked", block => block.Color("#00ff00").Indent("500%"))
+				{
+					line.AddBlock("picked", block => block.Color(ShowdownColors.Green).Indent("500%"))
 						.AddBlock("by")
 						.AddBlock($"{pickedLevel.Team.GetTag()}", block => block.Color(pickedLevel.Team.Color));
+				}
 			});
 
 		return tmp;
@@ -367,24 +417,21 @@ public class StateDrafting : IState
 			return;
 		}
 
-		string playerName = player.Username;
-		Draft currentDraft = Showdown.Match.CurrentDraft;
+		Draft currentDraft = CurrentDraft;
 		Team currentTeam = currentDraft.GetCurrentTeam();
 
-		if (!player.IsLocal)
+		if (!player.IsLocal && currentTeam.Racers.All(racer => racer.SteamId != steamId))
+		{
+			ChatMessage.SendCustomMessage(
+				$"{player.Username} is not a member of the current drafting team ({currentTeam.GetColoredTag()}).");
+			return;
+		}
 
-			if (currentTeam.Racers.All(racer => racer.SteamId != steamId))
-			{
-				ChatMessage.SendCustomMessage(
-					$"{playerName} is not a member of the current drafting team ({currentTeam.GetColoredTag()}).");
-				return;
-			}
-
-
-		if (!int.TryParse(levelIndexStr, out int levelIndex) || levelIndex < 1 || levelIndex > 7 ||
+		if (!int.TryParse(levelIndexStr, out int levelIndex) || levelIndex < 1 || levelIndex > MaxLevelIndex ||
 		    levelIndex > currentDraft.AllLevels.Count)
 		{
-			ChatMessage.SendCustomMessage($"Invalid level index: {levelIndexStr}. Must be between 1 and 7.");
+			ChatMessage.SendCustomMessage(
+				$"Invalid level index: {levelIndexStr}. Must be between 1 and {MaxLevelIndex}.");
 			return;
 		}
 
@@ -393,9 +440,13 @@ public class StateDrafting : IState
 		try
 		{
 			if (isBan)
+			{
 				HandleBan(currentDraft, currentTeam, levelToPickOrBan);
+			}
 			else
+			{
 				HandlePick(currentDraft, levelToPickOrBan, currentTeam, player);
+			}
 
 			CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(DraftTime, OnDraftTick,
 				OnDraftTimeout));
@@ -409,90 +460,25 @@ public class StateDrafting : IState
 
 	private void HandleBan(Draft currentDraft, Team currentTeam, OnlineZeeplevel levelToPickOrBan)
 	{
-		if (currentTeam.Equals(Showdown.Match.Initiative) && !_hasInitiativeBanned)
-		{
-			// _hasInitiativeBanned = true;
-			// _showdown.Match.Initiative = _showdown.Match.NonInitiative;
-		}
-
 		currentDraft.BanLevel(levelToPickOrBan);
 		ChatMessage.SendCustomMessage(
-			$"{currentTeam.GetColoredTag()} has <color=#ff0000>banned</color> <color=#00ffff>{levelToPickOrBan.Name}</color>");
+			$"{currentTeam.GetColoredTag()} has <color={ShowdownColors.Red}>banned</color> <color={ShowdownColors.Cyan}>{levelToPickOrBan.Name}</color>");
 	}
 
 	private void HandlePick(Draft currentDraft, OnlineZeeplevel level, Team currentTeam, ZeepkistNetworkPlayer player)
 	{
 		if (player.IsLocal && currentDraft.IsDraftComplete())
 		{
-			Team showdownTeam = new("Showdown", "Showdown", "#ff0000");
+			Team showdownTeam = Team.CreateShowdownTeam();
 			currentDraft.PickedLevels.Add(new DraftAction(level, showdownTeam, true));
 			ChatMessage.SendCustomMessage(
-				$"{showdownTeam.GetColoredTag()} has <color=#00ff00>picked</color> <color=#00ffff>{level.Name}</color>");
+				$"{showdownTeam.GetColoredTag()} has <color={ShowdownColors.Green}>picked</color> <color={ShowdownColors.Cyan}>{level.Name}</color>");
 		}
 		else
 		{
 			currentDraft.PickLevel(level);
 			ChatMessage.SendCustomMessage(
-				$"{currentTeam.GetColoredTag()} has <color=#00ff00>picked</color> <color=#00ffff>{level.Name}</color>");
+				$"{currentTeam.GetColoredTag()} has <color={ShowdownColors.Green}>picked</color> <color={ShowdownColors.Cyan}>{level.Name}</color>");
 		}
-	}
-
-	public void OnStartRandom()
-	{
-		_isRandomSelectionActive = true;
-		CoroutineManager.Instance.StartExternalCoroutine(RandomSelectionAnimation());
-	}
-
-	private void UpdateRandomSelectionMessage(int currentIndex)
-	{
-		ServerMessage msg = new ServerMessage()
-			.ShowdownHeader()
-			.AddLine(line => line.AddBlock("Random Map Selection..."))
-			.AddSeparator();
-
-		for (int i = 0; i < AvailableMaps.Count; i++)
-		{
-			OnlineZeeplevel level = AvailableMaps[i];
-
-			if (i == currentIndex)
-				msg.AddLine(line => line.AddBlock($"> {level.Name}", block => block.Bold().Color("#ffff00")));
-			else
-				msg.AddLine(line => line.AddBlock(level.Name));
-		}
-
-		msg.AddSeparator();
-		msg.Send();
-	}
-
-	private IEnumerator RandomSelectionAnimation()
-	{
-		float delay = 0.10f;
-		int selectedIndex = 0;
-		int randomLoops = new Random().Next(MinSpinLoops, MaxSpinLoops);
-
-		for (int i = 0; i < MaxSpinLoops; i++)
-		{
-			if (new Random().Next(10) == 0) // 10% chance to reverse direction
-				selectedIndex = (selectedIndex - 1 + AvailableMaps.Count) % AvailableMaps.Count;
-			else
-				selectedIndex = (selectedIndex + 1) % AvailableMaps.Count;
-
-			UpdateRandomSelectionMessage(selectedIndex);
-			delay += 0.05f;
-
-			yield return new WaitForSeconds(delay);
-		}
-
-		SelectRandomMap(AvailableMaps[selectedIndex]);
-		_isRandomSelectionActive = false;
-		Execute();
-	}
-
-	private void SelectRandomMap(OnlineZeeplevel selectedLevel)
-	{
-		ChatMessage.SendCustomMessage($"Randomly selected map: {selectedLevel.Name}");
-
-		Showdown.Match.CurrentDraft.PickedLevels.Add(new DraftAction(selectedLevel,
-			new Team("Showdown", "Showdown", "#ff0000"), true));
 	}
 }
