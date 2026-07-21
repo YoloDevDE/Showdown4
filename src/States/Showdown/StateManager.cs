@@ -14,7 +14,7 @@ public class StateManager : MonoBehaviour
 		{
 			if (_instance) return _instance;
 
-			var stateManagerObj = new GameObject("StateManager");
+			GameObject stateManagerObj = new("StateManager");
 			_instance = stateManagerObj.AddComponent<StateManager>();
 			DontDestroyOnLoad(stateManagerObj);
 

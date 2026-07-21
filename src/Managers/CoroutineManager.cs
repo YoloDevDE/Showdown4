@@ -16,7 +16,7 @@ public class CoroutineManager : MonoBehaviour
 		{
 			if (_instance == null)
 			{
-				var obj = new GameObject("CoroutineManager");
+				GameObject obj = new("CoroutineManager");
 				_instance = obj.AddComponent<CoroutineManager>();
 				DontDestroyOnLoad(obj); // Optional: Keeps this object across scenes
 			}
@@ -28,14 +28,14 @@ public class CoroutineManager : MonoBehaviour
 	public Coroutine StartExternalCoroutine(IEnumerator coroutine)
 	{
 		StopAllExternalCoroutines();
-		var startedCoroutine = StartCoroutine(coroutine);
+		Coroutine startedCoroutine = StartCoroutine(coroutine);
 		_activeCoroutines.Add(startedCoroutine); // Track the coroutine
 		return startedCoroutine;
 	}
 
 	public Coroutine AddExternalCoroutine(IEnumerator coroutine)
 	{
-		var startedCoroutine = StartCoroutine(coroutine);
+		Coroutine startedCoroutine = StartCoroutine(coroutine);
 		_activeCoroutines.Add(startedCoroutine); // Track the coroutine
 		return startedCoroutine;
 	}
@@ -52,7 +52,8 @@ public class CoroutineManager : MonoBehaviour
 	{
 		if (_activeCoroutines == null || _activeCoroutines.Count == 0) return;
 
-		foreach (var coroutine in _activeCoroutines.Where(coroutine => coroutine != null)) StopCoroutine(coroutine);
+		foreach (Coroutine coroutine in _activeCoroutines.Where(coroutine => coroutine != null))
+			StopCoroutine(coroutine);
 
 		_activeCoroutines.Clear(); // Clear the list once all are stopped
 	}

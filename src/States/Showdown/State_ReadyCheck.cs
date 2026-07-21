@@ -42,7 +42,7 @@ public class StateReadyCheck : IState
 
 	public void Execute()
 	{
-		var msg = ShowPickedMaps()
+		ServerMessage msg = ShowPickedMaps()
 			.AddSeparator()
 			.AddInLine(line => line
 				.AddBlock("Remaining Time:")
@@ -50,10 +50,10 @@ public class StateReadyCheck : IState
 			)
 			.AddLine(line => line.AddBlock("Ready Status:"));
 
-		foreach (var playerEntry in ZeepkistNetwork.Players)
+		foreach (KeyValuePair<uint, ZeepkistNetworkPlayer> playerEntry in ZeepkistNetwork.Players)
 		{
-			var player = playerEntry.Value;
-			var isReady = _readyPlayers.Contains(player.SteamID);
+			ZeepkistNetworkPlayer player = playerEntry.Value;
+			bool isReady = _readyPlayers.Contains(player.SteamID);
 			msg.AddLine(line => line
 				.AddBlock($"{player.Username}:")
 				.AddBlock(isReady ? "Ready" : "Not Ready", block => block.Color(isReady ? "#00ff00" : "#ff0000"))
@@ -109,7 +109,7 @@ public class StateReadyCheck : IState
 
 	private ServerMessage ShowPickedMaps()
 	{
-		var msg = new ServerMessage()
+		ServerMessage msg = new ServerMessage()
 			.ShowdownHeader()
 			.AddLine(line => line
 				.AddBlock($"{TeamA.GetNameWithTag()}", b => b.Color(TeamA.Color))
@@ -120,8 +120,8 @@ public class StateReadyCheck : IState
 			.AddLine(line => line
 				.AddBlock("Picked Maps:"));
 
-		var round = 1;
-		foreach (var pickedLevel in Showdown.Match.Drafts.SelectMany(matchDraft => matchDraft.PickedLevels))
+		int round = 1;
+		foreach (DraftAction pickedLevel in Showdown.Match.Drafts.SelectMany(matchDraft => matchDraft.PickedLevels))
 			msg.AddLine(line =>
 			{
 				if (round <= Showdown.Match.RoundCounter()) line.StrikeThrough();
@@ -158,14 +158,14 @@ public class StateReadyCheck : IState
 
 	private IEnumerator ReadyCountdown()
 	{
-		var msg = ShowPickedMaps()
+		ServerMessage msg = ShowPickedMaps()
 			.AddSeparator()
 			.AddLine(line => line.AddBlock("Ready Status:"));
 
-		foreach (var playerEntry in ZeepkistNetwork.Players)
+		foreach (KeyValuePair<uint, ZeepkistNetworkPlayer> playerEntry in ZeepkistNetwork.Players)
 		{
-			var player = playerEntry.Value;
-			var isReady = _readyPlayers.Contains(player.SteamID);
+			ZeepkistNetworkPlayer player = playerEntry.Value;
+			bool isReady = _readyPlayers.Contains(player.SteamID);
 			msg.AddLine(line => line
 				.AddBlock($"{player.Username}: ", block => block.Bold())
 				.AddBlock(isReady ? "Ready" : "Not Ready", block => block.Color(isReady ? "#00ff00" : "#ff0000"))

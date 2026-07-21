@@ -9,7 +9,7 @@ public class CountdownTimer
 	// Enumerator method that runs the countdown and triggers actions on tick and completion
 	public static IEnumerator Start(int durationInSeconds, Action<int> onTick, Action onComplete)
 	{
-		var remainingTime = durationInSeconds;
+		int remainingTime = durationInSeconds;
 
 		while (remainingTime >= 0)
 		{

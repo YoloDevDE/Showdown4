@@ -36,8 +36,8 @@ public static class RoundWinningCalculator
 		Dictionary<ulong, Result> leaderboard,
 		out WinningMethod winningMethod)
 	{
-		var finishersA = GetFinishersCount(teamA, leaderboard);
-		var finishersB = GetFinishersCount(teamB, leaderboard);
+		int finishersA = GetFinishersCount(teamA, leaderboard);
+		int finishersB = GetFinishersCount(teamB, leaderboard);
 
 		if (finishersA > finishersB)
 		{
@@ -61,8 +61,8 @@ public static class RoundWinningCalculator
 		Dictionary<ulong, Result> leaderboard,
 		out WinningMethod winningMethod)
 	{
-		var timeA = GetCumulativeTimeOfTeam(teamA, leaderboard);
-		var timeB = GetCumulativeTimeOfTeam(teamB, leaderboard);
+		double timeA = GetCumulativeTimeOfTeam(teamA, leaderboard);
+		double timeB = GetCumulativeTimeOfTeam(teamB, leaderboard);
 
 		if (timeA < timeB)
 		{
@@ -86,22 +86,22 @@ public static class RoundWinningCalculator
 		Dictionary<ulong, Result> leaderboard,
 		out WinningMethod winningMethod)
 	{
-		var finishersA = teamA.Racers
+		List<Racer> finishersA = teamA.Racers
 			.Where(racer => leaderboard.ContainsKey(racer.SteamId))
 			.OrderBy(racer => GetPersonalBest(racer, leaderboard))
 			.ToList();
 
-		var finishersB = teamB.Racers
+		List<Racer> finishersB = teamB.Racers
 			.Where(racer => leaderboard.ContainsKey(racer.SteamId))
 			.OrderBy(racer => GetPersonalBest(racer, leaderboard))
 			.ToList();
 
-		var minFinishers = Math.Min(finishersA.Count, finishersB.Count);
+		int minFinishers = Math.Min(finishersA.Count, finishersB.Count);
 
-		for (var i = 0; i < minFinishers; i++)
+		for (int i = 0; i < minFinishers; i++)
 		{
-			var timeA = GetPersonalBest(finishersA[i], leaderboard);
-			var timeB = GetPersonalBest(finishersB[i], leaderboard);
+			double timeA = GetPersonalBest(finishersA[i], leaderboard);
+			double timeB = GetPersonalBest(finishersB[i], leaderboard);
 
 			if (timeA < timeB)
 			{
@@ -136,7 +136,7 @@ public static class RoundWinningCalculator
 
 		// NOTE: if you want deterministic behaviour per round,
 		// inject a Random instance instead of creating it here.
-		var random = new Random();
+		Random random = new();
 		return random.Next(2) == 0
 			? new List<Team> { teamA, teamB }
 			: new List<Team> { teamB, teamA };
@@ -163,7 +163,7 @@ public static class RoundWinningCalculator
 		Racer racer,
 		Dictionary<ulong, Result> leaderboard)
 	{
-		return leaderboard.TryGetValue(racer.SteamId, out var result)
+		return leaderboard.TryGetValue(racer.SteamId, out Result result)
 			? result.Time
 			: double.MaxValue;
 	}

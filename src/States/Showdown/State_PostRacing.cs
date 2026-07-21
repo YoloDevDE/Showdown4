@@ -23,18 +23,18 @@ internal class StatePostRacing : IState
 
 	public void Execute()
 	{
-		var winnerTeam = Showdown.Match.CurrentRound.GetWinnerTeam;
+		Team winnerTeam = Showdown.Match.CurrentRound.GetWinnerTeam;
 		winnerTeam.AddWin();
 
 		// Get the current round index
-		var currentRoundCounter = Showdown.Match.RoundCounter();
+		int currentRoundCounter = Showdown.Match.RoundCounter();
 
 		// Default message in case of an error
-		var nextLevelMessage = "";
+		string nextLevelMessage = "";
 		// Check if the current round index is within the range of picked levels
 		if (currentRoundCounter < Showdown.Match.CurrentDraft.PickedLevels.Count)
 		{
-			var nextLevel = Showdown.Match.CurrentDraft.PickedLevels[Showdown.Match.RoundCounter()];
+			DraftAction nextLevel = Showdown.Match.CurrentDraft.PickedLevels[Showdown.Match.RoundCounter()];
 			// If valid, show the next level's name
 			nextLevelMessage += new ChatMessage.Builder()
 				.TextLine($"Starting Round {Showdown.Match.RoundCounter() + 1}")

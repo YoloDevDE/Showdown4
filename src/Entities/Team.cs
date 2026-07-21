@@ -37,9 +37,9 @@ public class Team
 
 	public int GetStringCountNoRichTags(string str)
 	{
-		var result = 0;
-		var openCount = 0;
-		foreach (var c in str)
+		int result = 0;
+		int openCount = 0;
+		foreach (char c in str)
 		{
 			switch (c)
 			{
@@ -80,7 +80,7 @@ public class Team
 
 	public void RemoveRacer(ulong steamId)
 	{
-		var racer = Racers.FirstOrDefault(r => r.SteamId == steamId);
+		Racer racer = Racers.FirstOrDefault(r => r.SteamId == steamId);
 		if (racer == null) return;
 
 		Racers.Remove(racer);
@@ -88,13 +88,13 @@ public class Team
 
 	public string GetLinkedRacersToString()
 	{
-		var result = "none";
+		string result = "none";
 		if (Racers.Count <= 0) return result;
 
 		result = "";
-		for (var index = 0; index < Racers.Count; index++)
+		for (int index = 0; index < Racers.Count; index++)
 		{
-			var racer = Racers[index];
+			Racer racer = Racers[index];
 			result += racer.SteamName;
 			if (index < Racers.Count - 1) result += ", ";
 		}

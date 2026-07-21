@@ -64,7 +64,7 @@ public class StatePreRacing : IState
 	// Update the server message with the countdown time
 	private void UpdateCountdownMessage(int secondsRemaining)
 	{
-		var msg = new ServerMessage()
+		ServerMessage msg = new ServerMessage()
 				.ShowdownHeader()
 				.AddLine(line => line
 					.AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
@@ -90,12 +90,12 @@ public class StatePreRacing : IState
 
 	private ServerMessage ShowPickedMaps()
 	{
-		var msg = new ServerMessage()
+		ServerMessage msg = new ServerMessage()
 			.AddLine(line => line
 				.AddBlock("Picked Maps:"));
 
-		var round = 1;
-		foreach (var pickedLevel in Showdown.Match.Drafts.SelectMany(matchDraft => matchDraft.PickedLevels))
+		int round = 1;
+		foreach (DraftAction pickedLevel in Showdown.Match.Drafts.SelectMany(matchDraft => matchDraft.PickedLevels))
 			msg.AddLine(line =>
 			{
 				if (round <= Showdown.Match.RoundCounter()) line.StrikeThrough();
@@ -114,7 +114,7 @@ public class StatePreRacing : IState
 
 	private void OnRoundEnd()
 	{
-		var nextLevel = Showdown.Match.CurrentDraft.PickedLevels.First();
+		DraftAction nextLevel = Showdown.Match.CurrentDraft.PickedLevels.First();
 		ChatMessage.SendCustomMessage(
 			new ChatMessage.Builder().ClearChat()
 				.DashedLine().NewLine()

@@ -86,19 +86,19 @@ public class Plugin : BaseUnityPlugin
 		string name = null;
 
 		// Split the args into parts by spaces
-		var splitArgs = args.Split(' ').ToList();
+		List<string> splitArgs = args.Split(' ').ToList();
 
 		// Extract the flags and their values first
-		for (var i = 0; i < splitArgs.Count - 1; i++) // The last argument will be the name
+		for (int i = 0; i < splitArgs.Count - 1; i++) // The last argument will be the name
 		{
-			var argument = splitArgs[i];
+			string argument = splitArgs[i];
 
-			if (argument.StartsWith("-"))
+			if (argument.StartsWith('-'))
 			{
 				// Get the next value for the flag
-				if (i + 1 < splitArgs.Count && !splitArgs[i + 1].StartsWith("-"))
+				if (i + 1 < splitArgs.Count && !splitArgs[i + 1].StartsWith('-'))
 				{
-					var value = splitArgs[i + 1];
+					string value = splitArgs[i + 1];
 					switch (argument)
 					{
 						case "-c":
@@ -134,12 +134,12 @@ public class Plugin : BaseUnityPlugin
 		}
 
 		// Load existing teams from the file if it exists, otherwise create a new list
-		var teams = Storage.JsonFileExists(filename)
+		List<Team> teams = Storage.JsonFileExists(filename)
 			? Storage.LoadFromJson<List<Team>>(filename)
 			: new List<Team>();
 
 		// Create the new team
-		var newTeam = new Team(name, tag, color);
+		Team newTeam = new(name, tag, color);
 
 		// Add the new team to the list
 		teams.Add(newTeam);

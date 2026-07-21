@@ -17,15 +17,15 @@ public static class MessageFormatter
 
 	public static string AlignKeyValue(string key, int keyMaxWidth, string value, int valueMaxWidth)
 	{
-		var paddedTeamName = key.PadRight(keyMaxWidth);
-		var paddedTime = value.PadLeft(valueMaxWidth);
+		string paddedTeamName = key.PadRight(keyMaxWidth);
+		string paddedTime = value.PadLeft(valueMaxWidth);
 		return $"{paddedTeamName} : {paddedTime}";
 	}
 
 	public static string ClearChat()
 	{
-		var br = "<br>";
-		var count = 40;
+		string br = "<br>";
+		int count = 40;
 		return string.Concat(Enumerable.Repeat(br, count));
 	}
 
@@ -40,8 +40,8 @@ public static class MessageFormatter
 
 	public static string PrintLine()
 	{
-		var dash = "-";
-		var count = 16;
+		string dash = "-";
+		int count = 16;
 		return string.Concat(Enumerable.Repeat(dash, count));
 	}
 
@@ -60,20 +60,20 @@ public static class MessageFormatter
 	public static string FormatTimestampDifference(double time)
 	{
 		// Überprüfen, ob die Zeit negativ ist und ein entsprechendes Vorzeichen setzen
-		var sign = time > 0
+		char sign = time > 0
 			? '-'
 			: time < 0
 				? '+'
 				: '\u00b1';
 
 		// Umwandeln der Zeit in einen absoluten Wert, um das Vorzeichen bei der Formatierung zu ignorieren
-		var absoluteTime = Math.Abs(time);
+		double absoluteTime = Math.Abs(time);
 
 		// Erstellen einer CultureInfo Instanz, die immer den Punkt als Dezimaltrennzeichen verwendet
-		var culture = CultureInfo.InvariantCulture;
+		CultureInfo culture = CultureInfo.InvariantCulture;
 
 		// Formatieren der Zeit in Sekunden mit drei Dezimalstellen
-		var formattedTime = absoluteTime.ToString("00.000", culture);
+		string formattedTime = absoluteTime.ToString("00.000", culture);
 
 		// Zusammenfügen des Vorzeichens mit der formatierten Zeit
 		return $"{sign}{formattedTime}";

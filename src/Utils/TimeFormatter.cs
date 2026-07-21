@@ -6,7 +6,7 @@ public class TimeFormatter
 {
 	public static string FormatDuration(int durationInSeconds)
 	{
-		var timeSpan = TimeSpan.FromSeconds(durationInSeconds);
+		TimeSpan timeSpan = TimeSpan.FromSeconds(durationInSeconds);
 
 		// Überprüfe, ob Stunden vorhanden sind
 		if (timeSpan.TotalHours >= 1)

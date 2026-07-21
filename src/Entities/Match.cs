@@ -33,7 +33,7 @@ public class Match
 
 	public string ScoreWithFullNameColoredAndPadded()
 	{
-		var maxLength = Math.Max(TeamA.GetFullColoredTagAndName().Length, TeamB.GetFullColoredTagAndName().Length);
+		int maxLength = Math.Max(TeamA.GetFullColoredTagAndName().Length, TeamB.GetFullColoredTagAndName().Length);
 		return
 			$"{TeamA.GetFullColoredTagAndName().PadLeft(maxLength)} {TeamA.Wins}:{TeamB.Wins} {TeamB.GetFullColoredTagAndName().PadRight(maxLength)}";
 	}
@@ -61,13 +61,14 @@ public class Match
 
 	public void AddDraft()
 	{
-		var unAvaiableLevels = new List<OnlineZeeplevel>();
-		var allLevels = PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.CompetitionLevelsPlaylistName.Value);
+		List<OnlineZeeplevel> unAvaiableLevels = new();
+		List<OnlineZeeplevel> allLevels =
+			PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.CompetitionLevelsPlaylistName.Value);
 		if (Drafts.Count > 0)
 			unAvaiableLevels =
 				new List<OnlineZeeplevel>(CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
 
-		var draft = new Draft(Initiative, NonInitiative, allLevels, unAvaiableLevels);
+		Draft draft = new(Initiative, NonInitiative, allLevels, unAvaiableLevels);
 		Drafts.Add(draft);
 	}
 

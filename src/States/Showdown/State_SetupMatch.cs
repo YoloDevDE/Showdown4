@@ -30,7 +30,7 @@ public class StateSetupMatch : IState
 
 	public void Enter()
 	{
-		var teamData = Plugin.Storage.LoadFromJson<TeamData>(Plugin.TeamFile.Value);
+		TeamData teamData = Plugin.Storage.LoadFromJson<TeamData>(Plugin.TeamFile.Value);
 		_teams = teamData?.Teams ?? new List<Team>();
 
 		_currentSelectionIndex = 0;
@@ -62,7 +62,7 @@ public class StateSetupMatch : IState
 
 	public void HandleInput()
 	{
-		var inputDetected = false;
+		bool inputDetected = false;
 
 		if (!_isCountdownActive)
 		{
@@ -102,16 +102,16 @@ public class StateSetupMatch : IState
 	private void SendServerMessage()
 	{
 		// ServerMessage showing the team selection
-		var serverMessage = new ServerMessage()
+		ServerMessage serverMessage = new ServerMessage()
 			.ShowdownHeader()
 			.AddLine(line => line.AddBlock("Setup Match",
 				builder => builder.Gradients("#b19d63", "#FFFFFF", "#b19d63").Bold().AllCaps().Size(40)))
 			.AddSeparator();
 
-		for (var i = 0; i < _teams.Count; i++)
+		for (int i = 0; i < _teams.Count; i++)
 		{
-			var team = _teams[i];
-			var index = i;
+			Team team = _teams[i];
+			int index = i;
 
 			if (i == _currentSelectionIndex && (team == _selectedTeamA || team == _selectedTeamB))
 				serverMessage.AddLine(line => line
@@ -149,7 +149,7 @@ public class StateSetupMatch : IState
 
 	private void SelectTeam()
 	{
-		var selectedTeam = _teams[_currentSelectionIndex];
+		Team selectedTeam = _teams[_currentSelectionIndex];
 
 		if (_selectedTeamA == null)
 		{

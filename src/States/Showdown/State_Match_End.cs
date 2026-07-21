@@ -1,4 +1,5 @@
 ﻿using System;
+using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using ZeepSDK.Chat;
@@ -39,10 +40,10 @@ public class StateMatchEnd : IState
 	public void Execute()
 	{
 		// We don't need to send this message every second manually now, since it's handled in `UpdateCountdownMessage`
-		var winnerTeam = Showdown.Match.CurrentRound.GetWinnerTeam;
+		Team winnerTeam = Showdown.Match.CurrentRound.GetWinnerTeam;
 
 		// Decorated ServerMessage without emotes
-		var msg = new ServerMessage()
+		ServerMessage msg = new ServerMessage()
 			.ShowdownHeader()
 			.AddSeparator()
 			.AddLine(line => line

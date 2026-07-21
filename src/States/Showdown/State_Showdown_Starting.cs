@@ -21,7 +21,7 @@ public class StateShowdownStarting : IState
 
 	public void Execute()
 	{
-		var tmp = "";
+		string tmp = "";
 		try
 		{
 			PlaylistManager.SetServerPlaylist(Plugin.IntermissionLevelPlaylistName.Value);

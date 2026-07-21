@@ -64,7 +64,7 @@ public interface IStateMachine
 
 	private void OnCurrentStateFinished()
 	{
-		foreach (var transition in Transitions)
+		foreach (ITransition transition in Transitions)
 		{
 			if (transition.From.GetType().Name != CurrentState.GetType().Name || !transition.CanTransition()) continue;
 

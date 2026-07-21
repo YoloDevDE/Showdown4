@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Entities;
 
@@ -15,10 +16,10 @@ public class LeaderboardDisplay
 	// Generate a server message for team and racer leaderboard
 	public ServerMessage GenerateLeaderboardMessage(Match match)
 	{
-		_round.Evaluate(out var teams);
-		var sortedTeams = _round.GetTeamsSortedByWinnerAsc();
+		_round.Evaluate(out List<Team> teams);
+		List<Team> sortedTeams = _round.GetTeamsSortedByWinnerAsc();
 
-		var msg = new ServerMessage()
+		ServerMessage msg = new ServerMessage()
 				.ShowdownHeader(true)
 				.AddLine(l => l.Size(30).Bold().AddBlock(match.ScoreColored()).Indent("585%"))
 			// .AddLine(line =>
@@ -48,12 +49,12 @@ public class LeaderboardDisplay
 			//     }
 			// })
 			;
-		for (var i = 0; i < sortedTeams.Count; i++)
+		for (int i = 0; i < sortedTeams.Count; i++)
 		{
-			var position = i + 1;
-			var team = sortedTeams[i];
-			var averageTime = _round.GetAvgTimeOfTeam(team);
-			var finishers = _round.GetFinishersCount(team);
+			int position = i + 1;
+			Team team = sortedTeams[i];
+			double averageTime = _round.GetAvgTimeOfTeam(team);
+			int finishers = _round.GetFinishersCount(team);
 
 
 			msg.AddLine(line =>
@@ -63,7 +64,7 @@ public class LeaderboardDisplay
 					.AddBlock($"{team.GetTag()}".PadRight(6), f => f.Bold().Color(team.Color));
 
 
-				var sortedRacers = team.Racers
+				List<Racer> sortedRacers = team.Racers
 					.Where(racer => _round.Leaderboard.ContainsKey(racer.SteamId))
 					.OrderBy(racer => _round.GetPersonalBest(racer))
 					.ToList();
@@ -93,7 +94,7 @@ public class LeaderboardDisplay
 
 						line.AddBlock("Individual Placements: ", f => f.Color("#ffffff"));
 
-						for (var j = 0; j < sortedRacers.Count; j++)
+						for (int j = 0; j < sortedRacers.Count; j++)
 						{
 							line.AddBlock(
 								$"{sortedRacers[j].SteamName} ({_round.GetPersonalBest(sortedRacers[j]).GetFormattedTime()})",

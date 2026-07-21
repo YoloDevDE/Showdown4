@@ -7,6 +7,7 @@ using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistClient;
+using ZeepkistNetworking;
 using ZeepSDK.Chat;
 using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
@@ -78,12 +79,12 @@ public class StateRacing : IState
 
 	private void OnPLayerJoined(ZeepkistNetworkPlayer player)
 	{
-		var allRacers = _currentRound.TeamA.Racers.Concat(_currentRound.TeamB.Racers);
-		var matchingRacer = allRacers.FirstOrDefault(r => r.SteamId == player.SteamID);
+		IEnumerable<Racer> allRacers = _currentRound.TeamA.Racers.Concat(_currentRound.TeamB.Racers);
+		Racer matchingRacer = allRacers.FirstOrDefault(r => r.SteamId == player.SteamID);
 
 		if (matchingRacer != null)
 		{
-			var personalBest = _currentRound.GetPersonalBest(matchingRacer);
+			double personalBest = _currentRound.GetPersonalBest(matchingRacer);
 			if (!(personalBest < double.MaxValue)) return;
 
 			ZeepkistNetwork.CustomLeaderBoard_SetPlayerTimeOnLeaderboard(player.SteamID, (float)personalBest, true);
@@ -106,8 +107,8 @@ public class StateRacing : IState
 			return;
 		}
 
-		var racer = new Racer(player.SteamID, player.Username);
-		var result = new Result(racer, player.CurrentResult.Time);
+		Racer racer = new(player.SteamID, player.Username);
+		Result result = new(racer, player.CurrentResult.Time);
 
 		if (_currentRound == null)
 		{
@@ -133,24 +134,24 @@ public class StateRacing : IState
 
 	private IEnumerator ShowTimeDifferencesTemporarily(ZeepkistNetworkPlayer player, float time)
 	{
-		var ingameLeaderboard = ZeepkistNetwork.Leaderboard
+		List<LeaderboardItem> ingameLeaderboard = ZeepkistNetwork.Leaderboard
 			.OrderBy(leaderboard => leaderboard.Time)
 			.ToList();
 
-		var positionChanges = new Dictionary<ulong, string>();
-		for (var index = 0; index < ingameLeaderboard.Count; index++)
+		Dictionary<ulong, string> positionChanges = new();
+		for (int index = 0; index < ingameLeaderboard.Count; index++)
 		{
-			var position = index + 1;
-			var currentLeaderboardItem = ingameLeaderboard[index];
+			int position = index + 1;
+			LeaderboardItem currentLeaderboardItem = ingameLeaderboard[index];
 
 			string positionChange = null;
-			if (_previousPositions.TryGetValue(currentLeaderboardItem.SteamID, out var previousPosition))
+			if (_previousPositions.TryGetValue(currentLeaderboardItem.SteamID, out int previousPosition))
 			{
-				var change = previousPosition - position;
+				int change = previousPosition - position;
 				if (change != 0)
 				{
-					var color = change > 0 ? "#11ff03" : "#a52019";
-					var sign = change > 0 ? "+" : "";
+					string color = change > 0 ? "#11ff03" : "#a52019";
+					string sign = change > 0 ? "+" : "";
 					positionChange = $"<color={color}>{sign}{change}</color>";
 				}
 			}
@@ -158,7 +159,7 @@ public class StateRacing : IState
 			positionChanges[currentLeaderboardItem.SteamID] = positionChange;
 
 			_previousPositions[currentLeaderboardItem.SteamID] = position;
-			var overrideTimeText =
+			string overrideTimeText =
 				ZeepkistNetwork.GetLeaderboardOverride(currentLeaderboardItem.SteamID).overrideTimeText;
 			ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
 				currentLeaderboardItem.SteamID,
@@ -173,11 +174,11 @@ public class StateRacing : IState
 		}
 
 		// Track player's previous result time
-		var previousTime = _previousTimes.GetValueOrDefault(player.SteamID, 0);
+		double previousTime = _previousTimes.GetValueOrDefault(player.SteamID, 0);
 
-		var timeDiff = time - previousTime;
-		var formattedDiff = $"-{TimeSpan.FromSeconds(timeDiff):mm\\:ss\\.fff}";
-		var timeColor = "#11ff03";
+		double timeDiff = time - previousTime;
+		string formattedDiff = $"-{TimeSpan.FromSeconds(timeDiff):mm\\:ss\\.fff}";
+		string timeColor = "#11ff03";
 
 
 		// Set the time difference for current player
@@ -196,7 +197,7 @@ public class StateRacing : IState
 		yield return new WaitForSeconds(5f);
 
 		// Reset all team players' overrides
-		foreach (var currentLeaderboardItem in ingameLeaderboard)
+		foreach (LeaderboardItem currentLeaderboardItem in ingameLeaderboard)
 			ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
 				currentLeaderboardItem.SteamID,
 				null,
@@ -211,7 +212,7 @@ public class StateRacing : IState
 
 	public void SendTeamLeaderboard()
 	{
-		var leaderboardMessage = _leaderboardDisplay.GenerateLeaderboardMessage(Showdown.Match);
+		ServerMessage leaderboardMessage = _leaderboardDisplay.GenerateLeaderboardMessage(Showdown.Match);
 		leaderboardMessage.Send();
 	}
 
@@ -220,7 +221,7 @@ public class StateRacing : IState
 // Coroutine for showing the cool intro message for the first 10 seconds
 	private IEnumerator DisplayRaceIntroMessage()
 	{
-		var introMessage = new ServerMessage("center")
+		ServerMessage introMessage = new ServerMessage("center")
 				.ShowdownHeader(false, "center")
 				.AddLine(line => line
 					.AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
@@ -230,12 +231,12 @@ public class StateRacing : IState
 			;
 
 		// Determine the number of rows needed based on the maximum number of racers in either team
-		var maxRacers = Mathf.Max(_teamA.Racers.Count, _teamB.Racers.Count);
+		int maxRacers = Mathf.Max(_teamA.Racers.Count, _teamB.Racers.Count);
 
-		for (var i = 0; i < maxRacers; i++)
+		for (int i = 0; i < maxRacers; i++)
 		{
-			var teamARacer = i < _teamA.Racers.Count ? _teamA.Racers[i] : null;
-			var teamBRacer = i < _teamB.Racers.Count ? _teamB.Racers[i] : null;
+			Racer teamARacer = i < _teamA.Racers.Count ? _teamA.Racers[i] : null;
+			Racer teamBRacer = i < _teamB.Racers.Count ? _teamB.Racers[i] : null;
 
 			introMessage.AddLine(line =>
 			{

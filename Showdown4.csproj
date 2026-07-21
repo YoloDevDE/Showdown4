@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
-        <AssemblyName>Showdown4</AssemblyName>
-        <Description>Showdown Helper</Description>
+        <AssemblyName>Zeepkist Showdown</AssemblyName>
+        <Description>Zeepkist plugin that runs the tournament called "Zeepkist Showdown"</Description>
         <Version>1.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
@@ -19,8 +19,9 @@
         <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
         <PackageReference Include="BepInEx.Core" Version="5.*"/>
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
+        <PackageReference Include="BepInExConfigurationGenerator" Version="0.1.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912"/>
-        <PackageReference Include="ZeepSDK" Version="2.0.2"/>
+        <PackageReference Include="ZeepSDK" Version="2.6.1"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
@@ -28,9 +29,26 @@
     </ItemGroup>
 
     <!-- Post-Build Scripts -->
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <RemoveDir Directories="C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)"/>
-        <MakeDir Directories="C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)"/>
-        <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)\$(ProjectName)-$(Version).dll&quot;"/>
+    <Target Name="PostBuild" AfterTargets="Build">
+        <PropertyGroup>
+            <PluginDir>C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)</PluginDir>
+            <ZipPath>C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)-$(Version).zip</ZipPath>
+        </PropertyGroup>
+        <!-- Recreate plugin folder -->
+        <RemoveDir Directories="$(PluginDir)"/>
+        <MakeDir Directories="$(PluginDir)"/>
+        <!-- Copy DLL + PDB (symbols) so BepInEx can show file:line -->
+        <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(PluginDir)\$(ProjectName).dll&quot;"/>
+        <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).pdb&quot; &quot;$(PluginDir)\$(ProjectName).pdb&quot;"/>
+        <!-- Zip it -->
+        <Exec Command="powershell -Command &quot;Compress-Archive -Path &quot;'$(PluginDir)\*'&quot; -DestinationPath &quot;'$(ZipPath)'&quot; -Force&quot;"/>
     </Target>
+
+    <!-- Enable debug logging symbols (compile-time) -->
+    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DefineConstants>TRACE</DefineConstants>
+    </PropertyGroup>
 </Project>

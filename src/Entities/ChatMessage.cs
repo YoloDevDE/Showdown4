@@ -19,7 +19,7 @@ public class ChatMessage
 
 	public static void SendCustomMessage(string message, params ulong[] steamIds)
 	{
-		foreach (var steamId in steamIds.Distinct())
+		foreach (ulong steamId in steamIds.Distinct())
 			ZeepkistNetwork.SendCustomChatMessage(false, steamId,
 				"<br><color=#E0E0E0><size=-2>" + message + "</size></color>", "--------SHOWDOWN--------</align>");
 	}
@@ -32,16 +32,16 @@ public class ChatMessage
 
 		public Builder DashedLine()
 		{
-			var dash = "-";
-			var count = 16;
+			string dash = "-";
+			int count = 16;
 			_chatMessage.Message += string.Concat(Enumerable.Repeat(dash, count));
 			return this;
 		}
 
 		public Builder ClearChat()
 		{
-			var br = "<br>";
-			var count = 50;
+			string br = "<br>";
+			int count = 50;
 			_chatMessage.Message += string.Concat(Enumerable.Repeat(br, count));
 			return this;
 		}
@@ -63,7 +63,7 @@ public class ChatMessage
 		public Builder CenterTextLine(string text)
 		{
 			// Berechnung der Anzahl der Leerzeichen auf beiden Seiten
-			var padding = (_maxLineWidth - text.Length) / 2;
+			int padding = (_maxLineWidth - text.Length) / 2;
 
 			// Falls die maxLineWidth kleiner als die Textlänge ist, wird kein Padding hinzugefügt
 			if (padding > 0)

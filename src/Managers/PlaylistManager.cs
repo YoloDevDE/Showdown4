@@ -12,7 +12,8 @@ public abstract class PlaylistManager
 {
 	public static void ResetPlaylist()
 	{
-		var intermissionLevel = GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value).First();
+		OnlineZeeplevel intermissionLevel =
+			GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value).First();
 		ZeepkistNetwork.CurrentLobby.Playlist.Clear();
 		ZeepkistNetwork.CurrentLobby.Playlist.Add(intermissionLevel);
 		ZeepkistNetwork.CurrentLobby.PlaylistRandom = false;

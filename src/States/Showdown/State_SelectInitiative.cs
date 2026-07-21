@@ -63,7 +63,7 @@ public class StateSelectInitiative : IState
 			// Do nothing if input is locked
 			return;
 
-		var inputDetected = false;
+		bool inputDetected = false;
 
 		// Detect arrow key presses
 		if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.DownArrow))
@@ -87,7 +87,7 @@ public class StateSelectInitiative : IState
 	private ServerMessage ServerMessageThing()
 	{
 		// Display the current team selection in the server message
-		var serverMessage = new ServerMessage()
+		ServerMessage serverMessage = new ServerMessage()
 			.ShowdownHeader()
 			.AddLine(line => line
 				.AddBlock($"{TeamA.GetNameWithTag()}", b => b.Color(TeamA.Color))
@@ -98,9 +98,9 @@ public class StateSelectInitiative : IState
 			.AddLine(line => line.AddBlock("Selecting Initiative (Press SPACE to confirm)"))
 			.AddSeparator();
 
-		for (var index = 0; index < _teams.Count; index++)
+		for (int index = 0; index < _teams.Count; index++)
 		{
-			var team = _teams[index];
+			Team team = _teams[index];
 
 			if (index == _currentSelectionIndex)
 				// Highlight the currently selected team
@@ -137,7 +137,7 @@ public class StateSelectInitiative : IState
 	private void UpdateCountdownMessage(int countdownTime)
 	{
 		// Send or append the countdown message to the server
-		var msg =
+		ServerMessage msg =
 			ServerMessageThing()
 				.AddSeparator()
 				.AddLine(line => line

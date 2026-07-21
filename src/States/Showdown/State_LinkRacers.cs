@@ -81,7 +81,7 @@ public class StateLinkRacers : IState
 	private void UpdateServerMessage(int countdownTime)
 	{
 		// Create a consistent server message with appended countdown at the end
-		var msg = ServerMessageLinkedRacers();
+		ServerMessage msg = ServerMessageLinkedRacers();
 
 
 		// Append the countdown timer if it's running
@@ -103,8 +103,8 @@ public class StateLinkRacers : IState
 
 	private void OnLinkRacerToTeam(ulong steamId)
 	{
-		var steamName = ZeepkistNetworkService.GetSteamNameFromSteamId(steamId);
-		var racer = new Racer(steamId, steamName);
+		string steamName = ZeepkistNetworkService.GetSteamNameFromSteamId(steamId);
+		Racer racer = new(steamId, steamName);
 		_currentTeam.AddRacer(racer); // Add racer to current team
 
 
@@ -122,7 +122,7 @@ public class StateLinkRacers : IState
 
 	private ServerMessage ServerMessageLinkedRacers()
 	{
-		var msg = new ServerMessage()
+		ServerMessage msg = new ServerMessage()
 				.ShowdownHeader()
 				.AddLine(line => line
 					.AddBlock($"{TeamA.GetNameWithTag()}", b => b.Color(TeamA.Color))

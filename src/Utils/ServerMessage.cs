@@ -27,15 +27,15 @@ public class ServerMessage
 
 	public override string ToString()
 	{
-		var tmp = "<size=\"0%\">TestTestTest" +
-		          "</size>";
+		string tmp = "<size=\"0%\">TestTestTest" +
+		             "</size>";
 		return $"{_command}{tmp}{_prefix}{_messageBuilder}{_suffix}";
 	}
 
 	// Add a line with one or more blocks and optional line-wide formatting
 	public ServerMessage AddLine(Action<LineBuilder> line)
 	{
-		var lineBuilder = new LineBuilder();
+		LineBuilder lineBuilder = new();
 		line(lineBuilder);
 		_messageBuilder.Append(lineBuilder.BuildLine());
 		AppendLineBreak();
@@ -44,7 +44,7 @@ public class ServerMessage
 
 	public ServerMessage AddLine(string line)
 	{
-		var lineBuilder = new LineBuilder();
+		LineBuilder lineBuilder = new();
 		lineBuilder.AddBlock(line);
 		_messageBuilder.Append(lineBuilder.BuildLine());
 		AppendLineBreak();
@@ -54,7 +54,7 @@ public class ServerMessage
 
 	public ServerMessage AddInLine(Action<LineBuilder> line)
 	{
-		var lineBuilder = new LineBuilder();
+		LineBuilder lineBuilder = new();
 		line(lineBuilder);
 		_messageBuilder.Append(lineBuilder.BuildLine());
 		return this;
@@ -68,7 +68,7 @@ public class ServerMessage
 		otherMessage._suffix = "";
 
 		// Convert otherMessage's StringBuilder to a string
-		var otherMessageContent = otherMessage._messageBuilder.ToString();
+		string otherMessageContent = otherMessage._messageBuilder.ToString();
 
 		// Remove all leading <br> from otherMessage
 		while (otherMessageContent.StartsWith("<br>"))
@@ -78,11 +78,11 @@ public class ServerMessage
 		_messageBuilder.Append(otherMessageContent);
 
 		// Update the line count
-		var originalLineCount = _lineCount;
+		int originalLineCount = _lineCount;
 		_lineCount += otherMessage._lineCount;
 
 		// Ensure the current message gets prepended breaks for each added line
-		for (var i = originalLineCount; i < _lineCount; i++) PrependBreaksIfNeeded();
+		for (int i = originalLineCount; i < _lineCount; i++) PrependBreaksIfNeeded();
 
 		return this;
 	}
@@ -150,7 +150,7 @@ public class ServerMessage
 		// Add blocks to the line with customization 
 		public LineBuilder AddBlock(string text, Action<BlockBuilder> customizer)
 		{
-			var blockBuilder = new BlockBuilder(text + " ");
+			BlockBuilder blockBuilder = new(text + " ");
 			customizer(blockBuilder);
 			_lineContent.Append(blockBuilder.BuildInline());
 			return this;
@@ -163,7 +163,7 @@ public class ServerMessage
 
 		public LineBuilder AddBlockNoSpace(string text, Action<BlockBuilder> customizer)
 		{
-			var blockBuilder = new BlockBuilder(text);
+			BlockBuilder blockBuilder = new(text);
 			customizer(blockBuilder);
 			_lineContent.Append(blockBuilder.BuildInline());
 			return this;
@@ -259,12 +259,12 @@ public class ServerMessage
 		// Build the final formatted line with effects and blocks
 		public string BuildLine()
 		{
-			var line = new StringBuilder();
+			StringBuilder line = new();
 
-			foreach (var tag in _openingTag) line.Insert(0, tag);
+			foreach (string tag in _openingTag) line.Insert(0, tag);
 
 			line.Append(_lineContent.ToString());
-			foreach (var tag in _closingTag) line.Append(tag);
+			foreach (string tag in _closingTag) line.Append(tag);
 
 			return line.ToString();
 		}
@@ -291,26 +291,26 @@ public class ServerMessage
 			if (colors == null || colors.Length < 2) return this;
 
 			// Validate hex codes
-			foreach (var color in colors)
+			foreach (string color in colors)
 			{
-				var cleanColor = color.TrimStart('#');
+				string cleanColor = color.TrimStart('#');
 				if (!Regex.IsMatch(cleanColor, "^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{4}$|^[0-9A-Fa-f]{6}$|^[0-9A-Fa-f]{8}$"))
 					return this;
 			}
 
-			var content = ExtractTextContent(_contentBuilder.ToString(), out var before, out var after);
-			var gradientText = new StringBuilder();
-			var textLength = content.Length;
+			string content = ExtractTextContent(_contentBuilder.ToString(), out string before, out string after);
+			StringBuilder gradientText = new();
+			int textLength = content.Length;
 
-			for (var i = 0; i < textLength; i++)
+			for (int i = 0; i < textLength; i++)
 			{
-				var progress = (float)i / (textLength - 1);
-				var colorIndex = (int)(progress * (colors.Length - 1));
-				var colorProgress = progress * (colors.Length - 1) - colorIndex;
+				float progress = (float)i / (textLength - 1);
+				int colorIndex = (int)(progress * (colors.Length - 1));
+				float colorProgress = progress * (colors.Length - 1) - colorIndex;
 
-				var startColor = colors[colorIndex].TrimStart('#');
-				var endColor = colors[Math.Min(colorIndex + 1, colors.Length - 1)].TrimStart('#');
-				var interpolatedColor = InterpolateColors(startColor, endColor, colorProgress);
+				string startColor = colors[colorIndex].TrimStart('#');
+				string endColor = colors[Math.Min(colorIndex + 1, colors.Length - 1)].TrimStart('#');
+				string interpolatedColor = InterpolateColors(startColor, endColor, colorProgress);
 
 				gradientText.Append($"<color=#{interpolatedColor}>{content[i]}</color>");
 			}
@@ -324,25 +324,25 @@ public class ServerMessage
 
 		private string InterpolateColors(string startColor, string endColor, float progress)
 		{
-			var r1 = Convert.ToInt32(startColor.Substring(0, 2), 16);
-			var g1 = Convert.ToInt32(startColor.Substring(2, 2), 16);
-			var b1 = Convert.ToInt32(startColor.Substring(4, 2), 16);
+			int r1 = Convert.ToInt32(startColor.Substring(0, 2), 16);
+			int g1 = Convert.ToInt32(startColor.Substring(2, 2), 16);
+			int b1 = Convert.ToInt32(startColor.Substring(4, 2), 16);
 
-			var r2 = Convert.ToInt32(endColor.Substring(0, 2), 16);
-			var g2 = Convert.ToInt32(endColor.Substring(2, 2), 16);
-			var b2 = Convert.ToInt32(endColor.Substring(4, 2), 16);
+			int r2 = Convert.ToInt32(endColor.Substring(0, 2), 16);
+			int g2 = Convert.ToInt32(endColor.Substring(2, 2), 16);
+			int b2 = Convert.ToInt32(endColor.Substring(4, 2), 16);
 
-			var r = (int)(r1 + (r2 - r1) * progress);
-			var g = (int)(g1 + (g2 - g1) * progress);
-			var b = (int)(b1 + (b2 - b1) * progress);
+			int r = (int)(r1 + (r2 - r1) * progress);
+			int g = (int)(g1 + (g2 - g1) * progress);
+			int b = (int)(b1 + (b2 - b1) * progress);
 
 			return $"{r:X2}{g:X2}{b:X2}";
 		}
 
 		private string ExtractTextContent(string input, out string before, out string after)
 		{
-			var startIndex = input.LastIndexOf('>') + 1;
-			var endIndex = input.IndexOf("</", StringComparison.Ordinal);
+			int startIndex = input.LastIndexOf('>') + 1;
+			int endIndex = input.IndexOf("</", StringComparison.Ordinal);
 
 			if (startIndex >= 0 && endIndex >= 0)
 			{

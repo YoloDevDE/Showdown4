@@ -52,7 +52,7 @@ public class Round
 
 	public double GetAvgTimeOfTeam(Team team)
 	{
-		var finishers = GetFinishersCount(team);
+		int finishers = GetFinishersCount(team);
 		return finishers > 0 ? GetCumulativeTimeOfTeam(team) / finishers : 0.0;
 	}
 
@@ -72,15 +72,15 @@ public class Round
 
 	public List<Team> GetTeamsSortedByWinnerAsc()
 	{
-		if (TeamsSortedByWinAsc == null) Evaluate(out var teams);
+		if (TeamsSortedByWinAsc == null) Evaluate(out List<Team> teams);
 
 		return TeamsSortedByWinAsc;
 	}
 
 	private List<Team> CompareFinishers()
 	{
-		var finishersA = GetFinishersCount(TeamA);
-		var finishersB = GetFinishersCount(TeamB);
+		int finishersA = GetFinishersCount(TeamA);
+		int finishersB = GetFinishersCount(TeamB);
 
 		if (finishersA > finishersB)
 		{
@@ -99,8 +99,8 @@ public class Round
 
 	private List<Team> CompareCumulativeTeamTimes()
 	{
-		var timeA = GetCumulativeTimeOfTeam(TeamA);
-		var timeB = GetCumulativeTimeOfTeam(TeamB);
+		double timeA = GetCumulativeTimeOfTeam(TeamA);
+		double timeB = GetCumulativeTimeOfTeam(TeamB);
 
 		if (timeA < timeB)
 		{
@@ -119,22 +119,22 @@ public class Round
 
 	private List<Team> CompareIndividualPlacements()
 	{
-		var finishersA = TeamA.Racers
+		List<Racer> finishersA = TeamA.Racers
 			.Where(racer => Leaderboard.ContainsKey(racer.SteamId))
 			.OrderBy(racer => GetPersonalBest(racer))
 			.ToList();
 
-		var finishersB = TeamB.Racers
+		List<Racer> finishersB = TeamB.Racers
 			.Where(racer => Leaderboard.ContainsKey(racer.SteamId))
 			.OrderBy(racer => GetPersonalBest(racer))
 			.ToList();
 
-		var minFinishers = Math.Min(finishersA.Count, finishersB.Count);
+		int minFinishers = Math.Min(finishersA.Count, finishersB.Count);
 
-		for (var i = 0; i < minFinishers; i++)
+		for (int i = 0; i < minFinishers; i++)
 		{
-			var timeA = GetPersonalBest(finishersA[i]);
-			var timeB = GetPersonalBest(finishersB[i]);
+			double timeA = GetPersonalBest(finishersA[i]);
+			double timeB = GetPersonalBest(finishersB[i]);
 
 			if (timeA < timeB)
 			{
@@ -155,7 +155,7 @@ public class Round
 	private List<Team> SelectRandomWinner()
 	{
 		WinningMethod = WinningMethod.RandomSelection;
-		var random = new Random();
+		Random random = new();
 		return random.Next(2) == 0 ? new List<Team> { TeamA, TeamB } : new List<Team> { TeamB, TeamA };
 	}
 }
