@@ -32,10 +32,12 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 		stateMachine
 			.AddTransition(new StateShowdownStarting(this), new StateWaitingForHoF(this),
 				() => !LevelApi.CurrentLevel.UID.Equals(
-					PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
+					PlaylistManager.GetLocalLevelsByPlaylistName(MyConfig.IntermissionLevelPlaylistNameConfig.Value)[0]
+						.UID))
 			.AddTransition(new StateShowdownStarting(this), new StateSetupMatch(this),
 				() => LevelApi.CurrentLevel.UID.Equals(
-					PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)[0].UID))
+					PlaylistManager.GetLocalLevelsByPlaylistName(MyConfig.IntermissionLevelPlaylistNameConfig.Value)[0]
+						.UID))
 			.AddTransition(new StateWaitingForHoF(this), new StateSetupMatch(this))
 			.AddTransition(new StateSetupMatch(this), new StateLinkRacers(this))
 			.AddTransition(new StateLinkRacers(this), new StateSelectInitiative(this))

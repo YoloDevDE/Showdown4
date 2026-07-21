@@ -1,15 +1,14 @@
 ﻿using System;
-using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
 
-public class CommandStartRandom : ILocalChatCommand
+public class CommandStartRandom : BaseLocalCommand
 {
-	public string Prefix => "/";
-	public string Command => "sd random";
-	public string Description => "Chooses a random map when the Draft is incomplete";
+	public override string Prefix => "/";
+	public override string Command => "sd random";
+	public override string Description => "Chooses a random map when the Draft is incomplete";
 
-	public void Handle(string arguments)
+	protected override void OnCommandInvoked(string arguments)
 	{
 		CommandInvoked?.Invoke();
 	}

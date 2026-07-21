@@ -28,6 +28,10 @@
         <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Include=".junie\AGENT.md"/>
+    </ItemGroup>
+
     <!-- Post-Build Scripts -->
     <Target Name="PostBuild" AfterTargets="Build">
         <PropertyGroup>

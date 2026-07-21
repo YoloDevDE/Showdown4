@@ -63,7 +63,7 @@ public class Match
 	{
 		List<OnlineZeeplevel> unAvaiableLevels = new();
 		List<OnlineZeeplevel> allLevels =
-			PlaylistManager.GetLocalLevelsByPlaylistName(Plugin.CompetitionLevelsPlaylistName.Value);
+			PlaylistManager.GetLocalLevelsByPlaylistName(MyConfig.CompetitionLevelsPlaylistNameConfig.Value);
 		if (Drafts.Count > 0)
 			unAvaiableLevels =
 				new List<OnlineZeeplevel>(CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));

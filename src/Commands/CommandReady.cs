@@ -1,23 +1,16 @@
 ﻿using System;
-using ZeepkistClient;
-using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
 
-public class CommandReady : IMixedChatCommand
+public class CommandReady : BaseMixedCommand
 {
-	public string Prefix => "!";
-	public string Command => "ready";
-	public string Description => "Confirms if you are ready for showdwon!.";
+	public override string Prefix => "!";
+	public override string Command => "ready";
+	public override string Description => "Confirms if you are ready for showdwon!.";
 
-	public void Handle(ulong playerId, string arguments)
+	protected override void OnCommandInvoked(ulong playerId, string arguments)
 	{
 		CommandInvoked?.Invoke(playerId, arguments);
-	}
-
-	public void Handle(string arguments)
-	{
-		Handle(ZeepkistNetwork.LocalPlayer.SteamID, arguments);
 	}
 
 	public static event Action<ulong, string> CommandInvoked;

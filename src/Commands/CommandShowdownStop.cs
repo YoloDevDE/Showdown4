@@ -1,15 +1,14 @@
 ﻿using System;
-using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
 
-public class CommandShowdownStop : ILocalChatCommand
+public class CommandShowdownStop : BaseLocalCommand
 {
-	public string Prefix => "/";
-	public string Command => "sd stop";
-	public string Description => "Stops the Showdown";
+	public override string Prefix => "/";
+	public override string Command => "sd stop";
+	public override string Description => "Stops the Showdown";
 
-	public void Handle(string arguments)
+	protected override void OnCommandInvoked(string arguments)
 	{
 		CommandInvoked?.Invoke();
 	}

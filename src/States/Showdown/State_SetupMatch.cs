@@ -30,7 +30,7 @@ public class StateSetupMatch : IState
 
 	public void Enter()
 	{
-		TeamData teamData = Plugin.Storage.LoadFromJson<TeamData>(Plugin.TeamFile.Value);
+		TeamData teamData = Plugin.Storage.LoadFromJson<TeamData>(MyConfig.TeamFileConfig.Value);
 		_teams = teamData?.Teams ?? new List<Team>();
 
 		_currentSelectionIndex = 0;

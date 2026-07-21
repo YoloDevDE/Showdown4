@@ -1,15 +1,14 @@
 ﻿using System;
-using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
 
-public class CommandFinishState : ILocalChatCommand
+public class CommandFinishState : BaseLocalCommand
 {
-	public string Prefix => "/";
-	public string Command => "sd next";
-	public string Description => "WIP";
+	public override string Prefix => "/";
+	public override string Command => "sd next";
+	public override string Description => "WIP";
 
-	public void Handle(string arguments)
+	protected override void OnCommandInvoked(string arguments)
 	{
 		CommandInvoked?.Invoke(arguments);
 	}

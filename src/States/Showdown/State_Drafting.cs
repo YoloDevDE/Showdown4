@@ -82,7 +82,7 @@ public class StateDrafting : IState
 						new(
 							Showdown.Match.CurrentDraft.PickedLevels.Select(draftAction => draftAction.Level));
 					matchPlaylist.Add(PlaylistManager
-						.GetLocalLevelsByPlaylistName(Plugin.IntermissionLevelPlaylistName.Value)
+						.GetLocalLevelsByPlaylistName(MyConfig.IntermissionLevelPlaylistNameConfig.Value)
 						.First());
 					PlaylistManager.SetServerPlaylist(matchPlaylist);
 
