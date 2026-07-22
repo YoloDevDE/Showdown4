@@ -1,34 +1,20 @@
 ﻿using System;
-using Showdown4.Commands;
 using Showdown4.Utils;
 
 namespace Showdown4.States.Master;
 
-public class StateMasterOff : IState
+public class StateMasterOff(IStateMachine stateMachine) : IState
 {
-	public StateMasterOff(IStateMachine stateMachine)
-	{
-		StateMachine = stateMachine;
-	}
-
-	public IStateMachine StateMachine { get; }
+	public IStateMachine StateMachine { get; } = stateMachine;
 
 	public event Action Finished;
 
 	public void Enter()
 	{
-		CommandShowdownStart.CommandInvoked += OnShowdownStarted;
-		CommandShowdownStop.CommandInvoked += OnShowdownStopped;
-	}
-
-	public void Execute()
-	{
 	}
 
 	public void Exit()
 	{
-		CommandShowdownStart.CommandInvoked -= OnShowdownStarted;
-		CommandShowdownStop.CommandInvoked -= OnShowdownStopped;
 	}
 
 	public void InvokeFinish()
@@ -36,12 +22,12 @@ public class StateMasterOff : IState
 		Finished?.Invoke();
 	}
 
-	private void OnShowdownStopped()
+	public void OnShowdownStop()
 	{
 		ToastMessenger.LogWarning("already stopped");
 	}
 
-	private void OnShowdownStarted()
+	public void OnShowdownStart()
 	{
 		Finished?.Invoke();
 

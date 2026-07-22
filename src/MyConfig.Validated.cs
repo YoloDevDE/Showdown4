@@ -24,6 +24,12 @@ public static partial class MyConfig
 		// The animation needs at least one loop to show anything.
 		public static int RandomSelectionSpinLoops => Clamp(RandomSelectionSpinLoopsConfig.Value, 1, 1000);
 
+		// How long the pre-draft instructions stay up; zero is fine (instant).
+		public static int PreDraftInstructionDuration => Clamp(PreDraftInstructionDurationConfig.Value, 0, 3600);
+
+		// Visual delay before the auto-picked last map is locked in; zero is fine (instant).
+		public static int AutoPickRevealCountdown => Clamp(AutoPickRevealCountdownConfig.Value, 0, 3600);
+
 		public static int ReadyCheckDuration => Clamp(ReadyCheckDurationConfig.Value, 1, 3600);
 
 		public static int ReadyConfirmCountdown => Clamp(ReadyConfirmCountdownConfig.Value, 0, 3600);

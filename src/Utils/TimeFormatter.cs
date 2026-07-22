@@ -8,14 +8,14 @@ public class TimeFormatter
 	{
 		TimeSpan timeSpan = TimeSpan.FromSeconds(durationInSeconds);
 
-		// Überprüfe, ob Stunden vorhanden sind
+		// Check whether hours are present
 		if (timeSpan.TotalHours >= 1)
-			// Format für Stunden:Minuten:Sekunden
+			// Format for hours:minutes:seconds
 		{
 			return string.Format("{0:D2}:{1:D2}:{2:D2}", (int)timeSpan.TotalHours, timeSpan.Minutes, timeSpan.Seconds);
 		}
 
-		// Format für Minuten:Sekunden
+		// Format for minutes:seconds
 		return string.Format("{0:D2}:{1:D2}", timeSpan.Minutes, timeSpan.Seconds);
 	}
 }

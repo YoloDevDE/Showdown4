@@ -55,7 +55,7 @@ consistent.
 
 * Located in `src/States`. Two machines: the **Master** state machine (`src/States/Master`, e.g. `StateMasterOn`/
   `StateMasterOff`) and the **Showdown** state machine (`src/States/Showdown`).
-* `ShowdownStateMachine` is a `MonoBehaviour`. States implement `IState` (`Enter`/`Execute`/`Exit` + `Finished` event +
+* `ShowdownStateMachine` is a `MonoBehaviour`. States implement `IState` (`Enter`/`Exit` + `Finished` event +
   `InvokeFinish()`).
 * **`ShowdownStateBase`** (`src/States/Showdown/ShowdownStateBase.cs`) is the abstract base for every Showdown state. It
   centralizes the boilerplate that used to be copy-pasted: storing the `StateMachine`, exposing strongly typed helpers
@@ -64,18 +64,17 @@ consistent.
   never `Finished?.Invoke()` directly (except in Master states that don't derive from the base).
 * Transitions are declared in `ShowdownStateMachine.InitTransitions()`.
 
-### Known weak spot: `Execute()` is NOT a loop
+### State lifecycle: no `Execute()` (removed)
 
-* In `TransitionTo`, `Execute()` is called **exactly once**, right after `Enter()` and **before**
-  `SubStateMachine?.Start()`. There is no per-frame `Update()` pumping it. So `Execute()` is effectively a "second Enter
-  phase", not a tick — the name is misleading.
-* Because there is no loop, some states manually re-call `Execute()` from timer callbacks to force a re-render (e.g.
-  `StateMatchEnd.UpdateCountdownMessage`, `State_DraftIncomplete`). Treat `Execute()` as a "render me" hook in the
-  current design.
-* **Recommended future refactor (Option A, behavior-neutral, agreed but NOT yet implemented):** dissolve `Execute()`;
-  move its body into `Enter()` (one-time setup + first message), keep `InvokeFinish()` on the triggering event, and
-  introduce an explicit `Render()`/`Refresh()` for the few countdown states that redraw. A real per-frame tick (Option
-  B) is discouraged because states are event/timer-driven, not frame-driven.
+* `Execute()` has been **removed** from the state lifecycle. `TransitionTo` now calls `Enter()` and then
+  `SubStateMachine?.Start()` — there is no separate `Execute` phase and no per-frame `Update()` pump.
+* One-time setup + the first message now live entirely in `Enter()`. For `StateMasterOn`, the `SubStateMachine`
+  must still be created inside `Enter()` because `TransitionTo` starts it right after `Enter()`.
+* States that redraw on timer/command callbacks now use an explicit private render method instead of re-calling the
+  lifecycle: `Render()` (`StateDrafting`, `StateDraftIncomplete`, `StateDraftCompleted`, `StateReadyCheck`) or an
+  existing message builder
+  such as `SendServerMessage()` / `ServerMessageThing()` (`StateMatchEnd`, `StateSetupMatch`, `StateSelectInitiative`).
+  States whose first render must happen immediately call that method at the end of `Enter()`.
 * Other fragilities to keep in mind: transitions compare `GetType().Name` strings (fragile against renames — prefer
   `Type`/`is`), and `InitTransitions()` rebuilds the list and `new StateX(this)` on every transition.
 
@@ -95,11 +94,18 @@ consistent.
 
 * Draft rules are owned by the `Draft` entity (`PickLevel`/`BanLevel` with validation) — states should go through it,
   not mutate `PickedLevels` directly.
-* The draft is split across two states: **`StateDrafting`** (normal pick/ban flow) and **`StateDraftIncomplete`** (
-  waiting for host + random-map roulette when no picks happened). `HandleDraftComplete()` in `StateDrafting` decides the
-  transition.
-* **Draftphase II auto-pick:** when only one level remains in draftphase II, `StateDrafting` auto-picks the last
-  remaining level instead of going to random selection.
+* The draft is split across four states: **`StatePreDraft`** (intro animation + step-by-step pick/ban/pass
+  instructions, runs before every draft), **`StateDrafting`** (normal pick/ban flow), **`StateDraftIncomplete`**
+  (random-map roulette when the draft ends with no picks and more than one map open) and **`StateDraftCompleted`**
+  (locks in the playlist, shows the "complete" banner + countdown, then hands over to the ready check).
+  `HandleDraftComplete()` in `StateDrafting` decides the transition; the state graph is
+  `SelectInitiative/PostRacing -> PreDraft -> Drafting -> (DraftIncomplete) -> DraftCompleted -> ReadyCheck`.
+* **Auto-pick of the last map:** when only one level remains after the last action, `StateDrafting` auto-picks it
+  with a short visual reveal countdown (`MyConfig.Validated.AutoPickRevealCountdown`, default 3s) before locking it in.
+* **No `/sd random` command:** the random selection for an incomplete draft now runs automatically in
+  `StateDraftIncomplete.Enter()` instead of being triggered by a chat command.
+* **`!pass` command** (`CommandPass`) hands the current team's action over to the other team (behaves like a
+  voluntary turn timeout) via the `OnPass` hook on `StateDrafting`.
 * Domain helpers live on the entities: `Match.IsDraftphaseTwo`, `Match.DraftphaseName`, `Team.CreateShowdownTeam()`.
 
 ## UI / Formatting Conventions

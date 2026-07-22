@@ -1,22 +1,17 @@
 ﻿using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
-using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
-public class StateMatchEnd : ShowdownStateBase
+public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private bool _countdownStarted;
 	private int _countdownTime = MyConfig.Validated.MatchEndKickCountdown; // Countdown duration in seconds
 
-	public StateMatchEnd(IStateMachine stateMachine) : base(stateMachine)
-	{
-	}
-
 	public override void Enter()
 	{
-		ChatApi.SendMessage("/timeset 86400");
+		ChatCommandService.SetTime(86400);
 		if (!_countdownStarted)
 		{
 			_countdownStarted = true;
@@ -30,7 +25,7 @@ public class StateMatchEnd : ShowdownStateBase
 		}
 	}
 
-	public override void Execute()
+	private void SendServerMessage()
 	{
 		// We don't need to send this message every second manually now, since it's handled in `UpdateCountdownMessage`
 		Team winnerTeam = Match.CurrentRound.GetWinnerTeam;
@@ -73,6 +68,6 @@ public class StateMatchEnd : ShowdownStateBase
 	private void UpdateCountdownMessage(int remainingTime)
 	{
 		_countdownTime = remainingTime;
-		Execute(); // This will send the updated message with the countdown
+		SendServerMessage(); // This will send the updated message with the countdown
 	}
 }

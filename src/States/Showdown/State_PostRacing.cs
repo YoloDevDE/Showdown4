@@ -1,21 +1,11 @@
 ﻿using Showdown4.Entities;
 using Showdown4.Utils;
-using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-internal class StatePostRacing : ShowdownStateBase
+internal class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
-	public StatePostRacing(IStateMachine stateMachine) : base(stateMachine)
-	{
-	}
-
 	public override void Enter()
-	{
-		RacingApi.RoundStarted += OnRoundStarted;
-	}
-
-	public override void Execute()
 	{
 		Team winnerTeam = Match.CurrentRound.GetWinnerTeam;
 		winnerTeam.AddWin();
@@ -34,7 +24,7 @@ internal class StatePostRacing : ShowdownStateBase
 				.TextLine($"Starting Round {Match.RoundCounter() + 1}")
 				.NewLine()
 				.DashedLine().NewLine()
-				.TextLine($"Level <color={ShowdownColors.Cyan}>'{nextLevel.Level.Name}'</color>").NewLine()
+				.TextLine($"Level <{ShowdownColors.Cyan}>'{nextLevel.Level.Name}'</color>").NewLine()
 				.TextLine($"picked by {nextLevel.Team.GetColoredTag()}")
 				.Build().Message;
 		}
@@ -70,10 +60,9 @@ internal class StatePostRacing : ShowdownStateBase
 
 	public override void Exit()
 	{
-		RacingApi.RoundStarted -= OnRoundStarted;
 	}
 
-	private void OnRoundStarted()
+	public override void OnRoundStarted()
 	{
 		InvokeFinish();
 	}

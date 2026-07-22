@@ -6,8 +6,8 @@ namespace Showdown4.Utils;
 
 public static class MessageFormatter
 {
-	private const int KeyMaxWidth = 30; // Max Länge des Teamnamens, anpassbar
-	private const int ValueMaxWidth = 10; // Max Länge der Zeit, anpassbar
+	private const int KeyMaxWidth = 30; // Max length of the team name, adjustable
+	private const int ValueMaxWidth = 10; // Max length of the time, adjustable
 
 	public static string AlignKeyValue(string key, string value)
 	{
@@ -52,33 +52,28 @@ public static class MessageFormatter
 
 	public static string FormatTimestamp(double time)
 	{
-		if (time <= 0)
-		{
-			return "--:--.---";
-		}
-
-		return time.GetFormattedTime();
+		return time <= 0 ? "--:--.---" : time.GetFormattedTime();
 	}
 
 	public static string FormatTimestampDifference(double time)
 	{
-		// Überprüfen, ob die Zeit negativ ist und ein entsprechendes Vorzeichen setzen
+		// Check whether the time is negative and set the corresponding sign
 		char sign = time > 0
 			? '-'
 			: time < 0
 				? '+'
 				: '\u00b1';
 
-		// Umwandeln der Zeit in einen absoluten Wert, um das Vorzeichen bei der Formatierung zu ignorieren
+		// Convert the time to an absolute value to ignore the sign during formatting
 		double absoluteTime = Math.Abs(time);
 
-		// Erstellen einer CultureInfo Instanz, die immer den Punkt als Dezimaltrennzeichen verwendet
+		// Create a CultureInfo instance that always uses the dot as the decimal separator
 		CultureInfo culture = CultureInfo.InvariantCulture;
 
-		// Formatieren der Zeit in Sekunden mit drei Dezimalstellen
+		// Format the time in seconds with three decimal places
 		string formattedTime = absoluteTime.ToString("00.000", culture);
 
-		// Zusammenfügen des Vorzeichens mit der formatierten Zeit
+		// Combine the sign with the formatted time
 		return $"{sign}{formattedTime}";
 	}
 }

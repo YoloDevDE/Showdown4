@@ -1,13 +1,7 @@
 ﻿namespace Showdown4.Entities;
 
-public class Result
+public class Result(Racer racer, double time)
 {
-	public Result(Racer racer, double time)
-	{
-		Racer = racer;
-		Time = time;
-	}
-
-	public Racer Racer { get; set; }
-	public double Time { get; set; }
+	public Racer Racer { get; set; } = racer;
+	public double Time { get; set; } = time;
 }

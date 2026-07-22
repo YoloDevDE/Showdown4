@@ -5,17 +5,9 @@ using ZeepSDK.Level;
 
 namespace Showdown4.States.Showdown;
 
-public class StateShowdownStarting : ShowdownStateBase
+public class StateShowdownStarting(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
-	public StateShowdownStarting(IStateMachine stateMachine) : base(stateMachine)
-	{
-	}
-
 	public override void Enter()
-	{
-	}
-
-	public override void Execute()
 	{
 		string tmp = "";
 		try
@@ -26,7 +18,7 @@ public class StateShowdownStarting : ShowdownStateBase
 					    .UID))
 			{
 				tmp = "Skipping to HoF...";
-				Managers.LobbyManager.SkipToLevel(0);
+				ChatCommandService.SkipToLevel(0);
 			}
 			else
 			{

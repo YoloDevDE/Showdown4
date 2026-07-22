@@ -6,7 +6,7 @@ using ZeepSDK.Chat;
 
 namespace Showdown4.Utils;
 
-public class ServerMessage
+public class ServerMessage(string alignment = "left")
 {
 	private readonly StringBuilder _messageBuilder = new(); // Using StringBuilder
 
@@ -14,16 +14,11 @@ public class ServerMessage
 
 	private int _lineCount; // To track the number of lines
 
-	private string _prefix;
+	private string _prefix = $"<size=\"20%\">" +
+	                         $"<align=\"{alignment}\">";
 
 	private string _suffix = "</align>" +
 	                         "</size>";
-
-	public ServerMessage(string alignment = "left")
-	{
-		_prefix = $"<size=\"20%\">" +
-		          $"<align=\"{alignment}\">";
-	}
 
 	public override string ToString()
 	{
@@ -90,7 +85,7 @@ public class ServerMessage
 
 	public ServerMessage AddSeparator(int length = 20)
 	{
-		_messageBuilder.Append($"<color=#00000000>{new string('-', length)}</color>");
+		_messageBuilder.Append($"<#00000000>{new string('-', length)}</color>");
 		AppendLineBreak();
 		return this;
 	}
@@ -224,7 +219,7 @@ public class ServerMessage
 
 		public LineBuilder Color(string color)
 		{
-			_openingTag.Add($"<color={color}>");
+			_openingTag.Add($"<{color}>");
 			_closingTag.Add("</color>");
 			return this;
 		}
@@ -295,20 +290,15 @@ public class ServerMessage
 	}
 
 	// BlockBuilder class to encapsulate content and formatting for blocks
-	public class BlockBuilder
+	public class BlockBuilder(string text)
 	{
-		private readonly StringBuilder _contentBuilder;
+		private readonly StringBuilder _contentBuilder = new(text);
 
-		public BlockBuilder(string text)
-		{
-			// int maxLength = 70;
-			// if (text.Length > maxLength)
-			// {
-			//     text = text.Substring(0, maxLength-3) + "..."; // Truncate the text if it's too long'
-			// }
-
-			_contentBuilder = new StringBuilder(text);
-		}
+		// int maxLength = 70;
+		// if (text.Length > maxLength)
+		// {
+		//     text = text.Substring(0, maxLength-3) + "..."; // Truncate the text if it's too long'
+		// }
 
 		public BlockBuilder Gradients(params string[] colors)
 		{
@@ -341,7 +331,7 @@ public class ServerMessage
 				string endColor = colors[Math.Min(colorIndex + 1, colors.Length - 1)].TrimStart('#');
 				string interpolatedColor = InterpolateColors(startColor, endColor, colorProgress);
 
-				gradientText.Append($"<color=#{interpolatedColor}>{content[i]}</color>");
+				gradientText.Append($"<#{interpolatedColor}>{content[i]}</color>");
 			}
 
 			_contentBuilder.Clear();
@@ -440,7 +430,7 @@ public class ServerMessage
 
 		public BlockBuilder Color(string color)
 		{
-			_contentBuilder.Insert(0, $"<color={color}>").Append("</color>");
+			_contentBuilder.Insert(0, $"<{color}>").Append("</color>");
 			return this;
 		}
 

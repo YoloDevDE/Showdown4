@@ -6,17 +6,13 @@ using UnityEngine;
 
 namespace Showdown4.States.Showdown;
 
-public class StateSelectInitiative : ShowdownStateBase
+public class StateSelectInitiative(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private const int CountdownDuration = 2; // Countdown in seconds
 	private int _currentSelectionIndex; // To track the currently selected team
 	private bool _isLocked; // To lock input after selecting initiative
 	private Team _selectedTeam; // The team with initiative
 	private List<Team> _teams;
-
-	public StateSelectInitiative(IStateMachine stateMachine) : base(stateMachine)
-	{
-	}
 
 	private Team TeamA => Match.TeamA;
 	private Team TeamB => Match.TeamB;
@@ -31,10 +27,7 @@ public class StateSelectInitiative : ShowdownStateBase
 
 		// Register this state for input detection
 		StateManager.Instance.SetCurrentState(this);
-	}
 
-	public override void Execute()
-	{
 		ServerMessageThing().Send();
 	}
 
@@ -72,7 +65,7 @@ public class StateSelectInitiative : ShowdownStateBase
 		// Update the display only if there was input
 		if (inputDetected)
 		{
-			Execute();
+			ServerMessageThing().Send();
 		}
 	}
 

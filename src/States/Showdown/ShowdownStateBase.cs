@@ -1,5 +1,6 @@
 ﻿using System;
 using Showdown4.Entities;
+using ZeepkistClient;
 
 namespace Showdown4.States.Showdown;
 
@@ -10,27 +11,68 @@ namespace Showdown4.States.Showdown;
 ///     together with its <see cref="Match" />/<see cref="CurrentDraft" />, and raising the
 ///     <see cref="Finished" /> event through <see cref="InvokeFinish" />.
 /// </summary>
-public abstract class ShowdownStateBase : IState
+public abstract class ShowdownStateBase(IStateMachine stateMachine) : IState
 {
-	protected ShowdownStateBase(IStateMachine stateMachine)
-	{
-		StateMachine = stateMachine;
-	}
-
 	protected ShowdownStateMachine Showdown => (ShowdownStateMachine)StateMachine;
 	protected Match Match => Showdown.Match;
 	protected Draft CurrentDraft => Match.CurrentDraft;
 
-	public IStateMachine StateMachine { get; }
+	public IStateMachine StateMachine { get; } = stateMachine;
 
 	public event Action Finished;
 
 	public abstract void Enter();
-	public abstract void Execute();
 	public abstract void Exit();
 
 	// States that need keyboard input (e.g. team/initiative selection) override this.
 	public virtual void HandleInput()
+	{
+	}
+
+	// Event hooks delegated from the ShowdownStateMachine. Declared virtual here so that
+	// concrete states can override only the ones they need. The machine subscribes to the
+	// underlying events once and forwards them to the current state.
+	public virtual void OnRoundStarted()
+	{
+	}
+
+	public virtual void OnRoundEnded()
+	{
+	}
+
+	public virtual void OnLevelLoaded()
+	{
+	}
+
+	public virtual void OnPlayerResultsChanged(ZeepkistNetworkPlayer player)
+	{
+	}
+
+	public virtual void OnPlayerJoined(ZeepkistNetworkPlayer player)
+	{
+	}
+
+	public virtual void OnBan(ulong steamId, string levelIndex)
+	{
+	}
+
+	public virtual void OnPick(ulong steamId, string levelIndex)
+	{
+	}
+
+	public virtual void OnLinkRacer(ulong steamId)
+	{
+	}
+
+	public virtual void OnUnlinkRacer(ulong steamId)
+	{
+	}
+
+	public virtual void OnPass(ulong steamId)
+	{
+	}
+
+	public virtual void OnReady(ulong steamId, string arguments)
 	{
 	}
 

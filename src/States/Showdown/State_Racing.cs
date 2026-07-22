@@ -9,22 +9,16 @@ using UnityEngine;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using ZeepSDK.Chat;
-using ZeepSDK.Multiplayer;
-using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-public class StateRacing : ShowdownStateBase
+public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private readonly Dictionary<ulong, int> _previousPositions = new();
 	private readonly Dictionary<ulong, double> _previousTimes = new();
 	private Round _currentRound;
 	private LeaderboardDisplay _leaderboardDisplay;
 	private Team _teamA, _teamB;
-
-	public StateRacing(IStateMachine stateMachine) : base(stateMachine)
-	{
-	}
 
 	public override void Enter()
 	{
@@ -33,9 +27,6 @@ public class StateRacing : ShowdownStateBase
 		Showdown.Match.AddRound(new Round(_teamA, _teamB)); // Initialize round
 		_currentRound = Showdown.Match.CurrentRound;
 
-		ZeepkistNetwork.PlayerResultsChanged += OnLeaderBoardUpdated;
-		RacingApi.RoundEnded += OnRoundEnd;
-		MultiplayerApi.PlayerJoined += OnPLayerJoined;
 		ChatMessage.SendCustomMessage(
 			new ChatMessage.Builder().ClearChat()
 				.DashedLine().NewLine()
@@ -46,26 +37,19 @@ public class StateRacing : ShowdownStateBase
 				.TextLine($"{Showdown.Match.Score()}").NewLine()
 				.DashedLine().NewLine()
 				.TextLine("Good Luck, Have Fun! :smile:").NewLine()
-				.TextLine("<i><color=#c0c0c0>This message disappears in 15 seconds</color></i>").Build().Message
+				.TextLine("<i><#c0c0c0>This message disappears in 15 seconds</color></i>").Build().Message
 		);
 		// Start the cool race intro message for the first 10 seconds
 		CoroutineManager.Instance.StartExternalCoroutine(DisplayRaceIntroMessage());
-	}
 
-	public override void Execute()
-	{
 		_leaderboardDisplay = new LeaderboardDisplay(_currentRound);
 	}
 
 	public override void Exit()
 	{
-		ZeepkistNetwork.PlayerResultsChanged -= OnLeaderBoardUpdated;
-
-		MultiplayerApi.PlayerJoined -= OnPLayerJoined;
-		RacingApi.RoundEnded -= OnRoundEnd;
 	}
 
-	private void OnPLayerJoined(ZeepkistNetworkPlayer player)
+	public override void OnPlayerJoined(ZeepkistNetworkPlayer player)
 	{
 		IEnumerable<Racer> allRacers = _currentRound.TeamA.Racers.Concat(_currentRound.TeamB.Racers);
 		Racer matchingRacer = allRacers.FirstOrDefault(r => r.SteamId == player.SteamID);
@@ -80,17 +64,17 @@ public class StateRacing : ShowdownStateBase
 
 			ZeepkistNetwork.CustomLeaderBoard_SetPlayerTimeOnLeaderboard(player.SteamID, (float)personalBest, true);
 			ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(player.SteamID, "",
-				$"<nobr><color={Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() +
+				$"<nobr><{Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() +
 				"</color></nobr>", null, null, null);
 		}
 	}
 
-	private void OnRoundEnd()
+	public override void OnRoundEnded()
 	{
 		InvokeFinish();
 	}
 
-	private void OnLeaderBoardUpdated(ZeepkistNetworkPlayer player)
+	public override void OnPlayerResultsChanged(ZeepkistNetworkPlayer player)
 	{
 		if (player?.CurrentResult == null)
 		{
@@ -111,7 +95,7 @@ public class StateRacing : ShowdownStateBase
 		ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
 			player.SteamID,
 			$"<#00ff00>{result.Time.GetFormattedTime()}</color>",
-			$"<nobr><color={Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() +
+			$"<nobr><{Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() +
 			"</color></nobr>",
 			null,
 			null,
@@ -143,7 +127,7 @@ public class StateRacing : ShowdownStateBase
 				{
 					string color = change > 0 ? "#11ff03" : "#a52019";
 					string sign = change > 0 ? "+" : "";
-					positionChange = $"<color={color}>{sign}{change}</color>";
+					positionChange = $"<{color}>{sign}{change}</color>";
 				}
 			}
 
@@ -155,7 +139,7 @@ public class StateRacing : ShowdownStateBase
 			ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
 				currentLeaderboardItem.SteamID,
 				overrideTimeText,
-				$"<nobr><color={Showdown.Match.GetTeamBySteamId(currentLeaderboardItem.SteamID).Color}>" +
+				$"<nobr><{Showdown.Match.GetTeamBySteamId(currentLeaderboardItem.SteamID).Color}>" +
 				currentLeaderboardItem.Username +
 				"</color></nobr>",
 				positionChange,
@@ -175,10 +159,10 @@ public class StateRacing : ShowdownStateBase
 		// Set the time difference for current player
 		ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
 			player.SteamID,
-			$"<color={timeColor}>{formattedDiff}</color>",
-			$"<nobr><color={Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() +
+			$"<{timeColor}>{formattedDiff}</color>",
+			$"<nobr><{Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() +
 			"</color></nobr>",
-			positionChanges[player.SteamID] == null ? "<color=#f7dcaa>=0</color>" : positionChanges[player.SteamID],
+			positionChanges[player.SteamID] == null ? "<#f7dcaa>=0</color>" : positionChanges[player.SteamID],
 			null,
 			null
 		);
@@ -192,7 +176,7 @@ public class StateRacing : ShowdownStateBase
 			ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
 				currentLeaderboardItem.SteamID,
 				null,
-				$"<nobr><color={Showdown.Match.GetTeamBySteamId(currentLeaderboardItem.SteamID).Color}>" +
+				$"<nobr><{Showdown.Match.GetTeamBySteamId(currentLeaderboardItem.SteamID).Color}>" +
 				currentLeaderboardItem.Username +
 				"</color></nobr>",
 				null,

@@ -4,20 +4,13 @@ using Showdown4.Entities;
 
 namespace Showdown4.Utils;
 
-public class LeaderboardDisplay
+public class LeaderboardDisplay(Round round)
 {
-	private readonly Round _round;
-
-	public LeaderboardDisplay(Round round)
-	{
-		_round = round;
-	}
-
 	// Generate a server message for team and racer leaderboard
 	public ServerMessage GenerateLeaderboardMessage(Match match)
 	{
-		_round.Evaluate(out List<Team> teams);
-		List<Team> sortedTeams = _round.GetTeamsSortedByWinnerAsc();
+		round.Evaluate(out List<Team> teams);
+		List<Team> sortedTeams = round.GetTeamsSortedByWinnerAsc();
 
 		ServerMessage msg = new ServerMessage()
 				.ShowdownHeader(true)
@@ -53,8 +46,8 @@ public class LeaderboardDisplay
 		{
 			int position = i + 1;
 			Team team = sortedTeams[i];
-			double averageTime = _round.GetAvgTimeOfTeam(team);
-			int finishers = _round.GetFinishersCount(team);
+			double averageTime = round.GetAvgTimeOfTeam(team);
+			int finishers = round.GetFinishersCount(team);
 
 
 			msg.AddLine(line =>
@@ -65,12 +58,12 @@ public class LeaderboardDisplay
 
 
 				List<Racer> sortedRacers = team.Racers
-					.Where(racer => _round.Leaderboard.ContainsKey(racer.SteamId))
-					.OrderBy(racer => _round.GetPersonalBest(racer))
+					.Where(racer => round.Leaderboard.ContainsKey(racer.SteamId))
+					.OrderBy(racer => round.GetPersonalBest(racer))
 					.ToList();
 
 
-				switch (_round.WinningMethod)
+				switch (round.WinningMethod)
 				{
 					case WinningMethod.Finishers:
 
@@ -85,7 +78,7 @@ public class LeaderboardDisplay
 						if (position > 1)
 						{
 							line.AddBlock(
-								$"+{(_round.GetAvgTimeOfTeam(sortedTeams[1]) - _round.GetAvgTimeOfTeam(sortedTeams[0])).GetFormattedTime()}",
+								$"+{(round.GetAvgTimeOfTeam(sortedTeams[1]) - round.GetAvgTimeOfTeam(sortedTeams[0])).GetFormattedTime()}",
 								f => f.Color("#ffff00"));
 						}
 
@@ -99,7 +92,7 @@ public class LeaderboardDisplay
 						for (int j = 0; j < sortedRacers.Count; j++)
 						{
 							line.AddBlock(
-								$"{sortedRacers[j].SteamName} ({_round.GetPersonalBest(sortedRacers[j]).GetFormattedTime()})",
+								$"{sortedRacers[j].SteamName} ({round.GetPersonalBest(sortedRacers[j]).GetFormattedTime()})",
 								f => f.Color("#ffffff"));
 							if (j < sortedRacers.Count - 1)
 							{
@@ -111,9 +104,9 @@ public class LeaderboardDisplay
 
 					case WinningMethod.RandomSelection:
 
-						if (_round.GetFinishersCount(_round.TeamB) + _round.GetFinishersCount(_round.TeamA) <
-						    _round.GetTeamsSortedByWinnerAsc()[0].Racers.Count +
-						    _round.GetTeamsSortedByWinnerAsc()[1].Racers.Count)
+						if (round.GetFinishersCount(round.TeamB) + round.GetFinishersCount(round.TeamA) <
+						    round.GetTeamsSortedByWinnerAsc()[0].Racers.Count +
+						    round.GetTeamsSortedByWinnerAsc()[1].Racers.Count)
 						{
 							line.AddBlock($"Finishers: {finishers}/2", f => f.Color("#ffffff"));
 						}
@@ -123,7 +116,7 @@ public class LeaderboardDisplay
 							if (position > 1)
 							{
 								line.AddBlock(
-									$"={(_round.GetAvgTimeOfTeam(sortedTeams[1]) - _round.GetAvgTimeOfTeam(sortedTeams[0])).GetFormattedTime()}",
+									$"={(round.GetAvgTimeOfTeam(sortedTeams[1]) - round.GetAvgTimeOfTeam(sortedTeams[0])).GetFormattedTime()}",
 									f => f.Color("#f7dcaa"));
 							}
 						}

@@ -5,18 +5,11 @@ using Showdown4.Utils;
 
 namespace Showdown4.Entities;
 
-public class Round
+public class Round(Team teamA, Team teamB)
 {
-	public readonly Team TeamA;
-	public readonly Team TeamB;
+	public readonly Team TeamA = teamA;
+	public readonly Team TeamB = teamB;
 	public List<Team> TeamsSortedByWinAsc;
-
-	public Round(Team teamA, Team teamB)
-	{
-		Leaderboard = new Dictionary<ulong, Result>();
-		TeamA = teamA;
-		TeamB = teamB;
-	}
 
 	public Team PickedLevel { get; }
 
@@ -26,7 +19,7 @@ public class Round
 	// Store the method used to determine the winner
 	public WinningMethod WinningMethod { get; private set; }
 
-	public Dictionary<ulong, Result> Leaderboard { get; set; }
+	public Dictionary<ulong, Result> Leaderboard { get; set; } = new();
 
 	public Team GetWinnerTeam => GetTeamsSortedByWinnerAsc().First();
 

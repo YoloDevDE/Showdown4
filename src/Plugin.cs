@@ -4,7 +4,6 @@ using Showdown4.Commands;
 using Showdown4.Managers;
 using Showdown4.States;
 using Showdown4.States.Master;
-using Showdown4.Utils;
 using ZeepSDK.ChatCommands;
 using ZeepSDK.Storage;
 
@@ -28,8 +27,7 @@ public class Plugin : BaseUnityPlugin
 		_harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
 		_harmony.PatchAll();
 
-		ModLogger.Initialize(Logger);
-		ModLogger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+		Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
 		_ = CoroutineManager.Instance;
 		MyConfig.Register(Config);
 		RegisterCommands();
@@ -54,7 +52,6 @@ public class Plugin : BaseUnityPlugin
 	private void RegisterCommands()
 	{
 		ChatCommandApi.RegisterLocalChatCommand<CommandFinishState>();
-		ChatCommandApi.RegisterLocalChatCommand<CommandStartRandom>();
 		ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStart>();
 		ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStop>();
 
@@ -65,6 +62,7 @@ public class Plugin : BaseUnityPlugin
 		ChatCommandApi.RegisterMixedChatCommand<CommandSkipAction>();
 		ChatCommandApi.RegisterMixedChatCommand<CommandPick>();
 		ChatCommandApi.RegisterMixedChatCommand<CommandBan>();
+		ChatCommandApi.RegisterMixedChatCommand<CommandPass>();
 
 		// CommandCreateTeam.CommandInvoked += CreateTeam;
 	}

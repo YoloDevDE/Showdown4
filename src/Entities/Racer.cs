@@ -1,13 +1,7 @@
 ﻿namespace Showdown4.Entities;
 
-public class Racer
+public class Racer(ulong steamId, string steamName)
 {
-	public Racer(ulong steamId, string steamName)
-	{
-		SteamId = steamId;
-		SteamName = steamName;
-	}
-
-	public ulong SteamId { get; set; }
-	public string SteamName { get; set; }
+	public ulong SteamId { get; set; } = steamId;
+	public string SteamName { get; set; } = steamName;
 }

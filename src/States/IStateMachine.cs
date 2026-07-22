@@ -58,7 +58,6 @@ public interface IStateMachine
 		CurrentState = nextState;
 		CurrentState.Finished += OnCurrentStateFinished;
 		CurrentState.Enter();
-		CurrentState.Execute();
 		CurrentState.SubStateMachine?.Start();
 	}
 
@@ -94,6 +93,7 @@ public interface IStateMachine
 		}
 
 		CurrentState.Exit();
+		UnsubscribeFromEvents();
 	}
 
 	void StateMachineFinishedNotify()
@@ -104,7 +104,18 @@ public interface IStateMachine
 	void Start()
 	{
 		InitTransitions();
+		SubscribeToEvents();
 		TransitionTo(InitialState);
+	}
+
+	// Central event subscription. Each concrete state machine subscribes to its own events
+	// once and delegates them to the current state via the IState event hooks.
+	void SubscribeToEvents()
+	{
+	}
+
+	void UnsubscribeFromEvents()
+	{
 	}
 
 	void InitTransitions();

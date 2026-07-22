@@ -3,11 +3,10 @@ using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
-using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
-public class StateSetupMatch : ShowdownStateBase
+public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private const int CountdownDuration = 2; // Countdown in seconds
 	private int _currentSelectionIndex;
@@ -16,10 +15,6 @@ public class StateSetupMatch : ShowdownStateBase
 	private Team _selectedTeamA;
 	private Team _selectedTeamB;
 	private List<Team> _teams;
-
-	public StateSetupMatch(IStateMachine stateMachine) : base(stateMachine)
-	{
-	}
 
 	public override void Enter()
 	{
@@ -31,18 +26,13 @@ public class StateSetupMatch : ShowdownStateBase
 		_selectedTeamB = null;
 		_isCountdownActive = false;
 
-		ChatApi.SendMessage("/timeset 86400");
+		ChatCommandService.SetTime(86400);
 		if (_teams.Count == 0)
 		{
 			ChatMessage.SendCustomMessage("No teams found in the JSON file.");
 		}
 
 		StateManager.Instance.SetCurrentState(this);
-		Execute();
-	}
-
-	public override void Execute()
-	{
 		SendServerMessage();
 	}
 
@@ -89,7 +79,7 @@ public class StateSetupMatch : ShowdownStateBase
 
 		if (inputDetected)
 		{
-			Execute();
+			SendServerMessage();
 		}
 	}
 
@@ -188,7 +178,7 @@ public class StateSetupMatch : ShowdownStateBase
 				remainingSeconds =>
 				{
 					_remainingSeconds = remainingSeconds;
-					Execute(); // Action to update message during countdown
+					SendServerMessage(); // Action to update message during countdown
 				},
 				InvokeFinish // Action when countdown completes
 			));

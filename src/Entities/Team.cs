@@ -4,27 +4,19 @@ using UnityEngine;
 
 namespace Showdown4.Entities;
 
-public class Team
+public class Team(string name, string tag, string color)
 {
-	public Team(string name, string tag, string color)
-	{
-		Name = name;
-		Tag = tag;
-		Color = color;
-		Racers = new List<Racer>();
-	}
-
 	public double QualificationTime { get; set; }
 
 	public int Wins { get; set; }
 	public int Losses { get; set; }
-	public string Name { get; set; }
-	public string Tag { get; set; }
-	public string Color { get; set; }
+	public string Name { get; set; } = name;
+	public string Tag { get; set; } = tag;
+	public string Color { get; set; } = color;
 	public int Picks { get; set; } = 1;
 	public int Bans { get; set; } = 2;
 	public bool MissedDraft { get; set; } = false;
-	public List<Racer> Racers { get; set; }
+	public List<Racer> Racers { get; set; } = new();
 
 	public int MaxTeamSize { get; set; } = 2;
 

@@ -2,19 +2,12 @@
 
 namespace Showdown4.States.Showdown;
 
-public class Transition : ITransition
+public class Transition(IState from, IState to, Func<bool> condition = null) : ITransition
 {
-	private readonly Func<bool> _condition; // Condition function
+	private readonly Func<bool> _condition = condition ?? (() => true); // Condition function
 
-	public Transition(IState from, IState to, Func<bool> condition = null)
-	{
-		From = from;
-		To = to;
-		_condition = condition ?? (() => true);
-	}
-
-	public IState From { get; }
-	public IState To { get; }
+	public IState From { get; } = from;
+	public IState To { get; } = to;
 
 
 	public bool CanTransition()

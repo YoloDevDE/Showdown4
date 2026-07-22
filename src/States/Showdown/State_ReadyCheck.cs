@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using Showdown4.Commands;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
@@ -9,14 +8,10 @@ using ZeepkistClient;
 
 namespace Showdown4.States.Showdown;
 
-public class StateReadyCheck : ShowdownStateBase
+public class StateReadyCheck(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private HashSet<ulong> _readyPlayers; // Store the IDs of players who are ready
 	private int _remainingTime; // Countdown in seconds
-
-	public StateReadyCheck(IStateMachine stateMachine) : base(stateMachine)
-	{
-	}
 
 	private Team TeamA => Match.TeamA;
 	private Team TeamB => Match.TeamB;
@@ -25,14 +20,13 @@ public class StateReadyCheck : ShowdownStateBase
 	{
 		_readyPlayers = new HashSet<ulong>();
 		_remainingTime = MyConfig.Validated.ReadyCheckDuration;
-		CommandReady.CommandInvoked += OnReady;
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 
 		// Start the timer coroutine
 		CoroutineManager.Instance.StartExternalCoroutine(TimerCoroutine());
 	}
 
-	public override void Execute()
+	private void SendServerMessage()
 	{
 		ServerMessage msg = ShowPickedMaps()
 			.AddSeparator()
@@ -58,7 +52,6 @@ public class StateReadyCheck : ShowdownStateBase
 
 	public override void Exit()
 	{
-		CommandReady.CommandInvoked -= OnReady;
 		_remainingTime = 0; // This will cause the timer coroutine to stop
 	}
 
@@ -66,7 +59,7 @@ public class StateReadyCheck : ShowdownStateBase
 	{
 		while (_remainingTime > 0)
 		{
-			Execute(); // Update the display every second
+			SendServerMessage(); // Update the display every second
 			yield return new WaitForSeconds(1);
 			_remainingTime--;
 
@@ -80,7 +73,7 @@ public class StateReadyCheck : ShowdownStateBase
 		}
 	}
 
-	private void OnReady(ulong steamId, string arg)
+	public override void OnReady(ulong steamId, string arguments)
 	{
 		if (!_readyPlayers.Contains(steamId))
 		{
@@ -94,7 +87,7 @@ public class StateReadyCheck : ShowdownStateBase
 			}
 			else
 			{
-				Execute(); // Update the ready status in the server message
+				SendServerMessage(); // Update the ready status in the server message
 			}
 		}
 	}
@@ -158,7 +151,7 @@ public class StateReadyCheck : ShowdownStateBase
 		// Notify that all players are ready
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 		ChatMessage.SendCustomMessage(
-			$"Racing starts in <color={ShowdownColors.Red}>{MyConfig.Validated.PreRaceCountdown}</color> seconds");
+			$"Racing starts in <{ShowdownColors.Red}>{MyConfig.Validated.PreRaceCountdown}</color> seconds");
 		// Proceed to the next state
 		InvokeFinish();
 	}

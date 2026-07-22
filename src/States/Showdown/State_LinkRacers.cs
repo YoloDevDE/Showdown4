@@ -1,48 +1,34 @@
-﻿using Showdown4.Commands;
-using Showdown4.Entities;
+﻿using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 
 namespace Showdown4.States.Showdown;
 
-public class StateLinkRacers : ShowdownStateBase
+public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private const int CountdownDuration = 3;
 	private Team _currentTeam;
 	private bool _isCountdownRunning;
-
-	public StateLinkRacers(IStateMachine stateMachine) : base(stateMachine)
-	{
-	}
 
 	private Team TeamA => Match.TeamA;
 	private Team TeamB => Match.TeamB;
 
 	public override void Enter()
 	{
-		CommandLinkRacer.CommandInvoked += OnLinkRacerToTeam;
-		CommandUnLinkRacer.CommandInvoked += OnUnLinkRacerToTeam;
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
-	}
 
-	public override void Execute()
-	{
 		_currentTeam = TeamA;
 		CheckIfRacersAreLinked();
 	}
 
 	public override void Exit()
 	{
-		CommandLinkRacer.CommandInvoked -= OnLinkRacerToTeam;
-		CommandUnLinkRacer.CommandInvoked -= OnUnLinkRacerToTeam;
 	}
 
 	private void CheckIfRacersAreLinked()
 	{
 		if (TeamA.Racers.Count >= TeamA.MaxTeamSize && TeamB.Racers.Count >= TeamB.MaxTeamSize)
 		{
-			CommandLinkRacer.CommandInvoked -= OnLinkRacerToTeam;
-			CommandUnLinkRacer.CommandInvoked -= OnUnLinkRacerToTeam;
 			StartCountdown();
 		}
 		else
@@ -54,15 +40,17 @@ public class StateLinkRacers : ShowdownStateBase
 
 	private void StartCountdown()
 	{
-		if (!_isCountdownRunning)
+		if (_isCountdownRunning)
 		{
-			_isCountdownRunning = true;
-			CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-				CountdownDuration,
-				UpdateServerMessage,
-				InvokeFinish // Move to next state when countdown finishes
-			));
+			return;
 		}
+
+		_isCountdownRunning = true;
+		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
+			CountdownDuration,
+			UpdateServerMessage,
+			InvokeFinish // Move to next state when countdown finishes
+		));
 	}
 
 	private void UpdateServerMessage(int countdownTime)
@@ -91,8 +79,14 @@ public class StateLinkRacers : ShowdownStateBase
 		msg.Send();
 	}
 
-	private void OnLinkRacerToTeam(ulong steamId)
+	public override void OnLinkRacer(ulong steamId)
 	{
+		// Once the countdown to the next state is running, no more (un)linking is accepted.
+		if (_isCountdownRunning)
+		{
+			return;
+		}
+
 		string steamName = ZeepkistNetworkService.GetSteamNameFromSteamId(steamId);
 		Racer racer = new(steamId, steamName);
 		_currentTeam.AddRacer(racer); // Add racer to current team
@@ -101,8 +95,14 @@ public class StateLinkRacers : ShowdownStateBase
 		CheckIfRacersAreLinked(); // Check again after each link
 	}
 
-	private void OnUnLinkRacerToTeam(ulong steamId)
+	public override void OnUnlinkRacer(ulong steamId)
 	{
+		// Once the countdown to the next state is running, no more (un)linking is accepted.
+		if (_isCountdownRunning)
+		{
+			return;
+		}
+
 		TeamA.RemoveRacer(steamId);
 		TeamB.RemoveRacer(steamId);
 

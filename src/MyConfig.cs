@@ -29,6 +29,14 @@ public static partial class MyConfig
 		"Number of animation steps the random map roulette spins through when the draft is incomplete (purely visual). Clamped to 1-1000.")]
 	private static readonly int RandomSelectionSpinLoops = 30;
 
+	[Entry("Draft", "Pre Draft Instruction Duration",
+		"Seconds the pick/ban/pass instructions are shown before the draft actually starts. Clamped to 0-3600.")]
+	private static readonly int PreDraftInstructionDuration = 6;
+
+	[Entry("Draft", "Auto Pick Reveal Countdown",
+		"Seconds of visual feedback shown when Showdown automatically picks the last remaining map. Clamped to 0-3600.")]
+	private static readonly int AutoPickRevealCountdown = 3;
+
 	[Entry("Ready Check", "Ready Check Duration",
 		"Seconds the ready check waits for all players before timing out. Clamped to 1-3600.")]
 	private static readonly int ReadyCheckDuration = 300;

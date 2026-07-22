@@ -6,24 +6,17 @@ using ZeepkistNetworking;
 
 namespace Showdown4.Entities;
 
-public class Match
+public class Match(Team teamA, Team teamB)
 {
-	public Match(Team teamA, Team teamB)
-	{
-		TeamA = teamA;
-		TeamB = teamB;
-		Initiative = teamA;
-	}
-
-	public Team TeamA { get; set; }
-	public Team TeamB { get; set; }
+	public Team TeamA { get; set; } = teamA;
+	public Team TeamB { get; set; } = teamB;
 	public List<Round> Rounds { get; } = [];
 
 	public List<Draft> Drafts { get; } = new();
 	public Draft CurrentDraft => Drafts[^1];
 	public Round CurrentRound => Rounds[^1];
 	public List<OnlineZeeplevel> TrackedLevels { get; } = [];
-	public Team Initiative { get; set; }
+	public Team Initiative { get; set; } = teamA;
 	public Team NonInitiative => Initiative == TeamA ? TeamB : TeamA;
 
 	// Draftphase I is the very first draft; every draft after a round has been played is Draftphase II.
@@ -45,7 +38,7 @@ public class Match
 	public string ScoreColored()
 	{
 		return
-			$"<color={TeamA.Color}>{TeamA.GetTag()}</color> {TeamA.Wins}:{TeamB.Wins} <color={TeamB.Color}>{TeamB.GetTag()}</color>";
+			$"<{TeamA.Color}>{TeamA.GetTag()}</color> {TeamA.Wins}:{TeamB.Wins} <{TeamB.Color}>{TeamB.GetTag()}</color>";
 	}
 
 	public string Score()

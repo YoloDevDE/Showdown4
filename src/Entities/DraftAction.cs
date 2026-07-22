@@ -2,18 +2,11 @@ using ZeepkistNetworking;
 
 namespace Showdown4.Entities;
 
-public class DraftAction
+public class DraftAction(OnlineZeeplevel level, Team team, bool isPick)
 {
-	public DraftAction(OnlineZeeplevel level, Team team, bool isPick)
-	{
-		Level = level;
-		Team = team;
-		IsPick = isPick;
-	}
-
-	public OnlineZeeplevel Level { get; }
-	public Team Team { get; }
-	public bool IsPick { get; }
+	public OnlineZeeplevel Level { get; } = level;
+	public Team Team { get; } = team;
+	public bool IsPick { get; } = isPick;
 
 	public int Round { get; set; }
 

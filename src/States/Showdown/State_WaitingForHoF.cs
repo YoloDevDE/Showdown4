@@ -1,21 +1,11 @@
 ﻿using Showdown4.Managers;
 using ZeepSDK.Level;
-using ZeepSDK.Racing;
 
 namespace Showdown4.States.Showdown;
 
-public class StateWaitingForHoF : ShowdownStateBase
+public class StateWaitingForHoF(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
-	public StateWaitingForHoF(IStateMachine stateMachine) : base(stateMachine)
-	{
-	}
-
 	public override void Enter()
-	{
-		RacingApi.RoundStarted += OnRoundStarted;
-	}
-
-	public override void Execute()
 	{
 		if (LevelApi.CurrentLevel.UID.Equals(
 			    PlaylistManager.GetLocalLevelsByPlaylistName(MyConfig.IntermissionLevelPlaylistNameConfig.Value)[0]
@@ -27,10 +17,9 @@ public class StateWaitingForHoF : ShowdownStateBase
 
 	public override void Exit()
 	{
-		RacingApi.RoundStarted -= OnRoundStarted;
 	}
 
-	private void OnRoundStarted()
+	public override void OnRoundStarted()
 	{
 		InvokeFinish();
 	}

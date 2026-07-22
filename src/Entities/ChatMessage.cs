@@ -13,7 +13,7 @@ public class ChatMessage
 
 	public static void SendCustomMessage(string message)
 	{
-		ZeepkistNetwork.SendCustomChatMessage(true, 0, "<br><color=#E0E0E0><size=-2>" + message + "</size></color>",
+		ZeepkistNetwork.SendCustomChatMessage(true, 0, "<br><#E0E0E0><size=-2>" + message + "</size></color>",
 			"--------SHOWDOWN--------");
 	}
 
@@ -21,7 +21,7 @@ public class ChatMessage
 	{
 		foreach (ulong steamId in steamIds.Distinct())
 			ZeepkistNetwork.SendCustomChatMessage(false, steamId,
-				"<br><color=#E0E0E0><size=-2>" + message + "</size></color>", "--------SHOWDOWN--------</align>");
+				"<br><#E0E0E0><size=-2>" + message + "</size></color>", "--------SHOWDOWN--------</align>");
 	}
 
 	public class Builder
@@ -65,14 +65,14 @@ public class ChatMessage
 
 		public Builder CenterTextLine(string text)
 		{
-			// Berechnung der Anzahl der Leerzeichen auf beiden Seiten
+			// Calculate the number of spaces on both sides
 			int padding = (_maxLineWidth - text.Length) / 2;
 
-			// Falls die maxLineWidth kleiner als die Textlänge ist, wird kein Padding hinzugefügt
+			// If maxLineWidth is smaller than the text length, no padding is added
 			if (padding > 0)
 			{
 				_chatMessage.Message += new string(' ', padding) + text + new string(' ', padding);
-				// Wenn die Länge ungerade ist, ein zusätzliches Leerzeichen rechts hinzufügen
+				// If the length is odd, add an extra space on the right
 				if ((_maxLineWidth - text.Length) % 2 != 0)
 				{
 					_chatMessage.Message += " ";

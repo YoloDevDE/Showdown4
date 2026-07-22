@@ -2,12 +2,7 @@
 
 namespace Showdown4.Entities;
 
-public class Level
+public class Level(OnlineZeeplevel onlineZeeplevel)
 {
-	public Level(OnlineZeeplevel onlineZeeplevel)
-	{
-		OnlineZeeplevel = onlineZeeplevel;
-	}
-
-	public OnlineZeeplevel OnlineZeeplevel { get; }
+	public OnlineZeeplevel OnlineZeeplevel { get; } = onlineZeeplevel;
 }

@@ -1,44 +1,27 @@
 ﻿using System;
-using Showdown4.Commands;
+using Showdown4.Managers;
 using Showdown4.States.Showdown;
 using Showdown4.Utils;
-using ZeepSDK.Chat;
 
 namespace Showdown4.States.Master;
 
-public class StateMasterOn : IState
+public class StateMasterOn(IStateMachine stateMachine) : IState
 {
-	public StateMasterOn(IStateMachine stateMachine)
-	{
-		StateMachine = stateMachine;
-	}
-
-
 	private ShowdownStateMachine ShowdownStateMachine => SubStateMachine as ShowdownStateMachine;
 
-	public IStateMachine StateMachine { get; }
+	public IStateMachine StateMachine { get; } = stateMachine;
 	public IStateMachine SubStateMachine { get; set; }
 	public event Action Finished;
 
 	public void Enter()
-	{
-		CommandShowdownStart.CommandInvoked += OnShowdownStarted;
-		CommandShowdownStop.CommandInvoked += OnShowdownStopped;
-		CommandFinishState.CommandInvoked += OnFinishedState;
-	}
-
-	public void Execute()
 	{
 		SubStateMachine = new ShowdownStateMachine();
 	}
 
 	public void Exit()
 	{
-		ChatApi.SendMessage("/joinmessage disable");
-		ChatApi.SendMessage("/servermessage remove");
-		CommandShowdownStart.CommandInvoked -= OnShowdownStarted;
-		CommandShowdownStop.CommandInvoked -= OnShowdownStopped;
-		CommandFinishState.CommandInvoked -= OnFinishedState;
+		ChatCommandService.RemoveJoinMessage();
+		ChatCommandService.RemoveServerMessage();
 	}
 
 	public void InvokeFinish()
@@ -46,17 +29,17 @@ public class StateMasterOn : IState
 		Finished?.Invoke();
 	}
 
-	private void OnFinishedState(string arg)
+	public void OnFinishState(string arguments)
 	{
 		SubStateMachine.CurrentState?.InvokeFinish();
 	}
 
-	private void OnShowdownStarted()
+	public void OnShowdownStart()
 	{
 		ToastMessenger.LogWarning("already running");
 	}
 
-	private void OnShowdownStopped()
+	public void OnShowdownStop()
 	{
 		Finished?.Invoke();
 		ToastMessenger.LogSuccess($"Season {MyConfig.Validated.SeasonNumber} stopped");
