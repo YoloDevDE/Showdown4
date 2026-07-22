@@ -11,7 +11,6 @@ namespace Showdown4.States.Showdown;
 
 public class StateReadyCheck : ShowdownStateBase
 {
-	private const int ReadyCheckDuration = 300; // Countdown in seconds
 	private HashSet<ulong> _readyPlayers; // Store the IDs of players who are ready
 	private int _remainingTime; // Countdown in seconds
 
@@ -25,7 +24,7 @@ public class StateReadyCheck : ShowdownStateBase
 	public override void Enter()
 	{
 		_readyPlayers = new HashSet<ulong>();
-		_remainingTime = ReadyCheckDuration;
+		_remainingTime = MyConfig.Validated.ReadyCheckDuration;
 		CommandReady.CommandInvoked += OnReady;
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 
@@ -154,11 +153,12 @@ public class StateReadyCheck : ShowdownStateBase
 			.AddSeparator();
 		msg.Send();
 
-		// Wait for 2 seconds before transitioning to the next state
-		yield return new WaitForSeconds(3);
+		// Wait before transitioning to the next state
+		yield return new WaitForSeconds(MyConfig.Validated.ReadyConfirmCountdown);
 		// Notify that all players are ready
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
-		ChatMessage.SendCustomMessage($"Racing starts in <color={ShowdownColors.Red}>10</color> seconds");
+		ChatMessage.SendCustomMessage(
+			$"Racing starts in <color={ShowdownColors.Red}>{MyConfig.Validated.PreRaceCountdown}</color> seconds");
 		// Proceed to the next state
 		InvokeFinish();
 	}

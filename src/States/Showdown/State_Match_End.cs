@@ -8,7 +8,7 @@ namespace Showdown4.States.Showdown;
 public class StateMatchEnd : ShowdownStateBase
 {
 	private bool _countdownStarted;
-	private int _countdownTime = 60; // Countdown duration set to 60 seconds
+	private int _countdownTime = MyConfig.Validated.MatchEndKickCountdown; // Countdown duration in seconds
 
 	public StateMatchEnd(IStateMachine stateMachine) : base(stateMachine)
 	{

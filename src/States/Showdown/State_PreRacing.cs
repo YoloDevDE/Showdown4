@@ -24,7 +24,7 @@ public class StatePreRacing : ShowdownStateBase
 
 		// Use the new CountdownTimer
 		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-			10, // Countdown duration
+			MyConfig.Validated.PreRaceCountdown, // Countdown duration
 			UpdateCountdownMessage, // Action on tick
 			SkipToNextLevel // Action on completion
 		));
@@ -32,8 +32,8 @@ public class StatePreRacing : ShowdownStateBase
 
 	public override void Execute()
 	{
-		// Set the lobby time to 300 seconds (5 minutes)
-		ChatApi.SendMessage("/settime 300");
+		// Set the lobby time (in seconds)
+		ChatApi.SendMessage($"/settime {MyConfig.Validated.LobbyTime}");
 	}
 
 	public override void Exit()

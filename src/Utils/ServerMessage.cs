@@ -115,16 +115,40 @@ public class ServerMessage
 
 	public ServerMessage ShowdownHeader(bool inline = false, string alignment = "left", int size = 40)
 	{
+		string season = ToRomanNumeral(MyConfig.Validated.SeasonNumber);
 		Action<LineBuilder> headerBuilder = line => line
 			.AddBlockNoSpace("<br>", b => b.Size(0))
 			.AddBlockNoSpace("Showdown ", b => b.Gradients("#ffffff", "#aaaaaa", "#cccccc", "#ffffff"))
 			.AddBlock("Season", b => b.Gradients("#ffffff", "#eeeeee", "#dddddd", "#aaaaaa", "#cccccc", "#ffffff"))
-			.AddBlock("VI", b => b.Color("#ffaa00"))
+			.AddBlock(season, b => b.Color("#ffaa00"))
 			.Bold().AllCaps().Size(size);
 
 		return inline
 			? new ServerMessage(alignment).AddInLine(headerBuilder)
 			: new ServerMessage(alignment).AddLine(headerBuilder);
+	}
+
+	// Converts a positive integer to its Roman numeral representation (e.g. 6 -> "VI").
+	// Falls back to the plain number for values outside the supported range.
+	private static string ToRomanNumeral(int number)
+	{
+		if (number <= 0 || number >= 4000)
+		{
+			return number.ToString();
+		}
+
+		int[] values = { 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };
+		string[] numerals = { "M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I" };
+
+		StringBuilder result = new();
+		for (int i = 0; i < values.Length; i++)
+			while (number >= values[i])
+			{
+				result.Append(numerals[i]);
+				number -= values[i];
+			}
+
+		return result.ToString();
 	}
 
 	public void Send()

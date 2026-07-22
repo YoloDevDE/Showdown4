@@ -13,9 +13,6 @@ namespace Showdown4.States.Showdown;
 
 public class StateDraftIncomplete : ShowdownStateBase
 {
-	private const int Countdown = 3;
-	private const int MaxSpinLoops = 30;
-
 	private readonly Random _random = new();
 
 	private bool _isDraftCompleteCountdownStarted;
@@ -66,7 +63,8 @@ public class StateDraftIncomplete : ShowdownStateBase
 		float delay = 0.10f;
 		int selectedIndex = 0;
 
-		for (int i = 0; i < MaxSpinLoops; i++)
+		int spinLoops = MyConfig.Validated.RandomSelectionSpinLoops;
+		for (int i = 0; i < spinLoops; i++)
 		{
 			if (_random.Next(10) == 0) // 10% chance to reverse direction
 			{
@@ -135,7 +133,8 @@ public class StateDraftIncomplete : ShowdownStateBase
 		PlaylistManager.SetServerPlaylist(matchPlaylist);
 
 		_isDraftCompleteCountdownStarted = true;
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(Countdown,
+		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
+			MyConfig.Validated.DraftCompleteCountdown,
 			_ => Execute(),
 			InvokeFinish));
 	}

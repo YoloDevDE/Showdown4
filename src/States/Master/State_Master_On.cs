@@ -59,6 +59,6 @@ public class StateMasterOn : IState
 	private void OnShowdownStopped()
 	{
 		Finished?.Invoke();
-		ToastMessenger.LogSuccess("Season 6 stopped");
+		ToastMessenger.LogSuccess($"Season {MyConfig.Validated.SeasonNumber} stopped");
 	}
 }

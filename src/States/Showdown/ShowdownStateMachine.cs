@@ -9,18 +9,13 @@ namespace Showdown4.States.Showdown;
 
 public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 {
-	public ShowdownStateMachine()
-	{
-		Transitions = new List<ITransition>();
-	}
-
 	public Match Match { get; set; }
 
 	// Always return new instances for InitialState and FinalState
 	public IState InitialState => new StateShowdownStarting(this);
 	public IState FinalState => new StateMatchEnd(this);
 	public IState CurrentState { get; set; }
-	public List<ITransition> Transitions { get; set; }
+	public List<ITransition> Transitions { get; set; } = new();
 
 	public event Action StateMachineFinished;
 

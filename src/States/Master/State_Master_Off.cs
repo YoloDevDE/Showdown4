@@ -45,6 +45,6 @@ public class StateMasterOff : IState
 	{
 		Finished?.Invoke();
 
-		ToastMessenger.LogSuccess("Season 6 started");
+		ToastMessenger.LogSuccess($"Season {MyConfig.Validated.SeasonNumber} started");
 	}
 }

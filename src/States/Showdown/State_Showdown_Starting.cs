@@ -38,7 +38,7 @@ public class StateShowdownStarting : ShowdownStateBase
 				.NewLine()
 				.DashedLine()
 				.NewLine()
-				.TextLine("Showdown Season 6 started")
+				.TextLine($"Showdown Season {MyConfig.Validated.SeasonNumber} started")
 				.NewLine()
 				.DashedLine()
 				.NewLine()

@@ -17,14 +17,11 @@ namespace Showdown4.States.Showdown;
 
 public class StateDrafting : ShowdownStateBase
 {
-	private const int DraftTime = 90;
-	private const int Countdown = 3;
-
 	private const int MaxLevelIndex = 7;
 
 	private readonly Random _random = new();
 
-	private int _draftCountdownTime = DraftTime;
+	private int _draftCountdownTime = MyConfig.Validated.DraftTime;
 	private bool _isDraftCompleteCountdownStarted;
 	private bool _isInitiationPhaseComplete;
 
@@ -41,7 +38,7 @@ public class StateDrafting : ShowdownStateBase
 	public override void Enter()
 	{
 		_isDraftCompleteCountdownStarted = false;
-		_draftCountdownTime = DraftTime;
+		_draftCountdownTime = MyConfig.Validated.DraftTime;
 		_isInitiationPhaseComplete = false;
 
 		Match.AddDraft();
@@ -88,7 +85,7 @@ public class StateDrafting : ShowdownStateBase
 					.AddBlock("'!ban 1-7'", block => block.Color(ShowdownColors.Yellow)))
 			.Send();
 
-		if (_draftCountdownTime >= DraftTime && !CurrentDraft.IsDraftComplete())
+		if (_draftCountdownTime >= MyConfig.Validated.DraftTime && !CurrentDraft.IsDraftComplete())
 		{
 			SendTurnAnnouncements();
 		}
@@ -128,7 +125,8 @@ public class StateDrafting : ShowdownStateBase
 		PlaylistManager.SetServerPlaylist(matchPlaylist);
 
 		_isDraftCompleteCountdownStarted = true;
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(Countdown,
+		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
+			MyConfig.Validated.DraftCompleteCountdown,
 			OnDraftCompleteTick,
 			InvokeFinish));
 		return false;
@@ -220,7 +218,7 @@ public class StateDrafting : ShowdownStateBase
 
 	private void OnDraftTimeout()
 	{
-		_draftCountdownTime = DraftTime;
+		_draftCountdownTime = MyConfig.Validated.DraftTime;
 		CurrentTeam.MissedDraft = true;
 
 		if (OtherTeam.Bans == 0 && OtherTeam.Picks == 0)
@@ -246,7 +244,9 @@ public class StateDrafting : ShowdownStateBase
 		}
 
 		CurrentDraft.SwitchTeam();
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(DraftTime, OnDraftTick, OnDraftTimeout));
+		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.Validated.DraftTime,
+			OnDraftTick,
+			OnDraftTimeout));
 	}
 
 	private void OnDraftCompleteTick(int remainingSeconds)
@@ -289,7 +289,9 @@ public class StateDrafting : ShowdownStateBase
 
 		_isInitiationPhaseComplete = true;
 
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(DraftTime, OnDraftTick, OnDraftTimeout));
+		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.Validated.DraftTime,
+			OnDraftTick,
+			OnDraftTimeout));
 	}
 
 	private ServerMessage DraftingStateMessage()
@@ -448,8 +450,8 @@ public class StateDrafting : ShowdownStateBase
 				HandlePick(currentDraft, levelToPickOrBan, currentTeam, player);
 			}
 
-			CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(DraftTime, OnDraftTick,
-				OnDraftTimeout));
+			CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.DraftTimeConfig.Value,
+				OnDraftTick, OnDraftTimeout));
 			Execute();
 		}
 		catch (InvalidOperationException ex)
