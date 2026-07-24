@@ -10,7 +10,7 @@ namespace Showdown4.States.Showdown;
 /// <summary>
 ///     Runs once the draft is finished (either normally, via auto-pick of the last map, or after
 ///     the random selection of the incomplete flow). It locks in the resulting playlist, shows the
-///     "draft complete" banner and, after a short countdown, hands over to the ready check.
+///     "draft complete" banner and, after a short countdown, hands over to pre-racing.
 /// </summary>
 public class StateDraftCompleted(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {

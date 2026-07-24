@@ -67,3 +67,89 @@ project-specific section) that adds, at minimum:
   unsubscription, etc.).
 
 Keep it factual and current — remove notes once they're no longer true, don't let it grow into a changelog.
+
+# 4  <:Showdown:1437119940933976306>  THE SHOWDOWN - MAIN EVENT
+
+# 📜 MATCH RULES
+
+> ## 🔹 **Core Rules**
+> - Format: **2 vs 2** / Single Elimination
+> - Match type: **Best of 3** (First to 2)
+> - Each round lasts **5 minutes**
+> - Both teams' players set their best time; team **average time** determines the result
+> - A **round win ** gains your team **1 point** for the whole match
+> - First team with **2 points** wins the match
+> ## 🔹 **Special Rules (Ties)**
+> ### __ Exact Time Tie – Picked Map__
+> - If both teams have **identical average times**  
+>   → The **OPPONENT** of the team that **PICKED** the map wins the round cause the Map Picker is expected to win. If
+    they don't win, they lose the tie.
+> ### __Exact Time Tie – Randomized Map__
+> - If the map was **randomly selected**, and the result is a perfect tie  
+>   → The winner is the team with the **better Qualifier Average Time**  
+>   (the team that originally held **initiative**).
+> - However if the **Qualifier Average Time** is also **tied**, we replay the match 🆕
+
+# 🧮 MATCH PROCEDURE
+
+> ## 🔸 **Core Procedure**
+> 1. **Pre Match**
+>   1. Players join (Code in https://discord.com/channels/1127321762686836798/1137826678542966875 !! DO NOT JOIN UNTIL
+       PINGED !!)
+>   1. Players link to their team
+> 1. **Match **
+>   1. Draft Phase I
+>   1. Round I
+>   1. Round II
+>   1. Intermission
+>      1. Winner determined?
+>         1. Yes <:Yes:761601587986432072> (2:0 or 0:2)
+>             1. Match Ends
+>         1. No  <:No:761601587843432539> (1:1)
+>             1. Draft Phase II
+>             1. Round III
+> 1. **Post Match**
+>   1. Players leave the lobby
+>   1. (optional) join us on stage for an interview! 🎙️
+>
+> ## 🔸 **Procedure Details & Sequence**
+> ### __**Draft Phase I**__
+> - Team with the better **Qualifier Average Time** gets **initiative**
+> - Teams have **consumables** that they use over the entire match:
+>   - **2 bans** 🟥
+>   - **1 pick**  🟩
+> - Draft pattern: **ABAB**
+>
+> ### __Draft Phase I__ - Sequence
+> 1. **Initiative team starts** (pick or ban)
+> 2. Teams alternate
+> 3. If one team **picks**, the other team must **also pick**
+> 4. Once **two maps are picked**, the first two rounds begin
+>    ⚠️ **IMPORTANT NOTE** ⚠️
+> 5. **90 seconds** per decision
+>    - **Timer runs out → the other team gets their action** (this also happens when you use **!pass**)
+>    - If the other team has no consumables → action becomes **randomized**
+> 6. repeat from 2. until **2** maps are picked. you **cannot __not__** use pick in **Draft I**. That's in the nature of
+     this system.
+>
+> ## __**Rounds I & II**__
+> - Played on the **two picked maps** in pick-order
+> - Round Length: **5 minutes**
+> - Winner team is determined by **better average time**
+>
+> ## __**Draft Phase II**__
+> - Triggered when the first two rounds are **tied** (1:1)
+> - Previously **banned** maps **__re-enter__** the pool
+> - Previously **played** maps are **__removed __**→ **5 maps remain**
+> - 🔃 **Initiative switches** to the other team
+> ### Draft Phase II Sequence
+> 1. The new Initiative team starts the **draft**
+> 2. Teams alternate
+> 2. If no more consumables remain → map is **randomized** by [Showdown]
+>
+> ## __**Round III (Tiebreaker)**__
+> - Played on the map selected in **Draft Phase II**
+> - **Tie rules** apply here as well
+>   - Picked map → picker loses
+>   - Random map → better Qualifier wins ⬅️ https://discord.com/channels/1127321762686836798/1134182342278258789 ⬅️
+      ➡️ https://discord.com/channels/1127321762686836798/1134183381077340161 ➡️

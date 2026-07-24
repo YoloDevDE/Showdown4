@@ -238,6 +238,12 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		SendTeamLeaderboard();
 	}
 
+	public void SendTeamLeaderboard()
+	{
+		ServerMessage leaderboardMessage = _leaderboardDisplay.GenerateLeaderboardMessage(Showdown.Match);
+		leaderboardMessage.Send();
+	}
+
 	private static int? FindLeaderboardPosition(List<LeaderboardItem> leaderboard, ulong steamId)
 	{
 		for (int index = 0; index < leaderboard.Count; index++)
@@ -310,12 +316,6 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		SetNormalLeaderboardOverride(steamId, time, color, name);
 		_lostAccum[steamId] = 0;
 		_resetCoroutines.Remove(steamId);
-	}
-
-	public void SendTeamLeaderboard()
-	{
-		ServerMessage leaderboardMessage = _leaderboardDisplay.GenerateLeaderboardMessage(Showdown.Match);
-		leaderboardMessage.Send();
 	}
 
 	// Coroutine for showing the cool intro message for the first 10 seconds

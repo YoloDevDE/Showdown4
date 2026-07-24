@@ -39,14 +39,6 @@ public class Round(Team teamA, Team teamB)
 		return Leaderboard.TryGetValue(racer.SteamId, out Result value) ? value.Time : double.MaxValue;
 	}
 
-	private double GetCumulativeTimeOfTeam(Team team)
-	{
-		return team.Racers
-			.Select(racer => GetPersonalBest(racer))
-			.Where(personalBest => personalBest < double.MaxValue)
-			.Sum();
-	}
-
 	public double GetAvgTimeOfTeam(Team team)
 	{
 		int finishers = GetFinishersCount(team);
@@ -75,6 +67,14 @@ public class Round(Team teamA, Team teamB)
 		}
 
 		return TeamsSortedByWinAsc;
+	}
+
+	private double GetCumulativeTimeOfTeam(Team team)
+	{
+		return team.Racers
+			.Select(racer => GetPersonalBest(racer))
+			.Where(personalBest => personalBest < double.MaxValue)
+			.Sum();
 	}
 
 	private List<Team> CompareFinishers()

@@ -43,6 +43,66 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 			OnDraftTimeout));
 	}
 
+	public override void Exit()
+	{
+	}
+
+	public override IState GetNextState()
+	{
+		return CurrentDraft.PickedLevels.Count == 0
+			? new StateDraftIncomplete(StateMachine)
+			: new StateDraftCompleted(StateMachine);
+	}
+
+	public override void OnPick(ulong steamId, string levelIndexStr)
+	{
+		if (IsDraftLocked())
+		{
+			return;
+		}
+
+		HandleDraft(false, steamId, levelIndexStr);
+	}
+
+	public override void OnBan(ulong steamId, string levelIndexStr)
+	{
+		if (IsDraftLocked())
+		{
+			return;
+		}
+
+		HandleDraft(true, steamId, levelIndexStr);
+	}
+
+	// Hands the current team's action over to the other team, mirroring a voluntary timeout.
+	public override void OnPass(ulong steamId)
+	{
+		if (IsDraftLocked())
+		{
+			return;
+		}
+
+		if (!ZeepkistNetwork.TryGetPlayer(steamId, out ZeepkistNetworkPlayer player))
+		{
+			ChatMessage.SendCustomMessage("Error: Could not find the player for the provided Steam ID.");
+			return;
+		}
+
+		Team currentTeam = CurrentDraft.GetCurrentTeam();
+		if (!player.IsLocal && currentTeam.Racers.All(racer => racer.SteamId != steamId))
+		{
+			ChatMessage.SendCustomMessage(
+				$"{player.Username} is not a member of the current drafting team ({currentTeam.GetColoredTag()}).");
+			return;
+		}
+
+		ChatMessage.SendCustomMessage(
+			$"{currentTeam.GetColoredTag()} <{ShowdownColors.Yellow}>passed</color> their action to {CurrentDraft.GetOtherTeam().GetColoredTag()}");
+
+		// A pass behaves exactly like letting the turn time out.
+		OnDraftTimeout();
+	}
+
 	private void Render(string backgroundColor = "white")
 	{
 		if (_isAutoPickInProgress)
@@ -98,17 +158,6 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 
 		Render();
-	}
-
-	public override void Exit()
-	{
-	}
-
-	public override IState GetNextState()
-	{
-		return CurrentDraft.PickedLevels.Count == 0
-			? new StateDraftIncomplete(StateMachine)
-			: new StateDraftCompleted(StateMachine);
 	}
 
 	// Decides how a finished draft continues:
@@ -331,55 +380,6 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 			.AddBlock($"{current.Bans}", block => block.Color(ShowdownColors.Red)));
 
 		return tmp;
-	}
-
-	public override void OnPick(ulong steamId, string levelIndexStr)
-	{
-		if (IsDraftLocked())
-		{
-			return;
-		}
-
-		HandleDraft(false, steamId, levelIndexStr);
-	}
-
-	public override void OnBan(ulong steamId, string levelIndexStr)
-	{
-		if (IsDraftLocked())
-		{
-			return;
-		}
-
-		HandleDraft(true, steamId, levelIndexStr);
-	}
-
-	// Hands the current team's action over to the other team, mirroring a voluntary timeout.
-	public override void OnPass(ulong steamId)
-	{
-		if (IsDraftLocked())
-		{
-			return;
-		}
-
-		if (!ZeepkistNetwork.TryGetPlayer(steamId, out ZeepkistNetworkPlayer player))
-		{
-			ChatMessage.SendCustomMessage("Error: Could not find the player for the provided Steam ID.");
-			return;
-		}
-
-		Team currentTeam = CurrentDraft.GetCurrentTeam();
-		if (!player.IsLocal && currentTeam.Racers.All(racer => racer.SteamId != steamId))
-		{
-			ChatMessage.SendCustomMessage(
-				$"{player.Username} is not a member of the current drafting team ({currentTeam.GetColoredTag()}).");
-			return;
-		}
-
-		ChatMessage.SendCustomMessage(
-			$"{currentTeam.GetColoredTag()} <{ShowdownColors.Yellow}>passed</color> their action to {CurrentDraft.GetOtherTeam().GetColoredTag()}");
-
-		// A pass behaves exactly like letting the turn time out.
-		OnDraftTimeout();
 	}
 
 	// The draft no longer accepts input once it is finished or the auto-pick reveal is running.

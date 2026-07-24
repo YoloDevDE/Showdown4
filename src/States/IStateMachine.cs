@@ -13,43 +13,7 @@ public interface IStateMachine
 
 	event Action StateMachineFinished;
 
-	protected void TransitionTo([NotNull] IState nextState)
-	{
-		if (CurrentState != null)
-		{
-			CurrentState.SubStateMachine?.Dispose();
-			CurrentState.Finished -= OnCurrentStateFinished;
-			try
-			{
-				CoroutineManager.Instance.StopAllExternalCoroutines();
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine(e);
-			}
-
-			CurrentState.Exit();
-		}
-
-		CurrentState = nextState;
-		CurrentState.Finished += OnCurrentStateFinished;
-		CurrentState.Enter();
-		CurrentState.SubStateMachine?.Start();
-	}
-
-	// Each state decides its own successor via GetNextState() - no central transition table.
-	private void OnCurrentStateFinished()
-	{
-		IState nextState = CurrentState.GetNextState();
-		if (nextState == null)
-		{
-			Debug.LogError($"No next state defined for the current state: {CurrentState.GetType().Name}");
-			return;
-		}
-
-		Debug.Log($"Current State: {CurrentState.GetType().Name}, Transitioning to: {nextState.GetType().Name}");
-		TransitionTo(nextState);
-	}
+	void InvokeFinish();
 
 	void Dispose()
 	{
@@ -87,5 +51,41 @@ public interface IStateMachine
 	{
 	}
 
-	void InvokeFinish();
+	protected void TransitionTo([NotNull] IState nextState)
+	{
+		if (CurrentState != null)
+		{
+			CurrentState.SubStateMachine?.Dispose();
+			CurrentState.Finished -= OnCurrentStateFinished;
+			try
+			{
+				CoroutineManager.Instance.StopAllExternalCoroutines();
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e);
+			}
+
+			CurrentState.Exit();
+		}
+
+		CurrentState = nextState;
+		CurrentState.Finished += OnCurrentStateFinished;
+		CurrentState.Enter();
+		CurrentState.SubStateMachine?.Start();
+	}
+
+	// Each state decides its own successor via GetNextState() - no central transition table.
+	private void OnCurrentStateFinished()
+	{
+		IState nextState = CurrentState.GetNextState();
+		if (nextState == null)
+		{
+			Debug.LogError($"No next state defined for the current state: {CurrentState.GetType().Name}");
+			return;
+		}
+
+		Debug.Log($"Current State: {CurrentState.GetType().Name}, Transitioning to: {nextState.GetType().Name}");
+		TransitionTo(nextState);
+	}
 }

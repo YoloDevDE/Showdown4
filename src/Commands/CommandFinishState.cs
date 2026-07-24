@@ -7,11 +7,10 @@ public class CommandFinishState : BaseLocalCommand
 	public override string Prefix => "/";
 	public override string Command => "sd next";
 	public override string Description => "WIP";
+	public static event Action<string> CommandInvoked;
 
 	protected override void OnCommandInvoked(string arguments)
 	{
 		CommandInvoked?.Invoke(arguments);
 	}
-
-	public static event Action<string> CommandInvoked;
 }

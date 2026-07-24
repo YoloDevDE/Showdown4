@@ -98,6 +98,27 @@ public class ServerMessage(string alignment = "left")
 		return this;
 	}
 
+	public ServerMessage ShowdownHeader(bool inline = false, string alignment = "left", int size = 40)
+	{
+		string season = ToRomanNumeral(MyConfig.SeasonNumberConfig.Value);
+		Action<LineBuilder> headerBuilder = line => line
+			.AddBlockNoSpace("<br>", b => b.Size(0))
+			.AddBlockNoSpace("Showdown ", b => b.Gradients("#ffffff", "#aaaaaa", "#cccccc", "#ffffff"))
+			.AddBlock("Season", b => b.Gradients("#ffffff", "#eeeeee", "#dddddd", "#aaaaaa", "#cccccc", "#ffffff"))
+			.AddBlock(season, b => b.Color("#ffaa00"))
+			.Bold().AllCaps().Size(size);
+
+		return inline
+			? new ServerMessage(alignment).AddInLine(headerBuilder)
+			: new ServerMessage(alignment).AddLine(headerBuilder);
+	}
+
+	public void Send()
+	{
+		// Simulating sending a message
+		Console.WriteLine(ToString());
+		ChatApi.SendMessage(ToString());
+	}
 
 	private void AppendLineBreak()
 	{
@@ -113,22 +134,6 @@ public class ServerMessage(string alignment = "left")
 		{
 			// // messageBuilder.Insert(0, "<br>");
 		}
-	}
-
-
-	public ServerMessage ShowdownHeader(bool inline = false, string alignment = "left", int size = 40)
-	{
-		string season = ToRomanNumeral(MyConfig.SeasonNumberConfig.Value);
-		Action<LineBuilder> headerBuilder = line => line
-			.AddBlockNoSpace("<br>", b => b.Size(0))
-			.AddBlockNoSpace("Showdown ", b => b.Gradients("#ffffff", "#aaaaaa", "#cccccc", "#ffffff"))
-			.AddBlock("Season", b => b.Gradients("#ffffff", "#eeeeee", "#dddddd", "#aaaaaa", "#cccccc", "#ffffff"))
-			.AddBlock(season, b => b.Color("#ffaa00"))
-			.Bold().AllCaps().Size(size);
-
-		return inline
-			? new ServerMessage(alignment).AddInLine(headerBuilder)
-			: new ServerMessage(alignment).AddLine(headerBuilder);
 	}
 
 	// Converts a positive integer to its Roman numeral representation (e.g. 6 -> "VI").
@@ -152,13 +157,6 @@ public class ServerMessage(string alignment = "left")
 			}
 
 		return result.ToString();
-	}
-
-	public void Send()
-	{
-		// Simulating sending a message
-		Console.WriteLine(ToString());
-		ChatApi.SendMessage(ToString());
 	}
 
 	// LineBuilder class for formatting entire lines and adding blocks
@@ -349,40 +347,6 @@ public class ServerMessage(string alignment = "left")
 			return this;
 		}
 
-		private string InterpolateColors(string startColor, string endColor, float progress)
-		{
-			int r1 = Convert.ToInt32(startColor.Substring(0, 2), 16);
-			int g1 = Convert.ToInt32(startColor.Substring(2, 2), 16);
-			int b1 = Convert.ToInt32(startColor.Substring(4, 2), 16);
-
-			int r2 = Convert.ToInt32(endColor.Substring(0, 2), 16);
-			int g2 = Convert.ToInt32(endColor.Substring(2, 2), 16);
-			int b2 = Convert.ToInt32(endColor.Substring(4, 2), 16);
-
-			int r = (int)(r1 + (r2 - r1) * progress);
-			int g = (int)(g1 + (g2 - g1) * progress);
-			int b = (int)(b1 + (b2 - b1) * progress);
-
-			return $"{r:X2}{g:X2}{b:X2}";
-		}
-
-		private string ExtractTextContent(string input, out string before, out string after)
-		{
-			int startIndex = input.LastIndexOf('>') + 1;
-			int endIndex = input.IndexOf("</", StringComparison.Ordinal);
-
-			if (startIndex >= 0 && endIndex >= 0)
-			{
-				before = input.Substring(0, startIndex);
-				after = input.Substring(endIndex);
-				return input.Substring(startIndex, endIndex - startIndex);
-			}
-
-			before = "";
-			after = "";
-			return input;
-		}
-
 		public BlockBuilder WrapWithTag(string tag)
 		{
 			_contentBuilder.Insert(0, $"<{tag}>").Append($"</{tag}>");
@@ -483,6 +447,40 @@ public class ServerMessage(string alignment = "left")
 		public string BuildInline()
 		{
 			return _contentBuilder.ToString();
+		}
+
+		private string InterpolateColors(string startColor, string endColor, float progress)
+		{
+			int r1 = Convert.ToInt32(startColor.Substring(0, 2), 16);
+			int g1 = Convert.ToInt32(startColor.Substring(2, 2), 16);
+			int b1 = Convert.ToInt32(startColor.Substring(4, 2), 16);
+
+			int r2 = Convert.ToInt32(endColor.Substring(0, 2), 16);
+			int g2 = Convert.ToInt32(endColor.Substring(2, 2), 16);
+			int b2 = Convert.ToInt32(endColor.Substring(4, 2), 16);
+
+			int r = (int)(r1 + (r2 - r1) * progress);
+			int g = (int)(g1 + (g2 - g1) * progress);
+			int b = (int)(b1 + (b2 - b1) * progress);
+
+			return $"{r:X2}{g:X2}{b:X2}";
+		}
+
+		private string ExtractTextContent(string input, out string before, out string after)
+		{
+			int startIndex = input.LastIndexOf('>') + 1;
+			int endIndex = input.IndexOf("</", StringComparison.Ordinal);
+
+			if (startIndex >= 0 && endIndex >= 0)
+			{
+				before = input.Substring(0, startIndex);
+				after = input.Substring(endIndex);
+				return input.Substring(startIndex, endIndex - startIndex);
+			}
+
+			before = "";
+			after = "";
+			return input;
 		}
 	}
 }

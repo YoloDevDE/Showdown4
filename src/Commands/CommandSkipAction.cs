@@ -7,11 +7,10 @@ public class CommandSkipAction : BaseMixedCommand
 	public override string Prefix => "!";
 	public override string Command => "skip";
 	public override string Description => "!skip";
+	public static event Action<ulong, string> CommandInvoked;
 
 	protected override void OnCommandInvoked(ulong playerId, string arguments)
 	{
 		CommandInvoked?.Invoke(playerId, arguments);
 	}
-
-	public static event Action<ulong, string> CommandInvoked;
 }

@@ -32,9 +32,6 @@ public class Draft
 		CurrentTeam = teamA;
 	}
 
-
-	private Team OtherTeam => CurrentTeam.Equals(_teamA) ? _teamB : _teamA;
-
 	public List<OnlineZeeplevel> AllLevels { get; }
 	public List<OnlineZeeplevel> AvailableLevels { get; }
 	public List<OnlineZeeplevel> UnAvailableLevels { get; }
@@ -42,6 +39,8 @@ public class Draft
 	public List<DraftAction> BannedLevels { get; } = new();
 
 	public bool IsPickPhase { get; set; }
+
+	private Team OtherTeam => CurrentTeam.Equals(_teamA) ? _teamB : _teamA;
 
 	public void PickLevel(OnlineZeeplevel level)
 	{

@@ -33,11 +33,13 @@ public class StateMasterOn(IStateMachine stateMachine) : IState
 		ChatCommandService.RemoveJoinMessage();
 		ChatCommandService.RemoveServerMessage();
 
-		if (_showdownObject != null)
+		if (!_showdownObject)
 		{
-			Object.Destroy(_showdownObject);
-			_showdownObject = null;
+			return;
 		}
+
+		Object.Destroy(_showdownObject);
+		_showdownObject = null;
 	}
 
 	public IState GetNextState()

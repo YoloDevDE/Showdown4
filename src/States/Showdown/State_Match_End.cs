@@ -26,6 +26,16 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 	}
 
+	public override void Exit()
+	{
+		// No extra cleanup required here
+	}
+
+	public override IState GetNextState()
+	{
+		return new StateWaitingForHoF(StateMachine);
+	}
+
 	private void SendServerMessage()
 	{
 		// We don't need to send this message every second manually now, since it's handled in `UpdateCountdownMessage`
@@ -59,16 +69,6 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 			.AddSeparator();
 
 		msg.Send();
-	}
-
-	public override void Exit()
-	{
-		// No extra cleanup required here
-	}
-
-	public override IState GetNextState()
-	{
-		return new StateWaitingForHoF(StateMachine);
 	}
 
 	private void UpdateCountdownMessage(int remainingTime)

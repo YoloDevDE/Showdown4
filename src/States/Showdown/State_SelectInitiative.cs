@@ -1,4 +1,5 @@
-﻿using Showdown4.Entities;
+﻿using Showdown4.Config;
+using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 
@@ -8,7 +9,6 @@ namespace Showdown4.States.Showdown;
 // the team with the better (lower) average qualification time gets initiative - no manual selection.
 public class StateSelectInitiative(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
-	private const int CountdownDuration = 2; // Countdown in seconds
 	private Team _selectedTeam; // The team with initiative
 
 	private Team TeamA => Match.TeamA;
@@ -23,7 +23,8 @@ public class StateSelectInitiative(IStateMachine stateMachine) : ShowdownStateBa
 		ServerMessageThing().Send();
 
 		CoroutineManager.Instance.StartExternalCoroutine(
-			CountdownTimer.Start(CountdownDuration, UpdateCountdownMessage, InvokeFinish)
+			CountdownTimer.Start(MyConfig.InitiativeAnnouncementDurationConfig.Value, UpdateCountdownMessage,
+				InvokeFinish)
 		);
 	}
 

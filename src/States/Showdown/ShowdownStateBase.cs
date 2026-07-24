@@ -16,13 +16,18 @@ public abstract class ShowdownStateBase(IStateMachine stateMachine) : IState
 	protected ShowdownStateMachine Showdown => (ShowdownStateMachine)StateMachine;
 	protected Match Match => Showdown.Match;
 	protected Draft CurrentDraft => Match.CurrentDraft;
-
 	public IStateMachine StateMachine { get; } = stateMachine;
 
 	public event Action Finished;
 
-	public abstract void Enter();
-	public abstract void Exit();
+	public virtual void Enter()
+	{
+	}
+
+	public virtual void Exit()
+	{
+	}
+
 	public abstract IState GetNextState();
 
 	// States that need keyboard input (e.g. team/initiative selection) override this.

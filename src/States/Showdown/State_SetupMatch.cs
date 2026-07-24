@@ -85,6 +85,11 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 		}
 	}
 
+	public override IState GetNextState()
+	{
+		return new StateLinkRacers(StateMachine);
+	}
+
 	private void SendServerMessage()
 	{
 		// ServerMessage showing the team selection
@@ -192,10 +197,5 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 		ChatMessage.SendCustomMessage(
 			$"Teams confirmed:<br>{_selectedTeamA.GetFullColoredTagAndName()} vs {_selectedTeamB.GetFullColoredTagAndName()}.");
 		Showdown.Match = new Match(_selectedTeamA, _selectedTeamB);
-	}
-
-	public override IState GetNextState()
-	{
-		return new StateLinkRacers(StateMachine);
 	}
 }

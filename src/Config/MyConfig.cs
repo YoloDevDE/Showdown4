@@ -14,6 +14,7 @@ public static class MyConfig
 	public static ConfigEntry<string> TeamFileConfig;
 
 	public static ConfigEntry<int> SeasonNumberConfig;
+	public static ConfigEntry<int> TutorialStepDurationConfig;
 	public static ConfigEntry<int> DraftTimeConfig;
 	public static ConfigEntry<int> DraftCompleteCountdownConfig;
 	public static ConfigEntry<int> RandomSelectionSpinLoopsConfig;

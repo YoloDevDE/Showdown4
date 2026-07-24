@@ -39,6 +39,24 @@ public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stat
 		InvokeFinish();
 	}
 
+	public override void OnRoundEnded()
+	{
+		DraftAction nextLevel = Match.CurrentDraft.PickedLevels[0];
+		ChatMessage.SendCustomMessage(
+			new ChatMessage.Builder().ClearChat()
+				.DashedLine().NewLine()
+				.TextLine(
+					$"Starting <b>{(Match.RoundCounter() + 1 == 3 ? "Tiebreaker" : $"Round {Match.RoundCounter() + 1}")}</b>")
+				.NewLine()
+				.DashedLine().NewLine()
+				.TextLine($"Level <{ShowdownColors.Cyan}>'{nextLevel.Level.Name}'</color>").NewLine()
+				.TextLine($"picked by {nextLevel.Team.GetColoredTag()}").NewLine()
+				.DashedLine().NewLine()
+				.TextLine($"{Match.Score()}")
+				.Build().Message
+		);
+	}
+
 	// Update the server message with the countdown time
 	private void UpdateCountdownMessage(int secondsRemaining)
 	{
@@ -65,23 +83,5 @@ public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stat
 	private void SkipToNextLevel()
 	{
 		ChatCommandService.SkipToLevel(0); // Move to the next level
-	}
-
-	public override void OnRoundEnded()
-	{
-		DraftAction nextLevel = Match.CurrentDraft.PickedLevels[0];
-		ChatMessage.SendCustomMessage(
-			new ChatMessage.Builder().ClearChat()
-				.DashedLine().NewLine()
-				.TextLine(
-					$"Starting <b>{(Match.RoundCounter() + 1 == 3 ? "Tiebreaker" : $"Round {Match.RoundCounter() + 1}")}</b>")
-				.NewLine()
-				.DashedLine().NewLine()
-				.TextLine($"Level <{ShowdownColors.Cyan}>'{nextLevel.Level.Name}'</color>").NewLine()
-				.TextLine($"picked by {nextLevel.Team.GetColoredTag()}").NewLine()
-				.DashedLine().NewLine()
-				.TextLine($"{Match.Score()}")
-				.Build().Message
-		);
 	}
 }

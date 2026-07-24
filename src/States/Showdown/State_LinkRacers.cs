@@ -15,12 +15,6 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 	private Team TeamA => Match.TeamA;
 	private Team TeamB => Match.TeamB;
 
-	// Index shown to players in front of each team's name (1-based) so '!link 1'/'!link 2' works.
-	private static int GetTeamNumber(Team team, Team teamA, Team teamB)
-	{
-		return team == teamA ? 1 : 2;
-	}
-
 	public override void Enter()
 	{
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
@@ -35,7 +29,7 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	public override IState GetNextState()
 	{
-		return new StateSelectInitiative(StateMachine);
+		return new StateTutorial(StateMachine);
 	}
 
 	public override void OnPlayerJoined(ZeepkistNetworkPlayer player)
@@ -47,6 +41,66 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 		AutoLinkPresentRacers();
 		CheckIfRacersAreLinked();
+	}
+
+	public override void OnLinkRacer(ulong steamId, string arguments)
+	{
+		// Once the countdown to the next state is running, no more (un)linking is accepted.
+		if (_isCountdownRunning)
+		{
+			return;
+		}
+
+		Team targetTeam = ResolveTeamFromArgument(arguments);
+		if (targetTeam == null)
+		{
+			ChatMessage.SendCustomMessage(
+				$"Usage: {ShowdownColors.Command("!link <1|2|TAG>")}, e.g. " +
+				$"{ShowdownColors.Command("!link 1")}, " +
+				$"{ShowdownColors.Command("!link #2")} or " +
+				$"{ShowdownColors.Command($"!link {TeamA.Tag}")}.");
+			return;
+		}
+
+		if (targetTeam.Racers.Count >= targetTeam.MaxTeamSize)
+		{
+			ChatMessage.SendCustomMessage($"Team {targetTeam.GetColoredTag()} is already full.");
+			return;
+		}
+
+		// A player can only be part of one team - remove them from the other team first.
+		TeamA.RemoveRacer(steamId);
+		TeamB.RemoveRacer(steamId);
+
+		string steamName = ZeepkistNetworkService.GetSteamNameFromSteamId(steamId);
+		Racer racer = targetTeam.ExpectedRacers.FirstOrDefault(r => r.SteamId == steamId) ??
+		              new Racer(steamId, steamName);
+		targetTeam.AddRacer(racer); // Add racer to the requested team
+
+		CheckIfRacersAreLinked(); // Check again after each link
+	}
+
+	// Handles '!unlink', which removes the calling player from whichever team they were on.
+	// Example: a player types '!unlink' to leave their current team without joining another one.
+	public override void OnUnlinkRacer(ulong steamId)
+	{
+		// Once the countdown to the next state is running, no more (un)linking is accepted.
+		if (_isCountdownRunning)
+		{
+			return;
+		}
+
+		TeamA.RemoveRacer(steamId);
+		TeamB.RemoveRacer(steamId);
+
+
+		CheckIfRacersAreLinked();
+	}
+
+	// Index shown to players in front of each team's name (1-based) so '!link 1'/'!link 2' works.
+	private static int GetTeamNumber(Team team, Team teamA, Team teamB)
+	{
+		return team == teamA ? 1 : 2;
 	}
 
 	// Teams.json already knows which SteamIds belong to a team. As soon as one of these players
@@ -117,43 +171,6 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 		msg.Send();
 	}
 
-	public override void OnLinkRacer(ulong steamId, string arguments)
-	{
-		// Once the countdown to the next state is running, no more (un)linking is accepted.
-		if (_isCountdownRunning)
-		{
-			return;
-		}
-
-		Team targetTeam = ResolveTeamFromArgument(arguments);
-		if (targetTeam == null)
-		{
-			ChatMessage.SendCustomMessage(
-				$"Usage: {ShowdownColors.Command("!link <1|2|TAG>")}, e.g. " +
-				$"{ShowdownColors.Command("!link 1")}, " +
-				$"{ShowdownColors.Command("!link #2")} or " +
-				$"{ShowdownColors.Command($"!link {TeamA.Tag}")}.");
-			return;
-		}
-
-		if (targetTeam.Racers.Count >= targetTeam.MaxTeamSize)
-		{
-			ChatMessage.SendCustomMessage($"Team {targetTeam.GetColoredTag()} is already full.");
-			return;
-		}
-
-		// A player can only be part of one team - remove them from the other team first.
-		TeamA.RemoveRacer(steamId);
-		TeamB.RemoveRacer(steamId);
-
-		string steamName = ZeepkistNetworkService.GetSteamNameFromSteamId(steamId);
-		Racer racer = targetTeam.ExpectedRacers.FirstOrDefault(r => r.SteamId == steamId) ??
-		              new Racer(steamId, steamName);
-		targetTeam.AddRacer(racer); // Add racer to the requested team
-
-		CheckIfRacersAreLinked(); // Check again after each link
-	}
-
 	// Resolves the team targeted by '!link'. Accepts a 1-based team number (optionally prefixed
 	// with '#', e.g. '1' / '#1') or the team tag (optionally wrapped in brackets, e.g. 'TAG' / '[TAG]').
 	private Team ResolveTeamFromArgument(string arguments)
@@ -195,23 +212,6 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 		}
 
 		return null;
-	}
-
-	// Handles '!unlink', which removes the calling player from whichever team they were on.
-	// Example: a player types '!unlink' to leave their current team without joining another one.
-	public override void OnUnlinkRacer(ulong steamId)
-	{
-		// Once the countdown to the next state is running, no more (un)linking is accepted.
-		if (_isCountdownRunning)
-		{
-			return;
-		}
-
-		TeamA.RemoveRacer(steamId);
-		TeamB.RemoveRacer(steamId);
-
-
-		CheckIfRacersAreLinked();
 	}
 
 	private ServerMessage ServerMessageLinkedRacers()

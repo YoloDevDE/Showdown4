@@ -9,9 +9,11 @@ using ZeepkistClient;
 
 namespace Showdown4.States.Showdown;
 
-// Ready check that runs before the very first draft (Draftphase I) only. It shows how the
-// draft works (pick/ban/pass) and who has initiative, so players know what to expect before
-// the draft actually starts. Draftphase II skips this state entirely (see ShowdownStateMachine).
+// Ready check that runs before the very first draft (Draftphase I) only, right after
+// StatePreDraft announced initiative. It shows how the draft works (pick/ban/pass) and who has
+// initiative, so players know what to expect before the draft actually starts. Once everyone is
+// ready, a short countdown plays and StateDrafting begins. Draftphase II skips this state
+// entirely (see StatePreDraft / StatePostRacing).
 public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private HashSet<ulong> _readyPlayers;
@@ -34,9 +36,31 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 			OnTimeout));
 	}
 
+	public override IState GetNextState()
+	{
+		return new StateDrafting(stateMachine);
+	}
+
 	public override void Exit()
 	{
 		_stopped = true; // Prevents a still-running countdown from acting once we left this state
+	}
+
+	public override void OnReady(ulong steamId, string arguments)
+	{
+		if (!_readyPlayers.Add(steamId))
+		{
+			return;
+		}
+
+		if (_readyPlayers.Count >= ZeepkistNetwork.Players.Count)
+		{
+			ConfirmReady();
+		}
+		else
+		{
+			SendServerMessage();
+		}
 	}
 
 	private void OnTick(int remainingSeconds)
@@ -59,23 +83,6 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 
 		ChatMessage.SendCustomMessage("Ready check timed out!");
 		InvokeFinish();
-	}
-
-	public override void OnReady(ulong steamId, string arguments)
-	{
-		if (!_readyPlayers.Contains(steamId))
-		{
-			_readyPlayers.Add(steamId);
-
-			if (_readyPlayers.Count >= ZeepkistNetwork.Players.Count)
-			{
-				ConfirmReady();
-			}
-			else
-			{
-				SendServerMessage();
-			}
-		}
 	}
 
 	private void SendServerMessage()
