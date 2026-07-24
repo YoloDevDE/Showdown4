@@ -35,6 +35,11 @@ public class StateDraftCompleted(IStateMachine stateMachine) : ShowdownStateBase
 	{
 	}
 
+	public override IState GetNextState()
+	{
+		return new StatePreRacing(StateMachine);
+	}
+
 	private void Render()
 	{
 		new ServerMessage().ShowdownHeader(true)

@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using Showdown4.Managers;
-using Showdown4.States.Showdown;
 using Debug = UnityEngine.Debug;
 
 namespace Showdown4.States;
@@ -13,32 +11,10 @@ public interface IStateMachine
 	[NotNull] IState InitialState { get; }
 	[NotNull] IState FinalState { get; }
 
-	protected List<ITransition> Transitions { get; }
-
-	// Overload that accepts two states and defaults condition to true
-	public IStateMachine AddTransition(IState from, IState to)
-	{
-		return AddTransition(new Transition(from, to, () => true));
-	}
-
-	// Overload that accepts two states with a condition
-	public IStateMachine AddTransition(IState from, IState to, Func<bool> condition)
-	{
-		return AddTransition(new Transition(from, to, condition));
-	}
-
-	// Original method that accepts an ITransition object
-	public IStateMachine AddTransition(ITransition transition)
-	{
-		Transitions.Add(transition);
-		return this;
-	}
-
 	event Action StateMachineFinished;
 
 	protected void TransitionTo([NotNull] IState nextState)
 	{
-		InitTransitions();
 		if (CurrentState != null)
 		{
 			CurrentState.SubStateMachine?.Dispose();
@@ -61,24 +37,18 @@ public interface IStateMachine
 		CurrentState.SubStateMachine?.Start();
 	}
 
+	// Each state decides its own successor via GetNextState() - no central transition table.
 	private void OnCurrentStateFinished()
 	{
-		foreach (ITransition transition in Transitions)
+		IState nextState = CurrentState.GetNextState();
+		if (nextState == null)
 		{
-			if (transition.From.GetType().Name != CurrentState.GetType().Name || !transition.CanTransition())
-			{
-				continue;
-			}
-
-			Debug.Log(
-				$"Current State: {CurrentState.GetType().Name}, Transitioning to: {transition.To.GetType().Name}");
-
-			transition.OnTransition();
-			TransitionTo(transition.To);
+			Debug.LogError($"No next state defined for the current state: {CurrentState.GetType().Name}");
 			return;
 		}
 
-		Debug.LogError($"No valid transition found for the current state: {CurrentState.GetType().Name}");
+		Debug.Log($"Current State: {CurrentState.GetType().Name}, Transitioning to: {nextState.GetType().Name}");
+		TransitionTo(nextState);
 	}
 
 	void Dispose()
@@ -103,7 +73,6 @@ public interface IStateMachine
 
 	void Start()
 	{
-		InitTransitions();
 		SubscribeToEvents();
 		TransitionTo(InitialState);
 	}
@@ -118,6 +87,5 @@ public interface IStateMachine
 	{
 	}
 
-	void InitTransitions();
 	void InvokeFinish();
 }

@@ -82,6 +82,11 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		_resetCoroutines.Clear();
 	}
 
+	public override IState GetNextState()
+	{
+		return new StatePostRacing(StateMachine);
+	}
+
 	public override void OnPlayerJoined(ZeepkistNetworkPlayer player)
 	{
 		IEnumerable<Racer> allRacers = _currentRound.TeamA.Racers.Concat(_currentRound.TeamB.Racers);

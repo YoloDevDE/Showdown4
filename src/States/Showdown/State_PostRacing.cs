@@ -66,4 +66,19 @@ internal class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(s
 	{
 		InvokeFinish();
 	}
+
+	public override IState GetNextState()
+	{
+		if (Match.TeamA.Wins >= 2 || Match.TeamB.Wins >= 2)
+		{
+			return new StateMatchEnd(StateMachine);
+		}
+
+		if (Match.RoundCounter() < 2)
+		{
+			return new StateRacing(StateMachine);
+		}
+
+		return new StatePreDraft(StateMachine);
+	}
 }

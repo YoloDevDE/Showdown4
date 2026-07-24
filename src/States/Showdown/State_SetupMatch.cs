@@ -193,4 +193,9 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 			$"Teams confirmed:<br>{_selectedTeamA.GetFullColoredTagAndName()} vs {_selectedTeamB.GetFullColoredTagAndName()}.");
 		Showdown.Match = new Match(_selectedTeamA, _selectedTeamB);
 	}
+
+	public override IState GetNextState()
+	{
+		return new StateLinkRacers(StateMachine);
+	}
 }

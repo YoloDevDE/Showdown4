@@ -33,6 +33,11 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 	{
 	}
 
+	public override IState GetNextState()
+	{
+		return new StateSelectInitiative(StateMachine);
+	}
+
 	public override void OnPlayerJoined(ZeepkistNetworkPlayer player)
 	{
 		if (_isCountdownRunning)

@@ -11,8 +11,6 @@ public class Round(Team teamA, Team teamB)
 	public readonly Team TeamB = teamB;
 	public List<Team> TeamsSortedByWinAsc;
 
-	public Team PickedLevel { get; }
-
 	public bool IsRoundOver { get; private set; } = false;
 
 

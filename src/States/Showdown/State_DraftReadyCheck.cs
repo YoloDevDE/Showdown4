@@ -16,6 +16,7 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 {
 	private HashSet<ulong> _readyPlayers;
 	private int _remainingTime;
+	private bool _stopped;
 
 	private Team TeamA => Match.TeamA;
 	private Team TeamB => Match.TeamB;
@@ -24,32 +25,40 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 	public override void Enter()
 	{
 		_readyPlayers = new HashSet<ulong>();
-		_remainingTime = MyConfig.ReadyCheckDurationConfig.Value;
+		_stopped = false;
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 
-		CoroutineManager.Instance.StartExternalCoroutine(TimerCoroutine());
+		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
+			MyConfig.ReadyCheckDurationConfig.Value,
+			OnTick,
+			OnTimeout));
 	}
 
 	public override void Exit()
 	{
-		_remainingTime = 0; // This will cause the timer coroutine to stop
+		_stopped = true; // Prevents a still-running countdown from acting once we left this state
 	}
 
-	private IEnumerator TimerCoroutine()
+	private void OnTick(int remainingSeconds)
 	{
-		while (_remainingTime > 0)
+		if (_stopped)
 		{
-			SendServerMessage();
-			yield return new WaitForSeconds(1);
-			_remainingTime--;
-
-			if (_remainingTime <= 0)
-			{
-				ChatMessage.SendCustomMessage("Ready check timed out!");
-				InvokeFinish();
-				yield break;
-			}
+			return;
 		}
+
+		_remainingTime = remainingSeconds;
+		SendServerMessage();
+	}
+
+	private void OnTimeout()
+	{
+		if (_stopped)
+		{
+			return;
+		}
+
+		ChatMessage.SendCustomMessage("Ready check timed out!");
+		InvokeFinish();
 	}
 
 	public override void OnReady(ulong steamId, string arguments)
@@ -134,7 +143,7 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 
 	private void ConfirmReady()
 	{
-		_remainingTime = 0;
+		_stopped = true; // Stops the ready-check countdown, the ready countdown below takes over
 		ChatMessage.SendCustomMessage("All players are ready! Let the draft begin!");
 		CoroutineManager.Instance.StartExternalCoroutine(ReadyCountdown());
 	}

@@ -34,6 +34,11 @@ public class StateDraftIncomplete(IStateMachine stateMachine) : ShowdownStateBas
 	{
 	}
 
+	public override IState GetNextState()
+	{
+		return new StateDraftCompleted(StateMachine);
+	}
+
 	private IEnumerator RandomSelectionAnimation()
 	{
 		float delay = 0.10f;

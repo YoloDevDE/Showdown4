@@ -27,6 +27,13 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 	{
 	}
 
+	public override IState GetNextState()
+	{
+		return Match.IsDraftphaseTwo
+			? new StateDrafting(StateMachine)
+			: new StateDraftReadyCheck(StateMachine);
+	}
+
 	private IEnumerator IntroSequence()
 	{
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);

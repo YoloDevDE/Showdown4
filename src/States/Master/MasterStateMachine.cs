@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Showdown4.Commands;
 
 namespace Showdown4.States.Master;
@@ -12,18 +11,7 @@ public class MasterStateMachine : IStateMachine
 	public IState InitialState => new StateMasterOff(this);
 	public IState FinalState => new StateMasterOff(this);
 
-	public List<ITransition> Transitions { get; set; } = new();
 	public event Action StateMachineFinished;
-
-	public void InitTransitions()
-	{
-		IStateMachine stateMachine = this;
-		Transitions = new List<ITransition>();
-		// Add transitions with new instances directly
-		stateMachine
-			.AddTransition(new StateMasterOff(this), new StateMasterOn(this))
-			.AddTransition(new StateMasterOn(this), new StateMasterOff(this));
-	}
 
 	public void InvokeFinish()
 	{

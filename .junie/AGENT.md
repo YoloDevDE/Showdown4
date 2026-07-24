@@ -1,139 +1,69 @@
-# Decompiled Zeepkist
+# Zeepkist Modding — AGENT.md
 
-C:\Users\TEute\Desktop\Projects\Zeepkist Mods\_Zeepkist
+This file gives the agent background knowledge about the Zeepkist modding ecosystem and its dependencies. It
+intentionally contains no project-specific architecture — that belongs in a separate, project-local AGENT.md (see note
+at the bottom).
 
-# ZeepSDK URL
+## Language Policy
 
-## Github
+Everything in this project is done in English (code, comments, commit messages). The user communicates with the agent in
+German.
 
-https://github.com/donderjoekel/ZeepSDK
+## Zeepkist & Dependencies — Reference Links
 
-https://donderjoekel.github.io/ZeepSDK/api/index.html
+### Zeepkist (the game)
 
-### GUI
+- Decompiled game assemblies: `C:\Users\TEute\Desktop\Projects\Zeepkist Mods\_Zeepkist` — fill in per machine, not
+  universal.
 
-https://github.com/Thundernerd/Imui/tree/feat/zeepkist
+### ZeepSDK (main modding SDK)
 
-This one is for the top toolbar https://donderjoekel.github.io/ZeepSDK/articles/zeep-toolbar-drawer.html
+- GitHub: https://github.com/donderjoekel/ZeepSDK
+- API docs: https://donderjoekel.github.io/ZeepSDK/api/index.html
+- GUI toolkit (Imui, Zeepkist-flavored fork): https://github.com/Thundernerd/Imui/tree/feat/zeepkist
+- Toolbar Drawer article: https://donderjoekel.github.io/ZeepSDK/articles/zeep-toolbar-drawer.html
+- GUI Drawer article: https://donderjoekel.github.io/ZeepSDK/articles/zeep-gui-drawer.html
 
-https://donderjoekel.github.io/ZeepSDK/articles/zeep-gui-drawer.html
+### BepInEx (mod loader/patcher framework)
 
-# Meine Mods
+- GitHub: https://github.com/BepInEx/BepInEx
+- Docs: https://docs.bepinex.dev
+- Plugin creation walkthrough & Harmony usage: linked from the docs index above
 
-C:\Users\TEute\Desktop\Projects\Zeepkist Mods
+### HarmonyLib (runtime method patching, ships with BepInEx)
 
-# Language Policy
+- GitHub: https://github.com/pardeike/Harmony
+- Docs: https://harmony.pardeike.net
+- Utilities (AccessTools, Traverse, etc.): https://harmony.pardeike.net/articles/utilities.html
 
-Everything in this project is done in English. However, the user communicates with the agent in German.
+### Other Zeepkist modders (reference for idiomatic SDK/API usage)
 
-# Zeepkist Modding Knowledge
+Useful when unsure how to use a ZeepSDK feature — check whether an established modder already solved it:
 
-Detailed documentation can be found in [README.md](C:\Users\TEute\Desktop\Projects\Zeepkist%20Modding%20Docs\README.md).
+- metalted — prolific modder, many mods under the `com.metalted.zeepkist.*` namespace: https://github.com/metalted
+- donderjoekel — ZeepSDK author, also has other Zeepkist projects: https://github.com/donderjoekel
+- Kilandor (Jason Booth) — several mods, some forked from metalted's work: https://github.com/Kilandor
+- Zeepkist community org (backend/API/tooling, less relevant for in-game GUI): https://github.com/zeepkist
+- Search GitHub for "<name> zeepkist" for anyone not listed here — don't guess URLs.
 
-## Critical API Signatures (ZeepSDK)
+Workflow when stuck on SDK usage: web-search `<modder> zeepkist github <feature>`, open the matching repo, and compare
+against the approach you're about to take. A pattern that shows up in more than one of these repos is a stronger signal
+of "the" idiomatic way than a single example.
 
-* **RacingApi.CrossedFinishLine**: `delegate void CrossedFinishLineDelegate(float time)`
-* **RacingApi.PassedCheckpoint**: `delegate void PassedCheckpointDelegate(float time)`
-* **RacingApi.Crashed**: `delegate void CrashedDelegate(CrashReason reason)`
-* **RacingApi.LevelLoaded**: `delegate void LevelLoadedDelegate()`
-* **RacingApi.RoundStarted**: `delegate void RoundStartedDelegate()`
-* **RacingApi.RoundEnded**: `delegate void RoundEndedDelegate()`
-* **RacingApi.PlayerSpawned**: `delegate void PlayerSpawnedDelegate()`
-* **MultiplayerApi.PlayerJoined**: `delegate void PlayerJoinedDelegate(ZeepkistNetworkPlayer player)`
-* **MultiplayerApi.CreatedRoom**: `delegate void CreatedRoomDelegate()`
-* **LevelEditorApi.EnteredLevelEditor**: `delegate void EnteredLevelEditorDelegate()`
-* **LevelEditorApi.EnteredTestMode**: `delegate void EnteredTestModeDelegate()`
+---
 
-# Showdown4 Project Knowledge
+## What a Good Project AGENT.md Should Add (checklist, not filled in here)
 
-This section captures architecture knowledge and conventions worked out with the user, so future changes stay
-consistent.
+This base file only covers external knowledge. Each individual project should have its own AGENT.md (or a
+project-specific section) that adds, at minimum:
 
-## Building & Verifying
+- **Build & verify command (s)** — the exact command to compile/check the project, and any known false-positive errors
+  to ignore (e.g. a PostBuild step that fails while the game is running).
+- **Architecture overview** — the 4–6 sentence mental model of how the major pieces fit together.
+- **Conventions** — naming, where shared/common logic lives, how config values are declared and bound.
+- **Ground rules agreed with the user** — e.g. "refactors are behavior-neutral by default," anything the user has
+  explicitly corrected the agent on before.
+- **Known fragilities** — things that look fine but silently break (string-based type comparisons, manual event
+  unsubscription, etc.).
 
-* **Do not use the full `build` target to verify code.** The project has a PostBuild target that copies `Showdown4.dll`
-  into the Steam Zeepkist BepInEx plugins folder. While the game is running this fails with "access denied" — that error
-  is **not** code-related.
-* **To verify compilation, use:** `dotnet build Showdown4.csproj -t:Compile -v:minimal`. This compiles both production
-  and test code without the PostBuild copy step.
-* Always aim for 0 errors / 0 warnings and keep changed files lint-clean.
-* Target framework: `net472`, C# 14.
-
-## State Machine Architecture
-
-* Located in `src/States`. Two machines: the **Master** state machine (`src/States/Master`, e.g. `StateMasterOn`/
-  `StateMasterOff`) and the **Showdown** state machine (`src/States/Showdown`).
-* `ShowdownStateMachine` is a `MonoBehaviour`. It is created via `GameObject.AddComponent` (see `StateMasterOn.Enter()`)
-  so Unity drives its `Update()` loop, which forwards keyboard input to `CurrentState.HandleInput()`. States implement
-  `IState` (`Enter`/`Exit` + `Finished` event + `InvokeFinish()`) and override `HandleInput()` when they need input.
-* **`ShowdownStateBase`** (`src/States/Showdown/ShowdownStateBase.cs`) is the abstract base for every Showdown state. It
-  centralizes the boilerplate that used to be copy-pasted: storing the `StateMachine`, exposing strongly typed helpers
-  `Showdown`, `Match`, `CurrentDraft`, the `Finished` event and `InvokeFinish()`, and a virtual `HandleInput()`. **New
-  Showdown states should inherit from it** instead of re-implementing the boilerplate. Always call `InvokeFinish()`,
-  never `Finished?.Invoke()` directly (except in Master states that don't derive from the base).
-* Transitions are declared in `ShowdownStateMachine.InitTransitions()`.
-
-### State lifecycle: no `Execute()` (removed)
-
-* `Execute()` has been **removed** from the state lifecycle. `TransitionTo` now calls `Enter()` and then
-  `SubStateMachine?.Start()` — there is no separate `Execute` phase. Per-frame input is delegated by the
-  `ShowdownStateMachine.Update()` MonoBehaviour hook to `CurrentState.HandleInput()` (the old separate `StateManager`
-  component has been removed).
-* One-time setup + the first message now live entirely in `Enter()`. For `StateMasterOn`, the `SubStateMachine`
-  must still be created inside `Enter()` because `TransitionTo` starts it right after `Enter()`.
-* States that redraw on timer/command callbacks now use an explicit private render method instead of re-calling the
-  lifecycle: `Render()` (`StateDrafting`, `StateDraftIncomplete`, `StateDraftCompleted`, `StateReadyCheck`) or an
-  existing message builder such as `SendServerMessage()` / `ServerMessageThing()` (`StateMatchEnd`, `StateSetupMatch`,
-  `StateSelectInitiative`). States whose first render must happen immediately call that method at the end of `Enter()`.
-* Other fragilities to keep in mind: transitions compare `GetType().Name` strings (fragile against renames — prefer
-  `Type`/`is`), and `InitTransitions()` rebuilds the list and `new StateX(this)` on every transition.
-
-## Configuration (`MyConfig`)
-
-* All tunable values live in `MyConfig.cs` as BepInEx `ConfigEntry<T>` fields (season number,
-  draft/ready-check/race/match-end timings, spin loops, lobby time). They are bound manually in `MyConfig.Register(...)`
-  and exposed as `FooConfig.Value`.
-* Values are read directly via `MyConfig.*Config.Value`. The config file is user-editable, so raw values could be
-  negative/zero/huge. Instead of a hand-written clamping layer, each numeric entry is bound with a BepInEx
-  `AcceptableValueRange<int>` (via `ConfigDescription`) so BepInEx keeps the value inside safe bounds automatically
-  (e.g. `SeasonNumber` 1-3999, `DraftTime` 1-3600). Season number is 1-3999 because it is rendered as a Roman numeral.
-* When adding a new tunable value: declare a `public static ConfigEntry<T> FooConfig;` field in `MyConfig.cs`, bind it
-  in
-  `Register(...)` with a `ConfigDescription` + `AcceptableValueRange` when it needs bounds, and consume
-  `MyConfig.FooConfig.Value` from the states.
-
-## Draft Flow Conventions
-
-* Draft rules are owned by the `Draft` entity (`PickLevel`/`BanLevel` with validation) — states should go through it,
-  not mutate `PickedLevels` directly.
-* The draft is split across four states: **`StatePreDraft`** (intro animation + step-by-step pick/ban/pass instructions,
-  runs before every draft), **`StateDrafting`** (normal pick/ban flow), **`StateDraftIncomplete`**
-  (random-map roulette when the draft ends with no picks and more than one map open) and **`StateDraftCompleted`**
-  (locks in the playlist, shows the "complete" banner + countdown, then hands over to the ready check).
-  `HandleDraftComplete()` in `StateDrafting` decides the transition; the state graph is
-  `SelectInitiative/PostRacing -> PreDraft -> Drafting -> (DraftIncomplete) -> DraftCompleted -> ReadyCheck`.
-* **Auto-pick of the last map:** when only one level remains after the last action, `StateDrafting` auto-picks it with a
-  short visual reveal countdown (`MyConfig.AutoPickRevealCountdownConfig.Value`, default 3s) before locking it in.
-* **No `/sd random` command:** the random selection for an incomplete draft now runs automatically in
-  `StateDraftIncomplete.Enter()` instead of being triggered by a chat command.
-* **`!pass` command** (`CommandPass`) hands the current team's action over to the other team (behaves like a voluntary
-  turn timeout) via the `OnPass` hook on `StateDrafting`.
-* Domain helpers live on the entities: `Match.IsDraftphaseTwo`, `Match.DraftphaseName`, `Team.CreateShowdownTeam()`.
-
-## UI / Formatting Conventions
-
-* **Colors are centralized in `ShowdownColors`** — do not hardcode hex literals (`#00ff00`, etc.) in states; use the
-  palette (`Green`, `Red`, `Cyan`, `Yellow`, `Gold`, `White`).
-* Shared message layout lives in `ShowdownMessages` (e.g. `AppendPickedMaps`, used by ReadyCheck and PreRacing) and
-  `ServerMessage`/`MessageFormatter`. `ServerMessage.ShowdownHeader` builds the Roman-numeral season header via
-  `ToRomanNumeral`.
-* Keep message-building/formatting out of the state lifecycle logic where possible.
-
-## Refactoring Ground Rules (as agreed with the user)
-
-* Refactors are **behavior-neutral by default** — keep messages, timings and public state signatures identical unless
-  the user explicitly asks to fix a bug.
-* Prefer reducing duplication by moving shared logic to the base class, `ShowdownColors`, `ShowdownMessages`, or the
-  domain entities (`Match`/`Team`/`Draft`).
-
-
+Keep it factual and current — remove notes once they're no longer true, don't let it grow into a changelog.

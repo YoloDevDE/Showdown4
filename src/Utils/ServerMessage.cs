@@ -23,9 +23,7 @@ public class ServerMessage(string alignment = "left")
 
 	public override string ToString()
 	{
-		string tmp = "<size=\"0%\">TestTestTest" +
-		             "</size>";
-		return $"{_command}{tmp}{_prefix}{_messageBuilder}{_suffix}";
+		return $"{_command}{_prefix}{_messageBuilder}{_suffix}";
 	}
 
 	// Changes the server message background color (e.g. used to briefly flash the message

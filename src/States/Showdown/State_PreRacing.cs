@@ -29,6 +29,11 @@ public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stat
 	{
 	}
 
+	public override IState GetNextState()
+	{
+		return new StateRacing(StateMachine);
+	}
+
 	public override void OnLevelLoaded()
 	{
 		InvokeFinish();

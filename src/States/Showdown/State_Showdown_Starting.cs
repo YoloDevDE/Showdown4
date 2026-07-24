@@ -2,7 +2,6 @@
 using Showdown4.Config;
 using Showdown4.Entities;
 using Showdown4.Managers;
-using ZeepSDK.Level;
 
 namespace Showdown4.States.Showdown;
 
@@ -14,9 +13,7 @@ public class StateShowdownStarting(IStateMachine stateMachine) : ShowdownStateBa
 		try
 		{
 			PlaylistManager.SetServerPlaylist(MyConfig.IntermissionLevelPlaylistNameConfig.Value);
-			if (!LevelApi.CurrentLevel.UID.Equals(
-				    PlaylistManager.GetLocalLevelsByPlaylistName(MyConfig.IntermissionLevelPlaylistNameConfig.Value)[0]
-					    .UID))
+			if (!PlaylistManager.IsOnIntermissionLevel())
 			{
 				tmp = "Skipping to HoF...";
 				ChatCommandService.SkipToLevel(0);
@@ -43,13 +40,18 @@ public class StateShowdownStarting(IStateMachine stateMachine) : ShowdownStateBa
 			Console.WriteLine(e);
 			throw;
 		}
-		finally
-		{
-			InvokeFinish();
-		}
+
+		InvokeFinish();
 	}
 
 	public override void Exit()
 	{
+	}
+
+	public override IState GetNextState()
+	{
+		return PlaylistManager.IsOnIntermissionLevel()
+			? new StateSetupMatch(StateMachine)
+			: new StateWaitingForHoF(StateMachine);
 	}
 }

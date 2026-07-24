@@ -23,6 +23,7 @@ public abstract class ShowdownStateBase(IStateMachine stateMachine) : IState
 
 	public abstract void Enter();
 	public abstract void Exit();
+	public abstract IState GetNextState();
 
 	// States that need keyboard input (e.g. team/initiative selection) override this.
 	public virtual void HandleInput()

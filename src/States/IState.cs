@@ -12,6 +12,10 @@ public interface IState
 	event Action Finished;
 	void Enter();
 
+	// Called once this state is finished, to determine which state comes next.
+	// Each state decides its own successor(s) instead of a central transition table.
+	IState GetNextState();
+
 	void HandleInput()
 	{
 	}

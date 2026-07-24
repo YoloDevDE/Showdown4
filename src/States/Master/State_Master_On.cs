@@ -40,6 +40,11 @@ public class StateMasterOn(IStateMachine stateMachine) : IState
 		}
 	}
 
+	public IState GetNextState()
+	{
+		return new StateMasterOff(StateMachine);
+	}
+
 	public void InvokeFinish()
 	{
 		Finished?.Invoke();

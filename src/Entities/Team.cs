@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace Showdown4.Entities;
 
@@ -66,35 +65,7 @@ public class Team(string name, string tag, string color)
 
 	public string GetNameWithTag()
 	{
-		// string shortName = GetStringCountNoRichTags(Name) > 48 ? $"{Name[..48]}..." : Name;
-		// return $"{GetTag()} {shortName}";
 		return $"{GetTag()} {Name}";
-	}
-
-	public int GetStringCountNoRichTags(string str)
-	{
-		int result = 0;
-		int openCount = 0;
-		foreach (char c in str)
-		{
-			switch (c)
-			{
-				case '<':
-					openCount++;
-					break;
-				case '>':
-					openCount--;
-					break;
-			}
-
-			if (openCount == 0)
-			{
-				result++;
-			}
-		}
-
-		Debug.Log($"String {str} has {result} characters");
-		return result;
 	}
 
 	public string GetFullNameWithTag()

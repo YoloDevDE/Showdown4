@@ -4,6 +4,7 @@ using System.Linq;
 using Showdown4.Config;
 using ZeepkistClient;
 using ZeepkistNetworking;
+using ZeepSDK.Level;
 using ZeepSDK.Multiplayer;
 using ZeepSDK.Playlist;
 
@@ -11,6 +12,16 @@ namespace Showdown4.Managers;
 
 public abstract class PlaylistManager
 {
+	/// <summary>
+	///     Whether the currently loaded level is the intermission level configured via
+	///     <see cref="MyConfig.IntermissionLevelPlaylistNameConfig" />.
+	/// </summary>
+	public static bool IsOnIntermissionLevel()
+	{
+		return LevelApi.CurrentLevel.UID.Equals(
+			GetLocalLevelsByPlaylistName(MyConfig.IntermissionLevelPlaylistNameConfig.Value)[0].UID);
+	}
+
 	public static void ResetPlaylist()
 	{
 		OnlineZeeplevel intermissionLevel =

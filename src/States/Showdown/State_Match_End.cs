@@ -66,6 +66,11 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 		// No extra cleanup required here
 	}
 
+	public override IState GetNextState()
+	{
+		return new StateWaitingForHoF(StateMachine);
+	}
+
 	private void UpdateCountdownMessage(int remainingTime)
 	{
 		_countdownTime = remainingTime;

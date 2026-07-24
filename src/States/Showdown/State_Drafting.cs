@@ -104,6 +104,13 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 	{
 	}
 
+	public override IState GetNextState()
+	{
+		return CurrentDraft.PickedLevels.Count == 0
+			? new StateDraftIncomplete(StateMachine)
+			: new StateDraftCompleted(StateMachine);
+	}
+
 	// Decides how a finished draft continues:
 	//  - exactly one map left and nothing picked yet -> Showdown auto-picks it (with visual feedback),
 	//    afterwards there is a pick, so the machine moves on to StateDraftCompleted.
