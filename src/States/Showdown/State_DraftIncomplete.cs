@@ -64,11 +64,13 @@ public class StateDraftIncomplete(IStateMachine stateMachine) : ShowdownStateBas
 
 		SelectRandomMap(AvailableMaps[selectedIndex]);
 
-		if (!_isSelectionDone)
+		if (_isSelectionDone)
 		{
-			_isSelectionDone = true;
-			InvokeFinish();
+			yield break;
 		}
+
+		_isSelectionDone = true;
+		InvokeFinish();
 	}
 
 	private void UpdateRandomSelectionMessage(int currentIndex)

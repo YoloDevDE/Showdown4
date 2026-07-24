@@ -29,9 +29,7 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	public override IState GetNextState()
 	{
-		return Match.IsDraftphaseTwo
-			? new StateDrafting(StateMachine)
-			: new StateDraftReadyCheck(StateMachine);
+		return new StateDrafting(StateMachine);
 	}
 
 	private IEnumerator IntroSequence()

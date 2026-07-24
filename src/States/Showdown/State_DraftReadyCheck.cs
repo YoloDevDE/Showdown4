@@ -38,7 +38,7 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 
 	public override IState GetNextState()
 	{
-		return new StateDrafting(stateMachine);
+		return new StatePreDraft(stateMachine);
 	}
 
 	public override void Exit()

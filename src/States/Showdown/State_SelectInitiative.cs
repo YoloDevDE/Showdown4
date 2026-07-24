@@ -34,7 +34,7 @@ public class StateSelectInitiative(IStateMachine stateMachine) : ShowdownStateBa
 
 	public override IState GetNextState()
 	{
-		return new StatePreDraft(StateMachine);
+		return new StateDraftReadyCheck(StateMachine);
 	}
 
 	private ServerMessage ServerMessageThing()

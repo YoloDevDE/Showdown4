@@ -51,6 +51,12 @@ public static class MyConfig
 				"The season number shown in the header and announcements (Roman numeral range).",
 				new AcceptableValueRange<int>(1, 3999)));
 
+		// Zero is fine (instant), negatives are not.
+		TutorialStepDurationConfig = configFile.Bind("Tutorial", "Tutorial Step Duration", 5,
+			new ConfigDescription(
+				"Seconds each tutorial step is displayed before moving on to the next.",
+				new AcceptableValueRange<int>(0, 3600)));
+
 		// A draft turn needs at least one second to be usable.
 		DraftTimeConfig = configFile.Bind("Draft", "Draft Time", 90,
 			new ConfigDescription(
