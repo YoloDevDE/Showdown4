@@ -18,6 +18,13 @@ public class Team(string name, string tag, string color)
 	public bool MissedDraft { get; set; } = false;
 	public List<Racer> Racers { get; set; } = new();
 
+	/// <summary>
+	///     The roster configured for this team in Teams.json (SteamId, name and qualification time).
+	///     Used by the team linking phase to automatically link players once they are detected in the
+	///     server, and to determine which team gets initiative.
+	/// </summary>
+	public List<Racer> ExpectedRacers { get; set; } = new();
+
 	public int MaxTeamSize { get; set; } = 2;
 
 	/// <summary>
@@ -27,6 +34,34 @@ public class Team(string name, string tag, string color)
 	public static Team CreateShowdownTeam()
 	{
 		return new Team("Showdown", "Showdown", "#ff0000");
+	}
+
+	/// <summary>
+	///     Builds a runtime Team from a Teams.json entry, preserving the configured roster
+	///     (<see cref="ExpectedRacers" />) and calculating the team's average qualification time.
+	/// </summary>
+	public static Team FromJson(TeamJsonEntry entry)
+	{
+		Team team = new(entry.Name, entry.Tag, entry.Color)
+		{
+			ExpectedRacers = (entry.Players ?? new List<TeamPlayerJsonEntry>())
+				.Select(player => new Racer(player.SteamId, player.Name)
+					{ QualificationTime = player.QualificationTime })
+				.ToList()
+		};
+
+		team.QualificationTime = team.GetAverageQualificationTime();
+		return team;
+	}
+
+	public double GetAverageQualificationTime()
+	{
+		return ExpectedRacers.Count > 0 ? ExpectedRacers.Average(racer => racer.QualificationTime) : 0;
+	}
+
+	public double GetCumulatedQualificationTime()
+	{
+		return ExpectedRacers.Sum(racer => racer.QualificationTime);
 	}
 
 	public string GetNameWithTag()

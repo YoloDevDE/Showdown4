@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Showdown4.Config;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using ZeepSDK.Multiplayer;

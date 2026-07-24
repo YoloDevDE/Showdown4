@@ -34,7 +34,9 @@ public class ChatMessage
 		{
 			string dash = "-";
 			int count = 16;
+			_chatMessage.Message += "<s>";
 			_chatMessage.Message += string.Concat(Enumerable.Repeat(dash, count));
+			_chatMessage.Message += "</s>";
 			return this;
 		}
 

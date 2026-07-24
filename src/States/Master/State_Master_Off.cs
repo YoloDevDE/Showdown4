@@ -1,4 +1,5 @@
 ﻿using System;
+using Showdown4.Config;
 using Showdown4.Utils;
 
 namespace Showdown4.States.Master;
@@ -31,6 +32,6 @@ public class StateMasterOff(IStateMachine stateMachine) : IState
 	{
 		Finished?.Invoke();
 
-		ToastMessenger.LogSuccess($"Season {MyConfig.Validated.SeasonNumber} started");
+		ToastMessenger.LogSuccess($"Season {MyConfig.SeasonNumberConfig.Value} started");
 	}
 }

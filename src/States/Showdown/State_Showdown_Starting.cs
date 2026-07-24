@@ -1,4 +1,5 @@
 ﻿using System;
+using Showdown4.Config;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using ZeepSDK.Level;
@@ -30,7 +31,7 @@ public class StateShowdownStarting(IStateMachine stateMachine) : ShowdownStateBa
 				.NewLine()
 				.DashedLine()
 				.NewLine()
-				.TextLine($"Showdown Season {MyConfig.Validated.SeasonNumber} started")
+				.TextLine($"Showdown Season {MyConfig.SeasonNumberConfig.Value} started")
 				.NewLine()
 				.DashedLine()
 				.NewLine()

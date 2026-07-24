@@ -66,7 +66,7 @@ public interface IState
 	{
 	}
 
-	void OnLinkRacer(ulong steamId)
+	void OnLinkRacer(ulong steamId, string arguments)
 	{
 	}
 

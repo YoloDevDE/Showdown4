@@ -1,4 +1,5 @@
-﻿using Showdown4.Entities;
+﻿using Showdown4.Config;
+using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 
@@ -15,13 +16,13 @@ public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stat
 
 		// Use the new CountdownTimer
 		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-			MyConfig.Validated.PreRaceCountdown, // Countdown duration
+			MyConfig.PreRaceCountdownConfig.Value, // Countdown duration
 			UpdateCountdownMessage, // Action on tick
 			SkipToNextLevel // Action on completion
 		));
 
 		// Set the lobby time (in seconds)
-		ChatCommandService.SetTime(MyConfig.Validated.LobbyTime);
+		ChatCommandService.SetTime(MyConfig.LobbyTimeConfig.Value);
 	}
 
 	public override void Exit()

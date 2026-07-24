@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using Showdown4.Config;
 using ZeepSDK.Chat;
 
 namespace Showdown4.Utils;
@@ -25,6 +26,15 @@ public class ServerMessage(string alignment = "left")
 		string tmp = "<size=\"0%\">TestTestTest" +
 		             "</size>";
 		return $"{_command}{tmp}{_prefix}{_messageBuilder}{_suffix}";
+	}
+
+	// Changes the server message background color (e.g. used to briefly flash the message
+	// yellow when a pick is made). Keeps the "duration 0" part intact, i.e. the message stays
+	// until the next Send() call.
+	public ServerMessage BackgroundColor(string color)
+	{
+		_command = $"/servermessage {color} 0 ";
+		return this;
 	}
 
 	// Add a line with one or more blocks and optional line-wide formatting
@@ -110,7 +120,7 @@ public class ServerMessage(string alignment = "left")
 
 	public ServerMessage ShowdownHeader(bool inline = false, string alignment = "left", int size = 40)
 	{
-		string season = ToRomanNumeral(MyConfig.Validated.SeasonNumber);
+		string season = ToRomanNumeral(MyConfig.SeasonNumberConfig.Value);
 		Action<LineBuilder> headerBuilder = line => line
 			.AddBlockNoSpace("<br>", b => b.Size(0))
 			.AddBlockNoSpace("Showdown ", b => b.Gradients("#ffffff", "#aaaaaa", "#cccccc", "#ffffff"))
@@ -436,8 +446,15 @@ public class ServerMessage(string alignment = "left")
 
 		public BlockBuilder Mark(string color)
 		{
-			_contentBuilder.Insert(0, $"<mark={color}>").Append("</color>");
+			_contentBuilder.Insert(0, $"<mark={color}>").Append("</mark>");
 			return this;
+		}
+
+		// Standard styling applied to all chat command references (e.g. '!link'):
+		// cyan, italic and a faint highlight so commands are instantly recognizable everywhere.
+		public BlockBuilder Command()
+		{
+			return Color(ShowdownColors.Cyan).Italic().Mark(ShowdownColors.CommandMark);
 		}
 
 		public BlockBuilder Size(int size)

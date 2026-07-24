@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Showdown4.Config;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
@@ -38,7 +39,7 @@ public class StateDraftIncomplete(IStateMachine stateMachine) : ShowdownStateBas
 		float delay = 0.10f;
 		int selectedIndex = 0;
 
-		int spinLoops = MyConfig.Validated.RandomSelectionSpinLoops;
+		int spinLoops = MyConfig.RandomSelectionSpinLoopsConfig.Value;
 		for (int i = 0; i < spinLoops; i++)
 		{
 			if (_random.Next(10) == 0) // 10% chance to reverse direction

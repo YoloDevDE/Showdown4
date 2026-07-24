@@ -1,4 +1,5 @@
-﻿using Showdown4.Entities;
+﻿using Showdown4.Config;
+using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
 
@@ -7,7 +8,7 @@ namespace Showdown4.States.Showdown;
 public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private bool _countdownStarted;
-	private int _countdownTime = MyConfig.Validated.MatchEndKickCountdown; // Countdown duration in seconds
+	private int _countdownTime = MyConfig.MatchEndKickCountdownConfig.Value; // Countdown duration in seconds
 
 	public override void Enter()
 	{

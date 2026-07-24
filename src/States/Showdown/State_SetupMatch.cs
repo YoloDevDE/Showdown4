@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Showdown4.Config;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
@@ -19,7 +21,9 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 	public override void Enter()
 	{
 		TeamData teamData = Plugin.Storage.LoadFromJson<TeamData>(MyConfig.TeamFileConfig.Value);
-		_teams = teamData?.Teams ?? new List<Team>();
+		_teams = teamData?.Teams?.Select(Team.FromJson)
+			.OrderBy(team => team.GetAverageQualificationTime())
+			.ToList() ?? new List<Team>();
 
 		_currentSelectionIndex = 0;
 		_selectedTeamA = null;
@@ -32,13 +36,11 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 			ChatMessage.SendCustomMessage("No teams found in the JSON file.");
 		}
 
-		StateManager.Instance.SetCurrentState(this);
 		SendServerMessage();
 	}
 
 	public override void Exit()
 	{
-		StateManager.Instance.SetCurrentState(null);
 	}
 
 	public override void HandleInput()

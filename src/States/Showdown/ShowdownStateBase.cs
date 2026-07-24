@@ -60,7 +60,7 @@ public abstract class ShowdownStateBase(IStateMachine stateMachine) : IState
 	{
 	}
 
-	public virtual void OnLinkRacer(ulong steamId)
+	public virtual void OnLinkRacer(ulong steamId, string arguments)
 	{
 	}
 

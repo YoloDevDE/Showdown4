@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Showdown4.Commands;
+using Showdown4.Config;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using UnityEngine;
@@ -14,6 +15,13 @@ namespace Showdown4.States.Showdown;
 public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 {
 	public Match Match { get; set; }
+
+	// The state machine itself is a MonoBehaviour, so Unity drives the per-frame
+	// loop here and forwards keyboard input to the active state.
+	private void Update()
+	{
+		CurrentState?.HandleInput();
+	}
 
 	// Always return new instances for InitialState and FinalState
 	public IState InitialState => new StateShowdownStarting(this);
@@ -41,13 +49,19 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 			.AddTransition(new StateSetupMatch(this), new StateLinkRacers(this))
 			.AddTransition(new StateLinkRacers(this), new StateSelectInitiative(this))
 			.AddTransition(new StateSelectInitiative(this), new StatePreDraft(this))
-			.AddTransition(new StatePreDraft(this), new StateDrafting(this))
+			// Draftphase I: the ready check (with the draft tutorial baked in) runs right after the
+			// initiative announcement. Draftphase II skips the ready check entirely.
+			.AddTransition(new StatePreDraft(this), new StateDraftReadyCheck(this),
+				() => !Match.IsDraftphaseTwo)
+			.AddTransition(new StatePreDraft(this), new StateDrafting(this),
+				() => Match.IsDraftphaseTwo)
+			.AddTransition(new StateDraftReadyCheck(this), new StateDrafting(this))
 			.AddTransition(new StateDrafting(this), new StateDraftIncomplete(this),
 				() => Match.CurrentDraft.PickedLevels.Count == 0)
 			.AddTransition(new StateDrafting(this), new StateDraftCompleted(this))
 			.AddTransition(new StateDraftIncomplete(this), new StateDraftCompleted(this))
-			.AddTransition(new StateDraftCompleted(this), new StateReadyCheck(this))
-			.AddTransition(new StateReadyCheck(this), new StatePreRacing(this))
+			// There is no more ready check between the draft and the race.
+			.AddTransition(new StateDraftCompleted(this), new StatePreRacing(this))
 			.AddTransition(new StatePreRacing(this), new StateRacing(this))
 			.AddTransition(new StateRacing(this), new StatePostRacing(this))
 			.AddTransition(new StatePostRacing(this), new StateRacing(this),
@@ -131,9 +145,9 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 		CurrentState?.OnPick(steamId, levelIndex);
 	}
 
-	private void HandleLinkRacer(ulong steamId)
+	private void HandleLinkRacer(ulong steamId, string arguments)
 	{
-		CurrentState?.OnLinkRacer(steamId);
+		CurrentState?.OnLinkRacer(steamId, arguments);
 	}
 
 	private void HandleUnlinkRacer(ulong steamId)

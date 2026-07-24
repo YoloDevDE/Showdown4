@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Showdown4.Config;
 using Showdown4.Managers;
 using Showdown4.Utils;
 using ZeepkistNetworking;
@@ -25,7 +26,7 @@ public class StateDraftCompleted(IStateMachine stateMachine) : ShowdownStateBase
 		Render();
 
 		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-			MyConfig.Validated.DraftCompleteCountdown,
+			MyConfig.DraftCompleteCountdownConfig.Value,
 			_ => Render(),
 			InvokeFinish));
 	}

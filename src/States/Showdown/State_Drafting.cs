@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Showdown4.Config;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
@@ -19,7 +20,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	private readonly Random _random = new();
 
-	private int _draftCountdownTime = MyConfig.Validated.DraftTime;
+	private int _draftCountdownTime = MyConfig.DraftTimeConfig.Value;
 	private bool _isAutoPickInProgress;
 	private bool _isDraftCompleteCountdownStarted;
 
@@ -32,17 +33,17 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 	{
 		_isDraftCompleteCountdownStarted = false;
 		_isAutoPickInProgress = false;
-		_draftCountdownTime = MyConfig.Validated.DraftTime;
+		_draftCountdownTime = MyConfig.DraftTimeConfig.Value;
 
 		Match.AddDraft();
 		ChatCommandService.SetTime(86400);
 
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.Validated.DraftTime,
+		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.DraftTimeConfig.Value,
 			OnDraftTick,
 			OnDraftTimeout));
 	}
 
-	private void Render()
+	private void Render(string backgroundColor = "white")
 	{
 		if (_isAutoPickInProgress)
 		{
@@ -63,23 +64,40 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 
 		new ServerMessage().ShowdownHeader(true)
+			.BackgroundColor(backgroundColor)
 			.AddLine(l => l.Size(30).Bold().AddBlock(Match.ScoreColored()).Indent("585%"))
 			.AddMessage(DraftingStateMessage())
 			.AddSeparator()
 			.AddMessage(DraftDisplay.LevelList(CurrentDraft))
 			.AddSeparator()
 			.AddLine(line =>
-				line.Italic().AddBlock("To pick use")
-					.AddBlock("'!pick 1-7'", block => block.Color(ShowdownColors.Yellow)))
+				line.AddBlock("To pick use")
+					.AddBlock("'!pick 1-7'", block => block.Command()))
 			.AddLine(line =>
-				line.Italic().AddBlock("To ban use")
-					.AddBlock("'!ban 1-7'", block => block.Color(ShowdownColors.Yellow)))
+				line.AddBlock("To ban use")
+					.AddBlock("'!ban 1-7'", block => block.Command()))
+			.AddLine(line =>
+				line.AddBlock("To pass use")
+					.AddBlock("'!pass'", block => block.Command()))
 			.Send();
 
-		if (_draftCountdownTime >= MyConfig.Validated.DraftTime && !CurrentDraft.IsDraftComplete())
+		if (_draftCountdownTime >= MyConfig.DraftTimeConfig.Value && !CurrentDraft.IsDraftComplete())
 		{
 			SendTurnAnnouncements();
 		}
+	}
+
+	// Briefly flashes the whole server message yellow when a pick is made (1-0-1-0, 0.25s per
+	// step), then renders the message normally again.
+	private IEnumerator FlashPickAnnouncement()
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			Render(i % 2 == 0 ? ShowdownColors.Yellow : "white");
+			yield return new WaitForSeconds(0.25f);
+		}
+
+		Render();
 	}
 
 	public override void Exit()
@@ -163,18 +181,18 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 			if (OtherTeam.Picks == 0)
 			{
 				return $"It's time to <{ShowdownColors.Green}><b>pick</b></color> a map!" +
-				       $"<br>Use <{ShowdownColors.Yellow}><b>!pick 1-7</b></color> to pick a map.";
+				       $"<br>Use {ShowdownColors.Command("!pick 1-7")} to pick a map.";
 			}
 
 			return
 				$"You can <{ShowdownColors.Green}><b>pick</b></color> or <{ShowdownColors.Red}><b>ban</b></color> a map!" +
-				$"<br>Use <{ShowdownColors.Yellow}><b>!pick 1-7</b></color> to pick or <{ShowdownColors.Yellow}><b>!ban 1-7</b></color> to ban a map.";
+				$"<br>Use {ShowdownColors.Command("!pick 1-7")} to pick or {ShowdownColors.Command("!ban 1-7")} to ban a map.";
 		}
 
 		if (current.Bans > 0)
 		{
 			return $"You can only <{ShowdownColors.Red}><b>ban</b></color> a map!" +
-			       $"<br>Use <{ShowdownColors.Yellow}><b>!ban 1-7</b></color> to ban a map.";
+			       $"<br>Use {ShowdownColors.Command("!ban 1-7")} to ban a map.";
 		}
 
 		return "";
@@ -188,7 +206,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	private void OnDraftTimeout()
 	{
-		_draftCountdownTime = MyConfig.Validated.DraftTime;
+		_draftCountdownTime = MyConfig.DraftTimeConfig.Value;
 		CurrentTeam.MissedDraft = true;
 
 		if (OtherTeam.Bans == 0 && OtherTeam.Picks == 0)
@@ -214,7 +232,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 
 		CurrentDraft.SwitchTeam();
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.Validated.DraftTime,
+		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.DraftTimeConfig.Value,
 			OnDraftTick,
 			OnDraftTimeout));
 	}
@@ -231,7 +249,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		ChatMessage.SendCustomMessage(
 			$"Only one map remains - <{ShowdownColors.Red}>Showdown</color> will automatically pick <{ShowdownColors.Cyan}>{lastLevel.Name}</color>!");
 
-		for (int remaining = MyConfig.Validated.AutoPickRevealCountdown; remaining > 0; remaining--)
+		for (int remaining = MyConfig.AutoPickRevealCountdownConfig.Value; remaining > 0; remaining--)
 		{
 			SendAutoPickMessage(lastLevel, remaining);
 			yield return new WaitForSeconds(1f);
@@ -404,7 +422,16 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 			CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.DraftTimeConfig.Value,
 				OnDraftTick, OnDraftTimeout));
-			Render();
+
+			if (isBan)
+			{
+				Render();
+			}
+			else
+			{
+				// Flash the whole message yellow to highlight the pick before rendering normally.
+				CoroutineManager.Instance.StartExternalCoroutine(FlashPickAnnouncement());
+			}
 		}
 		catch (InvalidOperationException ex)
 		{

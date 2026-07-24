@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using HarmonyLib;
 using Showdown4.Commands;
+using Showdown4.Config;
 using Showdown4.Managers;
 using Showdown4.States;
 using Showdown4.States.Master;

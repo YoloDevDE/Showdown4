@@ -1,4 +1,5 @@
-﻿using Showdown4.Managers;
+﻿using Showdown4.Config;
+using Showdown4.Managers;
 using ZeepSDK.Level;
 
 namespace Showdown4.States.Showdown;

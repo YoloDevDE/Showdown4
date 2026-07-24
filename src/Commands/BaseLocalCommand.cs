@@ -1,4 +1,5 @@
-﻿using ZeepSDK.ChatCommands;
+﻿using System;
+using ZeepSDK.ChatCommands;
 
 namespace Showdown4.Commands;
 
@@ -14,4 +15,18 @@ public abstract class BaseLocalCommand : ILocalChatCommand
 	}
 
 	protected abstract void OnCommandInvoked(string arguments);
+}
+
+public class SomeCommand : ILocalChatCommand
+{
+	public string Prefix => "/";
+	public string Command => "somecommand";
+	public string Description => "Some command description";
+
+	public void Handle(string arguments)
+	{
+		CommandInvoked?.Invoke(arguments);
+	}
+
+	public static event Action<string> CommandInvoked;
 }
