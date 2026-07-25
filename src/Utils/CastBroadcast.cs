@@ -86,6 +86,19 @@ public static class CastBroadcast
 		}
 	}
 
+	/// <summary>
+	///     Called when a player joins the lobby mid-match. A (re)joining client has no chat history,
+	///     so it missed every earlier broadcast - without this, a companion mod on a client that
+	///     crashed and rejoined would be blind until the next state transition (worst case a whole
+	///     round). Clearing the dedup guard forces the current state out again; all the usual guards
+	///     (host-only, live match only) still apply via <see cref="OnStateEntered" />.
+	/// </summary>
+	public static void OnPlayerJoined(IStateMachine machine)
+	{
+		_lastPayload = null;
+		OnStateEntered(machine);
+	}
+
 	// "StateRacing" -> "racing". Informational only; the receiver keys off the structured fields.
 	private static string PhaseOf(IState state)
 	{
