@@ -5,6 +5,7 @@ using System.Linq;
 using BepInEx.Configuration;
 using Imui.Controls;
 using Imui.Core;
+using Newtonsoft.Json;
 using Showdown4.Commands;
 using Showdown4.Config;
 using Showdown4.Entities;
@@ -28,6 +29,11 @@ public class ShowdownGuiDrawer : IZeepGUIDrawer
 
 	// ── Playlists ─────────────────────────────────────────────────────────
 	private bool _competitionExpanded;
+	private string _importError = "";
+
+	// ── JSON import panel ─────────────────────────────────────────────────
+	private bool _importExpanded;
+	private string _importJson = "";
 	private bool _intermissionExpanded;
 	private string[] _playlistNames = Array.Empty<string>();
 
@@ -277,6 +283,35 @@ public class ShowdownGuiDrawer : IZeepGUIDrawer
 		gui.Separator();
 		gui.AddSpacing();
 
+		// ── JSON Import panel ────────────────────────────────────────────
+		string importToggleLabel = _importExpanded ? "▼ Import JSON" : "▶ Import JSON";
+		if (gui.Button(importToggleLabel, (160, 28)))
+		{
+			_importExpanded = !_importExpanded;
+			_importError = "";
+		}
+
+		if (_importExpanded)
+		{
+			gui.Text("Paste team JSON array (or single team object):");
+			gui.TextEdit(ref _importJson, (480, 72));
+
+			if (gui.Button("Import", (100, 28)))
+			{
+				TryImportJson(_importJson);
+			}
+
+			if (!string.IsNullOrEmpty(_importError))
+			{
+				gui.Text(_importError);
+			}
+
+			gui.AddSpacing();
+		}
+
+		gui.Separator();
+		gui.AddSpacing();
+
 		// Scrollable team list
 		gui.BeginScrollable();
 
@@ -402,6 +437,77 @@ public class ShowdownGuiDrawer : IZeepGUIDrawer
 	// ─────────────────────────────────────────────────────────────────────
 	// Config <-> editor state
 	// ─────────────────────────────────────────────────────────────────────
+
+	private void TryImportJson(string json)
+	{
+		_importError = "";
+		if (string.IsNullOrWhiteSpace(json))
+		{
+			_importError = "Error: JSON is empty.";
+			return;
+		}
+
+		try
+		{
+			List<TeamJsonEntry> imported;
+
+			// Accept either an array [ {...}, ... ] or a single object { ... }
+			string trimmed = json.Trim();
+			if (trimmed.StartsWith("["))
+			{
+				imported = JsonConvert.DeserializeObject<List<TeamJsonEntry>>(trimmed)
+				           ?? new List<TeamJsonEntry>();
+			}
+			else
+			{
+				TeamJsonEntry single = JsonConvert.DeserializeObject<TeamJsonEntry>(trimmed);
+				imported = single != null ? new List<TeamJsonEntry> { single } : new List<TeamJsonEntry>();
+			}
+
+			if (imported.Count == 0)
+			{
+				_importError = "Warning: No teams found in JSON.";
+				return;
+			}
+
+			foreach (TeamJsonEntry t in imported)
+			{
+				if (_teams.Count >= MyConfig.TeamSlotCount)
+				{
+					_importError =
+						$"Warning: Slot limit ({MyConfig.TeamSlotCount}) reached. Some teams were not imported.";
+					break;
+				}
+
+				_teams.Add(new TeamEditorEntry
+				{
+					Name = t.Name ?? "",
+					Tag = t.Tag ?? "",
+					Color = t.Color ?? "#ffffff",
+					Expanded = false,
+					Players = (t.Players ?? new List<TeamPlayerJsonEntry>())
+						.Select(p => new PlayerEditorEntry
+						{
+							Name = p.Name ?? "",
+							SteamId = p.SteamId.ToString(),
+							QualificationTime = p.QualificationTime.ToString("G")
+						})
+						.ToList()
+				});
+			}
+
+			_teamsDirty = true;
+			_importJson = "";
+			if (string.IsNullOrEmpty(_importError))
+			{
+				_importExpanded = false;
+			}
+		}
+		catch (Exception ex)
+		{
+			_importError = $"Error: {ex.Message}";
+		}
+	}
 
 	private void LoadTeamsFromConfig()
 	{
