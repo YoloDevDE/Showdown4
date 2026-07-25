@@ -1,6 +1,7 @@
 using System;
 using JetBrains.Annotations;
 using Showdown4.Managers;
+using Showdown4.Utils;
 using Debug = UnityEngine.Debug;
 
 namespace Showdown4.States;
@@ -72,7 +73,7 @@ public interface IStateMachine
 		CurrentState = nextState;
 		CurrentState.Finished += OnCurrentStateFinished;
 		CurrentState.Enter();
-		Showdown4.Utils.CastBroadcast.OnStateEntered(this); // broadcast match state to companion mods
+		CastBroadcast.OnStateEntered(this); // broadcast match state to companion mods
 		CurrentState.SubStateMachine?.Start();
 	}
 

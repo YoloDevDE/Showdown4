@@ -6,7 +6,6 @@ using Showdown4.Entities;
 using Showdown4.States;
 using Showdown4.States.Showdown;
 using ZeepkistClient;
-using ZeepkistNetworking;
 using ZeepSDK.Chat;
 using ZeepSDK.Level;
 
@@ -15,11 +14,9 @@ namespace Showdown4.Utils;
 /// <summary>
 ///     Broadcasts the current Showdown match state to companion mods (e.g. the Tournament Casting UI
 ///     overlay) as a single hidden chat line whenever the match enters a new state.
-///
 ///     The payload is a compact JSON object, base64-encoded and wrapped in <c>@SDSTATE@</c> sentinels
 ///     so that player names or rich-text in the state can never collide with TMP's parser, and it is
 ///     rendered at <c>size 0</c> so it stays invisible to players in chat.
-///
 ///     Design notes:
 ///     <list type="bullet">
 ///         <item>Only the host emits - it is the only client that runs the state machine.</item>
@@ -228,21 +225,19 @@ public static class CastBroadcast
 		}
 
 		foreach (Draft draft in match.Drafts)
+		foreach (DraftAction action in draft.PickedLevels)
 		{
-			foreach (DraftAction action in draft.PickedLevels)
+			if (action.Level == null || action.Level.UID != currentUid)
 			{
-				if (action.Level == null || action.Level.UID != currentUid)
-				{
-					continue;
-				}
-
-				if (ReferenceEquals(action.Team, match.TeamA))
-				{
-					return "A";
-				}
-
-				return ReferenceEquals(action.Team, match.TeamB) ? "B" : "random";
+				continue;
 			}
+
+			if (ReferenceEquals(action.Team, match.TeamA))
+			{
+				return "A";
+			}
+
+			return ReferenceEquals(action.Team, match.TeamB) ? "B" : "random";
 		}
 
 		return null;
@@ -258,7 +253,6 @@ public static class CastBroadcast
 		StringBuilder sb = new();
 		sb.Append('"');
 		foreach (char c in s)
-		{
 			switch (c)
 			{
 				case '"':
@@ -294,7 +288,6 @@ public static class CastBroadcast
 
 					break;
 			}
-		}
 
 		sb.Append('"');
 		return sb.ToString();
