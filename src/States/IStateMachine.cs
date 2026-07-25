@@ -72,6 +72,7 @@ public interface IStateMachine
 		CurrentState = nextState;
 		CurrentState.Finished += OnCurrentStateFinished;
 		CurrentState.Enter();
+		Showdown4.Utils.CastBroadcast.OnStateEntered(this); // broadcast match state to companion mods
 		CurrentState.SubStateMachine?.Start();
 	}
 
