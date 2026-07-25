@@ -148,7 +148,7 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 	private void HandlePlayerJoined(ZeepkistNetworkPlayer player)
 	{
 		CurrentState?.OnPlayerJoined(player);
-		Utils.CastBroadcast.OnPlayerJoined(this); // late joiners have no chat history - resend the state
+		CastBroadcast.OnPlayerJoined(this); // late joiners have no chat history - resend the state
 	}
 
 	private void HandleBan(ulong steamId, string levelIndex)

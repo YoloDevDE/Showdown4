@@ -25,6 +25,13 @@ public class Countdown
 
 	public bool IsPaused => _pausedRemaining >= 0f;
 
+	// The number of seconds left on the countdown (ceil-rounded), or -1 when not running.
+	public int RemainingSeconds => IsRunning
+		? Mathf.Max(0, Mathf.CeilToInt(_endTime - Time.time))
+		: IsPaused
+			? Mathf.Max(0, Mathf.CeilToInt(_pausedRemaining))
+			: -1;
+
 	public void Start(int seconds, Action<int> onTick = null, Action onComplete = null)
 	{
 		_endTime = Time.time + seconds;

@@ -103,9 +103,10 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		}
 
 		ZeepkistNetwork.CustomLeaderBoard_SetPlayerTimeOnLeaderboard(player.SteamID, (float)personalBest, true);
+		Team joinedTeam = Showdown.Match.GetTeamBySteamId(player.SteamID);
+		string joinedName = GetJsonNameForPlayer(player.SteamID, joinedTeam);
 		ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(player.SteamID, "",
-			$"<nobr><{Showdown.Match.GetTeamBySteamId(player.SteamID).Color}>" + player.GetTaggedUsername() +
-			"</color></nobr>", null, null, null);
+			$"<nobr><{joinedTeam.Color}>{joinedName}</color></nobr>", null, null, null);
 	}
 
 	public override void OnRoundEnded()
@@ -137,8 +138,9 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		}
 
 		ulong steamId = player.SteamID;
-		string color = Showdown.Match.GetTeamBySteamId(steamId).Color;
-		string name = player.GetTaggedUsername();
+		Team playerTeam = Showdown.Match.GetTeamBySteamId(steamId);
+		string color = playerTeam.Color;
+		string name = GetJsonNameForPlayer(steamId, playerTeam);
 
 		List<LeaderboardItem> ingameLeaderboard = ZeepkistNetwork.Leaderboard
 			.OrderBy(leaderboard => leaderboard.Time)
@@ -239,7 +241,7 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 
 	public void SendTeamLeaderboard()
 	{
-		ServerMessage leaderboardMessage = _leaderboardDisplay.GenerateLeaderboardMessage(Showdown.Match);
+		ServerMessage leaderboardMessage = _leaderboardDisplay.GenerateLeaderboardMessage(Showdown.Match, true);
 		leaderboardMessage.Send();
 	}
 
@@ -257,6 +259,58 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 	private static string BuildNameOverride(string color, string name)
 	{
 		return $"<nobr><{color}>{name}</color></nobr>";
+	}
+
+	private string GetTeamPositionColor(ulong steamId)
+	{
+		Team playerTeam = Showdown.Match.GetTeamBySteamId(steamId);
+		if (playerTeam == null || _currentRound.Leaderboard.Count == 0)
+		{
+			return null;
+		}
+
+		Team teamA = _currentRound.TeamA;
+		Team teamB = _currentRound.TeamB;
+		double timeA = teamA.Racers
+			.Where(r => _currentRound.Leaderboard.ContainsKey(r.SteamId))
+			.Sum(r => _currentRound.GetPersonalBest(r));
+		double timeB = teamB.Racers
+			.Where(r => _currentRound.Leaderboard.ContainsKey(r.SteamId))
+			.Sum(r => _currentRound.GetPersonalBest(r));
+
+		if (timeA == 0 && timeB == 0)
+		{
+			return null;
+		}
+
+		Team leadingTeam;
+		if (timeA == 0)
+		{
+			leadingTeam = teamB;
+		}
+		else if (timeB == 0)
+		{
+			leadingTeam = teamA;
+		}
+		else
+		{
+			leadingTeam = timeA < timeB ? teamA : teamB;
+		}
+
+		return playerTeam == leadingTeam ? "#00ff00" : "#ff0000";
+	}
+
+	private string GetJsonNameForPlayer(ulong steamId, Team team)
+	{
+		Racer expected = team.ExpectedRacers.FirstOrDefault(r => r.SteamId == steamId);
+		string jsonName = expected?.SteamName;
+		if (string.IsNullOrEmpty(jsonName))
+		{
+			return team.GetTag() + " " + (ZeepkistNetwork.PlayerList
+				.FirstOrDefault(p => p.SteamID == steamId)?.Username ?? steamId.ToString());
+		}
+
+		return team.GetTag() + " " + jsonName;
 	}
 
 	private static string BuildNormalTimeOverride(double time)
@@ -290,9 +344,16 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(steamId, time, name, pos, s1, s2);
 	}
 
-	private static void SetNormalLeaderboardOverride(ulong steamId, double time, string color, string name)
+	private void SetNormalLeaderboardOverride(ulong steamId, double time, string color, string name)
 	{
-		SetLeaderboardOverrides(steamId, BuildNormalTimeOverride(time), BuildNameOverride(color, name));
+		string posColor = GetTeamPositionColor(steamId);
+		string posOverride = null;
+		if (posColor != null && _playerPositions.TryGetValue(steamId, out int pos))
+		{
+			posOverride = $"<{posColor}>{pos}</color>";
+		}
+
+		SetLeaderboardOverrides(steamId, BuildNormalTimeOverride(time), BuildNameOverride(color, name), posOverride);
 	}
 
 	// Restarts the pending "revert to normal" countdown for this racer, so the very last

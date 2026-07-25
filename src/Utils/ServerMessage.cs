@@ -121,10 +121,30 @@ public class ServerMessage(string alignment = "left")
 
 	public void Send()
 	{
+		// Schedule the auto-vanish timer first so that RemainingSeconds is already set when
+		// AppendAutoVanishCountdown reads it below (relevant for the very first Send call).
+		ScheduleAutoVanish();
+		AppendAutoVanishCountdown();
 		// Simulating sending a message
 		Console.WriteLine(ToString());
 		ChatApi.SendMessage(ToString());
-		ScheduleAutoVanish();
+	}
+
+	// Appends a small "disappears in Xs" footer showing how long the message will stay visible.
+	private void AppendAutoVanishCountdown()
+	{
+		int remaining = AutoVanish.RemainingSeconds;
+		if (remaining < 0)
+		{
+			return;
+		}
+
+		AddSeparator()
+			.AddLine(line => line
+				.AddBlock("Message disappears in", b => b.Size(80).Color(ShowdownColors.Gray))
+				.AddBlock($"{remaining}s",
+					b => b.Size(80).Color(remaining <= 5 ? ShowdownColors.Red : ShowdownColors.Gray))
+			);
 	}
 
 	// Robustness net: every server message auto-hides itself after a configurable time unless a

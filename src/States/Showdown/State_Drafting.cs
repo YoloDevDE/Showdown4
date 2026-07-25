@@ -27,6 +27,8 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 	private readonly Random _random = new();
 
 	private int _draftCountdownTime = MyConfig.DraftTimeConfig.Value;
+
+	private DraftingLeaderboard _draftingLeaderboard;
 	private bool _isAutoPickInProgress;
 	private bool _isDraftCompleteCountdownStarted;
 
@@ -48,6 +50,9 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		Match.AddDraft();
 		ChatCommandService.SetTime(86400);
 
+		_draftingLeaderboard = new DraftingLeaderboard(Match.TeamA, Match.TeamB);
+		_draftingLeaderboard.Activate(CurrentTeam);
+
 		Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
 	}
 
@@ -56,6 +61,8 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		CommandRegistry.Unregister(_pickCommand);
 		CommandRegistry.Unregister(_banCommand);
 		CommandRegistry.Unregister(_passCommand);
+
+		_draftingLeaderboard?.Deactivate();
 	}
 
 	public override IState GetNextState()
@@ -320,6 +327,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 
 		CurrentDraft.SwitchTeam();
+		_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam);
 		Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
 	}
 
@@ -459,6 +467,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 			if (!currentDraft.IsDraftComplete())
 			{
+				_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam);
 				Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
 			}
 

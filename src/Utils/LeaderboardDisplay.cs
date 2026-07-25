@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Entities;
 
@@ -7,7 +7,7 @@ namespace Showdown4.Utils;
 public class LeaderboardDisplay(Round round)
 {
 	// Generate a server message for team and racer leaderboard
-	public ServerMessage GenerateLeaderboardMessage(Match match)
+	public ServerMessage GenerateLeaderboardMessage(Match match, bool racingColors = false)
 	{
 		round.Evaluate(out List<Team> teams);
 		List<Team> sortedTeams = round.GetTeamsSortedByWinnerAsc();
@@ -49,11 +49,12 @@ public class LeaderboardDisplay(Round round)
 			double averageTime = round.GetAvgTimeOfTeam(team);
 			int finishers = round.GetFinishersCount(team);
 
-
 			msg.AddLine(line =>
 			{
 				line.Size(25)
-					.AddBlock($"#{position}", f => f.Bold().Color(position == 1 ? "#FFD700" : "#C0C0C0"))
+					.AddBlock($"#{position}",
+						f => f.Bold().Color(racingColors ? i == 0 ? "#00ff00" : "#ff0000" :
+							position == 1 ? "#FFD700" : "#C0C0C0"))
 					.AddBlock($"{team.GetTag()}".PadRight(6), f => f.Bold().Color(team.Color));
 
 
