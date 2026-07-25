@@ -9,6 +9,11 @@ public class CommandShowdownResume : BaseLocalCommand
 	public override string Description => "Resumes all paused timers";
 	public static event Action CommandInvoked;
 
+	public static void Fire()
+	{
+		CommandInvoked?.Invoke();
+	}
+
 	protected override void OnCommandInvoked(string arguments)
 	{
 		CommandInvoked?.Invoke();
