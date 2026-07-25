@@ -13,21 +13,23 @@ namespace Showdown4.Utils;
 
 /// <summary>
 ///     Broadcasts the current Showdown match state to companion mods (e.g. the Tournament Casting UI
-///     overlay) as a single hidden chat line whenever the match enters a new state.
+///     overlay) whenever the match enters a new state.
 ///     The payload is a compact JSON object, base64-encoded and wrapped in <c>@SDSTATE@</c> sentinels
 ///     so that player names or rich-text in the state can never collide with TMP's parser, and it is
-///     rendered at <c>size 0</c> so it stays invisible to players in chat.
+///     rendered at <c>size 0</c> so it stays invisible to players.
 ///     Design notes:
 ///     <list type="bullet">
 ///         <item>Only the host emits - it is the only client that runs the state machine.</item>
 ///         <item>
-///             It is sent as a normal chat message (not <c>/servermessage</c>), so it never competes
-///             for the single server-message overlay slot the leaderboard uses, and has no length
-///             pressure from the leaderboard message. Receivers listen on
-///             <see cref="ChatApi.ChatMessageReceived" />.
+///             A plain chat message sent with <see cref="ChatApi.SendMessage" /> is not guaranteed to
+///             reach every client (e.g. it can be swallowed by chat filters), so the payload must
+///             either be sent as a custom chat message (<see cref="ChatMessage.SendCustomMessage" />)
+///             or as a <c>/servermessage</c> command, e.g.
+///             <c>ChatApi.SendMessage("/servermessage white 0 &lt;message&gt;")</c>. Receivers listen
+///             on <see cref="ChatApi.ChatMessageReceived" />.
 ///         </item>
 ///         <item>
-///             Purely additive telemetry: it only reads match state and sends one chat line. It never
+///             Purely additive telemetry: it only reads match state and sends one message. It never
 ///             touches scoring, the leaderboard or gameplay, and any failure is swallowed so it can
 ///             never disturb the match.
 ///         </item>
@@ -70,8 +72,13 @@ public static class CastBroadcast
 
 			_lastPayload = payload;
 
-			// size 0 -> invisible to players; plain chat message -> off the /servermessage overlay slot.
-			ChatApi.SendMessage("<size=0%>" + payload + "</size>");
+			// size 0 -> invisible to players. Sent as a custom chat message (not a plain ChatApi.SendMessage,
+			// which is not guaranteed to be delivered/received by every client) and not as a /servermessage,
+			// so it never competes for the single server-message overlay slot the leaderboard uses.
+			// No matter which type is used, it is delivered the same way: receivers can either listen on
+			// ChatApi.ChatMessageReceived, or read it afterwards from
+			// ZeepkistNetwork.ChatMessages (List<ZeepkistChatMessage>).
+			ZeepkistNetwork.SendCustomChatMessage(true, 0, "<size=0%>" + payload + "</size>", "");
 		}
 		catch
 		{
