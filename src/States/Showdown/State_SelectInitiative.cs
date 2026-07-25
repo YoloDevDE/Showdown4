@@ -1,6 +1,5 @@
 ﻿using Showdown4.Config;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
 
 namespace Showdown4.States.Showdown;
@@ -22,10 +21,7 @@ public class StateSelectInitiative(IStateMachine stateMachine) : ShowdownStateBa
 
 		ServerMessageThing().Send();
 
-		CoroutineManager.Instance.StartExternalCoroutine(
-			CountdownTimer.Start(MyConfig.InitiativeAnnouncementDurationConfig.Value, UpdateCountdownMessage,
-				InvokeFinish)
-		);
+		Countdown.Start(MyConfig.InitiativeAnnouncementDurationConfig.Value, UpdateCountdownMessage, InvokeFinish);
 	}
 
 	public override void Exit()

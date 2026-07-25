@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
+using Showdown4.Commands;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
 using ZeepkistClient;
 
@@ -10,6 +10,10 @@ namespace Showdown4.States.Showdown;
 public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private const int CountdownDuration = 3;
+
+	// The (un)link commands are only available while racers are being linked to their teams.
+	private readonly CommandLinkRacer _linkCommand = new();
+	private readonly CommandUnLinkRacer _unlinkCommand = new();
 	private bool _isCountdownRunning;
 
 	private Team TeamA => Match.TeamA;
@@ -17,6 +21,9 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	public override void Enter()
 	{
+		CommandRegistry.RegisterMixed(_linkCommand);
+		CommandRegistry.RegisterMixed(_unlinkCommand);
+
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 
 		AutoLinkPresentRacers();
@@ -25,6 +32,8 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	public override void Exit()
 	{
+		CommandRegistry.Unregister(_linkCommand);
+		CommandRegistry.Unregister(_unlinkCommand);
 	}
 
 	public override IState GetNextState()
@@ -138,11 +147,7 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 		}
 
 		_isCountdownRunning = true;
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-			CountdownDuration,
-			UpdateServerMessage,
-			InvokeFinish // Move to next state when countdown finishes
-		));
+		Countdown.Start(CountdownDuration, UpdateServerMessage, InvokeFinish);
 	}
 
 	private void UpdateServerMessage(int countdownTime)

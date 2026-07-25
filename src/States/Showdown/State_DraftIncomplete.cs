@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Showdown4.Config;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistNetworking;
@@ -27,7 +26,7 @@ public class StateDraftIncomplete(IStateMachine stateMachine) : ShowdownStateBas
 
 		// The random selection used to be triggered manually via '/sd random'. It now runs
 		// automatically whenever the draft ends incomplete with more than one map still open.
-		CoroutineManager.Instance.StartExternalCoroutine(RandomSelectionAnimation());
+		Showdown.StartCoroutine(RandomSelectionAnimation());
 	}
 
 	public override void Exit()

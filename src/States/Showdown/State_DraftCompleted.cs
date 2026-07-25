@@ -25,10 +25,7 @@ public class StateDraftCompleted(IStateMachine stateMachine) : ShowdownStateBase
 
 		Render();
 
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-			MyConfig.DraftCompleteCountdownConfig.Value,
-			_ => Render(),
-			InvokeFinish));
+		Countdown.Start(MyConfig.DraftCompleteCountdownConfig.Value, _ => Render(), InvokeFinish);
 	}
 
 	public override void Exit()

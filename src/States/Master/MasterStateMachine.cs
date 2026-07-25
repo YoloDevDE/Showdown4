@@ -23,6 +23,11 @@ public class MasterStateMachine : IStateMachine
 		CommandShowdownStart.CommandInvoked += HandleShowdownStart;
 		CommandShowdownStop.CommandInvoked += HandleShowdownStop;
 		CommandFinishState.CommandInvoked += HandleFinishState;
+		CommandShowdownPrev.CommandInvoked += HandlePrev;
+		CommandShowdownPause.CommandInvoked += HandlePause;
+		CommandShowdownResume.CommandInvoked += HandleResume;
+		CommandShowdownRestart.CommandInvoked += HandleRestart;
+		CommandStateRestart.CommandInvoked += HandleStateRestart;
 	}
 
 	public void UnsubscribeFromEvents()
@@ -30,6 +35,11 @@ public class MasterStateMachine : IStateMachine
 		CommandShowdownStart.CommandInvoked -= HandleShowdownStart;
 		CommandShowdownStop.CommandInvoked -= HandleShowdownStop;
 		CommandFinishState.CommandInvoked -= HandleFinishState;
+		CommandShowdownPrev.CommandInvoked -= HandlePrev;
+		CommandShowdownPause.CommandInvoked -= HandlePause;
+		CommandShowdownResume.CommandInvoked -= HandleResume;
+		CommandShowdownRestart.CommandInvoked -= HandleRestart;
+		CommandStateRestart.CommandInvoked -= HandleStateRestart;
 	}
 
 	private void HandleShowdownStart()
@@ -45,5 +55,30 @@ public class MasterStateMachine : IStateMachine
 	private void HandleFinishState(string arguments)
 	{
 		CurrentState?.OnFinishState(arguments);
+	}
+
+	private void HandlePrev(string arguments)
+	{
+		CurrentState?.OnPrev();
+	}
+
+	private void HandlePause()
+	{
+		CurrentState?.OnPause();
+	}
+
+	private void HandleResume()
+	{
+		CurrentState?.OnResume();
+	}
+
+	private void HandleRestart(string arguments)
+	{
+		CurrentState?.OnRestart();
+	}
+
+	private void HandleStateRestart(string arguments)
+	{
+		CurrentState?.OnStateRestart();
 	}
 }

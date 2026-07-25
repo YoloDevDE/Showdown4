@@ -1,8 +1,8 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
+using Showdown4.Commands;
 using Showdown4.Config;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistClient;
@@ -16,6 +16,9 @@ namespace Showdown4.States.Showdown;
 // entirely (see StatePreDraft / StatePostRacing).
 public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
+	// The ready command is only available during the ready check.
+	private readonly CommandReady _readyCommand = new();
+	private int _elapsedTicks;
 	private HashSet<ulong> _readyPlayers;
 	private int _remainingTime;
 	private bool _stopped;
@@ -26,23 +29,23 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 
 	public override void Enter()
 	{
+		CommandRegistry.RegisterMixed(_readyCommand);
+
 		_readyPlayers = new HashSet<ulong>();
 		_stopped = false;
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-			MyConfig.ReadyCheckDurationConfig.Value,
-			OnTick,
-			OnTimeout));
+		Countdown.Start(MyConfig.ReadyCheckDurationConfig.Value, OnTick, OnTimeout);
 	}
 
 	public override IState GetNextState()
 	{
-		return new StatePreDraft(stateMachine);
+		return new StatePreDraft(StateMachine);
 	}
 
 	public override void Exit()
 	{
+		CommandRegistry.Unregister(_readyCommand);
 		_stopped = true; // Prevents a still-running countdown from acting once we left this state
 	}
 
@@ -71,6 +74,7 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 		}
 
 		_remainingTime = remainingSeconds;
+		_elapsedTicks++;
 		SendServerMessage();
 	}
 
@@ -96,8 +100,31 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 			.AddLine(line => line.AddBlock("Ready Status:"));
 
 		AppendReadyStatus(msg);
+		AppendTutorialTip(msg);
 
 		msg.Send();
+	}
+
+	// The first time a session sees the tutorial, it plays as its own full sequence. Every match
+	// after that reuses the exact same content here, rotating one topic at a time - like tips on a
+	// loading screen - instead of showing the full tutorial again.
+	private void AppendTutorialTip(ServerMessage msg)
+	{
+		if (!StateTutorial.HasPlayedOnce || TutorialContent.Pages.Count == 0)
+		{
+			return;
+		}
+
+		int stepDuration = Mathf.Max(MyConfig.TutorialStepDurationConfig.Value, 1);
+		int pageIndex = _elapsedTicks / stepDuration % TutorialContent.Pages.Count;
+		TutorialContent.Page page = TutorialContent.Pages[pageIndex];
+
+		msg.AddSeparator()
+			.AddLine(line => line
+				.AddBlock("Tip:", block => block.Color(ShowdownColors.Gold).Bold())
+				.AddBlock(page.Title, block => block.Color(ShowdownColors.Yellow).Bold()));
+
+		foreach (Action<ServerMessage.LineBuilder> line in page.Lines) msg.AddLine(line);
 	}
 
 	private ServerMessage ExplainDraftMessage()
@@ -150,13 +177,9 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 
 	private void ConfirmReady()
 	{
-		_stopped = true; // Stops the ready-check countdown, the ready countdown below takes over
+		_stopped = true; // The ready-check countdown is over, the ready-confirm countdown takes over
 		ChatMessage.SendCustomMessage("All players are ready! Let the draft begin!");
-		CoroutineManager.Instance.StartExternalCoroutine(ReadyCountdown());
-	}
 
-	private IEnumerator ReadyCountdown()
-	{
 		ServerMessage msg = ExplainDraftMessage()
 			.AddSeparator()
 			.AddLine(line => line.AddBlock("Ready Status:"));
@@ -171,9 +194,11 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 			.AddSeparator();
 		msg.Send();
 
-		yield return new WaitForSeconds(MyConfig.ReadyConfirmCountdownConfig.Value);
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
-
-		InvokeFinish();
+		// Restarting the countdown implicitly replaces the ready-check timer above.
+		Countdown.Start(MyConfig.ReadyConfirmCountdownConfig.Value, onComplete: () =>
+		{
+			ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+			InvokeFinish();
+		});
 	}
 }

@@ -2,11 +2,12 @@
 using HarmonyLib;
 using Showdown4.Commands;
 using Showdown4.Config;
-using Showdown4.Managers;
 using Showdown4.States;
 using Showdown4.States.Master;
+using Showdown4.Utils;
 using ZeepSDK.ChatCommands;
 using ZeepSDK.Storage;
+using ZeepSDK.UI;
 
 namespace Showdown4;
 
@@ -14,6 +15,7 @@ namespace Showdown4;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
+	private ShowdownGuiDrawer _guiDrawer;
 	private Harmony _harmony;
 
 	private IStateMachine _masterStateMachine;
@@ -29,16 +31,24 @@ public class Plugin : BaseUnityPlugin
 		_harmony.PatchAll();
 
 		Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
-		_ = CoroutineManager.Instance;
 		MyConfig.Register(Config);
 		RegisterCommands();
 		InitializeStateMachine();
+
+		_guiDrawer = new ShowdownGuiDrawer();
+		UIApi.AddZeepGUIDrawer(_guiDrawer);
 	}
 
 	private void OnDestroy()
 	{
 		// Clear the static instance
 		Instance = null;
+
+		if (_guiDrawer != null)
+		{
+			UIApi.RemoveZeepGUIDrawer(_guiDrawer);
+			_guiDrawer = null;
+		}
 
 		_harmony?.UnpatchSelf();
 		_harmony = null;
@@ -52,19 +62,11 @@ public class Plugin : BaseUnityPlugin
 
 	private void RegisterCommands()
 	{
-		ChatCommandApi.RegisterLocalChatCommand<CommandFinishState>();
+		// Only the commands needed to control the plugin globally are registered here. Everything
+		// else (the master control commands and the in-game draft/ready/link commands) is registered
+		// and unregistered on demand by the states that actually handle them, so a command is only
+		// known to the chat while it can be used.
 		ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStart>();
 		ChatCommandApi.RegisterLocalChatCommand<CommandShowdownStop>();
-
-		ChatCommandApi.RegisterMixedChatCommand<CommandLinkRacer>();
-		ChatCommandApi.RegisterMixedChatCommand<CommandUnLinkRacer>();
-		ChatCommandApi.RegisterMixedChatCommand<CommandReady>();
-
-		ChatCommandApi.RegisterMixedChatCommand<CommandSkipAction>();
-		ChatCommandApi.RegisterMixedChatCommand<CommandPick>();
-		ChatCommandApi.RegisterMixedChatCommand<CommandBan>();
-		ChatCommandApi.RegisterMixedChatCommand<CommandPass>();
-
-		// CommandCreateTeam.CommandInvoked += CreateTeam;
 	}
 }

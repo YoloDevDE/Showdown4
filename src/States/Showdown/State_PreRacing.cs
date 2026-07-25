@@ -14,12 +14,7 @@ public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stat
 		_teamA = Match.TeamA;
 		_teamB = Match.TeamB;
 
-		// Use the new CountdownTimer
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-			MyConfig.PreRaceCountdownConfig.Value, // Countdown duration
-			UpdateCountdownMessage, // Action on tick
-			SkipToNextLevel // Action on completion
-		));
+		Countdown.Start(MyConfig.PreRaceCountdownConfig.Value, UpdateCountdownMessage, SkipToNextLevel);
 
 		// Set the lobby time (in seconds)
 		ChatCommandService.SetTime(MyConfig.LobbyTimeConfig.Value);

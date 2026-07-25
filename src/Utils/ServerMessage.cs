@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using Showdown4.Config;
+using Showdown4.Managers;
 using ZeepSDK.Chat;
 
 namespace Showdown4.Utils;
@@ -20,6 +21,11 @@ public class ServerMessage(string alignment = "left")
 
 	private string _suffix = "</align>" +
 	                         "</size>";
+
+	// Robustness net: every server message auto-hides itself after a configurable time unless a
+	// newer message arrives first (which simply restarts this countdown). The running match's
+	// state machine ticks it once per frame.
+	public static Countdown AutoVanish { get; } = new();
 
 	public override string ToString()
 	{
@@ -118,6 +124,21 @@ public class ServerMessage(string alignment = "left")
 		// Simulating sending a message
 		Console.WriteLine(ToString());
 		ChatApi.SendMessage(ToString());
+		ScheduleAutoVanish();
+	}
+
+	// Robustness net: every server message auto-hides itself after a configurable time unless a
+	// newer message arrives first (which simply restarts this countdown). This way a state that
+	// ever forgets to clear its own message can no longer leave it stuck on screen forever.
+	private static void ScheduleAutoVanish()
+	{
+		int duration = MyConfig.ServerMessageAutoVanishDurationConfig.Value;
+		if (duration <= 0)
+		{
+			return;
+		}
+
+		AutoVanish.Start(duration, onComplete: ChatCommandService.RemoveServerMessage);
 	}
 
 	private void AppendLineBreak()

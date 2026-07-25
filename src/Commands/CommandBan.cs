@@ -7,6 +7,7 @@ public class CommandBan : BaseMixedCommand
 	public override string Prefix => "!";
 	public override string Command => "ban";
 	public override string Description => "!ban <levelindex>";
+	public override string[] Aliases => new[] { "b" };
 	public static event Action<ulong, string> CommandInvoked;
 
 	protected override void OnCommandInvoked(ulong playerId, string arguments)

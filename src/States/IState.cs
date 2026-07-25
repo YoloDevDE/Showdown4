@@ -9,6 +9,10 @@ public interface IState
 
 	public IStateMachine SubStateMachine => null;
 
+	// The state this state was entered from. Set by the owning state machine on every
+	// transition, so a state always knows its predecessor (used by the 'sd prev' command).
+	IState PreviousState { get; set; }
+
 	event Action Finished;
 	void Enter();
 
@@ -58,6 +62,31 @@ public interface IState
 	}
 
 	void OnFinishState(string arguments)
+	{
+	}
+
+	// Transition back to the previous state ('sd prev').
+	void OnPrev()
+	{
+	}
+
+	// Pause every running timer ('sd pause').
+	void OnPause()
+	{
+	}
+
+	// Resume every paused timer ('sd resume').
+	void OnResume()
+	{
+	}
+
+	// Restart the whole showdown by turning it off and on again ('sd restart').
+	void OnRestart()
+	{
+	}
+
+	// Restart only the current state ('sd restartstate').
+	void OnStateRestart()
 	{
 	}
 

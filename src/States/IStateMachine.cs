@@ -1,6 +1,5 @@
 using System;
 using JetBrains.Annotations;
-using Showdown4.Managers;
 using Showdown4.Utils;
 using Debug = UnityEngine.Debug;
 
@@ -15,6 +14,13 @@ public interface IStateMachine
 	event Action StateMachineFinished;
 
 	void InvokeFinish();
+
+	// Concrete state machines that host coroutines (e.g. ShowdownStateMachine) override this to
+	// stop every coroutine still running from the previous state. Machines without coroutines
+	// simply keep the no-op default.
+	void StopAllCoroutines()
+	{
+	}
 
 	void Dispose()
 	{
@@ -60,7 +66,7 @@ public interface IStateMachine
 			CurrentState.Finished -= OnCurrentStateFinished;
 			try
 			{
-				CoroutineManager.Instance.StopAllExternalCoroutines();
+				StopAllCoroutines();
 			}
 			catch (Exception e)
 			{
@@ -68,6 +74,10 @@ public interface IStateMachine
 			}
 
 			CurrentState.Exit();
+
+			// Remember where we came from, so a state always knows its predecessor
+			// (used by TransitionToPreviousState / the 'sd prev' command).
+			nextState.PreviousState = CurrentState;
 		}
 
 		CurrentState = nextState;
@@ -75,6 +85,38 @@ public interface IStateMachine
 		CurrentState.Enter();
 		CastBroadcast.OnStateEntered(this); // broadcast match state to companion mods
 		CurrentState.SubStateMachine?.Start();
+	}
+
+	// Jumps back to the predecessor recorded on the current state (the 'sd prev' command).
+	// Does nothing when there is no recorded previous state.
+	void TransitionToPreviousState()
+	{
+		IState previous = CurrentState?.PreviousState;
+		if (previous == null)
+		{
+			Debug.LogWarning("No previous state to transition to.");
+			return;
+		}
+
+		Debug.Log($"Transitioning back to previous state: {previous.GetType().Name}");
+		TransitionTo(previous);
+	}
+
+	// Re-enters the current state from scratch (the 'sd restart' command). The recorded
+	// PreviousState is preserved so a following 'sd prev' still works as expected.
+	void RestartCurrentState()
+	{
+		IState current = CurrentState;
+		if (current == null)
+		{
+			Debug.LogWarning("No current state to restart.");
+			return;
+		}
+
+		IState previous = current.PreviousState;
+		Debug.Log($"Restarting current state: {current.GetType().Name}");
+		TransitionTo(current);
+		current.PreviousState = previous;
 	}
 
 	// Each state decides its own successor via GetNextState() - no central transition table.

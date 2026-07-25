@@ -17,12 +17,7 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 		{
 			_countdownStarted = true;
 
-			// Use CountdownTimer to manage the countdown
-			CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-				_countdownTime,
-				UpdateCountdownMessage, // onTick action
-				InvokeFinish // onComplete action
-			));
+			Countdown.Start(_countdownTime, UpdateCountdownMessage, InvokeFinish);
 		}
 	}
 

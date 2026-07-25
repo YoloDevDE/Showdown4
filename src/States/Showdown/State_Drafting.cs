@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Showdown4.Commands;
 using Showdown4.Config;
 using Showdown4.Entities;
 using Showdown4.Managers;
@@ -17,6 +18,11 @@ namespace Showdown4.States.Showdown;
 public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private const int MaxLevelIndex = 7;
+	private readonly CommandBan _banCommand = new();
+	private readonly CommandPass _passCommand = new();
+
+	// The draft commands are only available while this state is active.
+	private readonly CommandPick _pickCommand = new();
 
 	private readonly Random _random = new();
 
@@ -31,6 +37,10 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	public override void Enter()
 	{
+		CommandRegistry.RegisterMixed(_pickCommand);
+		CommandRegistry.RegisterMixed(_banCommand);
+		CommandRegistry.RegisterMixed(_passCommand);
+
 		_isDraftCompleteCountdownStarted = false;
 		_isAutoPickInProgress = false;
 		_draftCountdownTime = MyConfig.DraftTimeConfig.Value;
@@ -38,13 +48,14 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		Match.AddDraft();
 		ChatCommandService.SetTime(86400);
 
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.DraftTimeConfig.Value,
-			OnDraftTick,
-			OnDraftTimeout));
+		Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
 	}
 
 	public override void Exit()
 	{
+		CommandRegistry.Unregister(_pickCommand);
+		CommandRegistry.Unregister(_banCommand);
+		CommandRegistry.Unregister(_passCommand);
 	}
 
 	public override IState GetNextState()
@@ -96,8 +107,18 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 			return;
 		}
 
+		Team otherTeam = CurrentDraft.GetOtherTeam();
+		if (otherTeam.Bans == 0 && otherTeam.Picks == 0)
+		{
+			// Passing only makes sense if the other team still has an action left to use it for -
+			// otherwise there is nobody left to hand the turn over to.
+			ChatMessage.SendCustomMessage(
+				$"{currentTeam.GetColoredTag()} cannot pass - {otherTeam.GetColoredTag()} has no actions left.");
+			return;
+		}
+
 		ChatMessage.SendCustomMessage(
-			$"{currentTeam.GetColoredTag()} <{ShowdownColors.Yellow}>passed</color> their action to {CurrentDraft.GetOtherTeam().GetColoredTag()}");
+			$"{currentTeam.GetColoredTag()} <{ShowdownColors.Yellow}>passed</color> their action to {otherTeam.GetColoredTag()}");
 
 		// A pass behaves exactly like letting the turn time out.
 		OnDraftTimeout();
@@ -167,9 +188,13 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 	//  - normal completion (maps were picked) -> StateDraftCompleted.
 	private void HandleDraftComplete()
 	{
+		// The draft is done - no more turns are coming, so the still-ticking turn countdown must be
+		// stopped now. Otherwise a stray timeout could still fire afterwards.
+		Countdown.Stop();
+
 		if (CurrentDraft.PickedLevels.Count == 0 && AvailableMaps.Count == 1)
 		{
-			CoroutineManager.Instance.StartExternalCoroutine(AutoPickLastRemainingLevel());
+			Showdown.StartCoroutine(AutoPickLastRemainingLevel());
 			return;
 		}
 
@@ -262,6 +287,13 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	private void OnDraftTimeout()
 	{
+		if (IsDraftLocked())
+		{
+			// The draft already finished (or is auto-picking) - a stray, still-ticking timer must
+			// not be able to act anymore.
+			return;
+		}
+
 		_draftCountdownTime = MyConfig.DraftTimeConfig.Value;
 		CurrentTeam.MissedDraft = true;
 
@@ -288,9 +320,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 
 		CurrentDraft.SwitchTeam();
-		CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.DraftTimeConfig.Value,
-			OnDraftTick,
-			OnDraftTimeout));
+		Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
 	}
 
 	// Only one map remains after the last possible action, so Showdown picks it automatically.
@@ -427,8 +457,10 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 				HandlePick(currentDraft, levelToPickOrBan, currentTeam, player);
 			}
 
-			CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(MyConfig.DraftTimeConfig.Value,
-				OnDraftTick, OnDraftTimeout));
+			if (!currentDraft.IsDraftComplete())
+			{
+				Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
+			}
 
 			if (isBan)
 			{
@@ -437,7 +469,8 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 			else
 			{
 				// Flash the whole message yellow to highlight the pick before rendering normally.
-				CoroutineManager.Instance.StartExternalCoroutine(FlashPickAnnouncement());
+				// The turn countdown is not a coroutine, so this effect can never cancel it.
+				Showdown.StartCoroutine(FlashPickAnnouncement());
 			}
 		}
 		catch (InvalidOperationException ex)

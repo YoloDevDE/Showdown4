@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Config;
 using Showdown4.Entities;
-using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistClient;
@@ -70,7 +69,7 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 				.TextLine("<i><#c0c0c0>This message disappears in 15 seconds</color></i>").Build().Message
 		);
 		// Start the cool race intro message for the first 10 seconds
-		CoroutineManager.Instance.StartExternalCoroutine(DisplayRaceIntroMessage());
+		Showdown.StartCoroutine(DisplayRaceIntroMessage());
 
 		_leaderboardDisplay = new LeaderboardDisplay(_currentRound);
 	}
@@ -78,7 +77,7 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 	public override void Exit()
 	{
 		foreach (Coroutine coroutine in _resetCoroutines.Values)
-			CoroutineManager.Instance.StopExternalCoroutine(coroutine);
+			Showdown.StopCoroutine(coroutine);
 		_resetCoroutines.Clear();
 	}
 
@@ -302,11 +301,11 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 	{
 		if (_resetCoroutines.TryGetValue(steamId, out Coroutine existingCoroutine))
 		{
-			CoroutineManager.Instance.StopExternalCoroutine(existingCoroutine);
+			Showdown.StopCoroutine(existingCoroutine);
 		}
 
 		_resetCoroutines[steamId] =
-			CoroutineManager.Instance.AddExternalCoroutine(LeaderboardResetCoroutine(steamId, time, color, name));
+			Showdown.StartCoroutine(LeaderboardResetCoroutine(steamId, time, color, name));
 	}
 
 	private IEnumerator LeaderboardResetCoroutine(ulong steamId, double time, string color, string name)

@@ -20,7 +20,7 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	public override void Enter()
 	{
-		CoroutineManager.Instance.StartExternalCoroutine(IntroSequence());
+		Showdown.StartCoroutine(IntroSequence());
 	}
 
 	public override void Exit()

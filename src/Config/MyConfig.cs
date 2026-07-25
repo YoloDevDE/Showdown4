@@ -1,4 +1,8 @@
-﻿using BepInEx.Configuration;
+﻿using System.Collections.Generic;
+using BepInEx.Configuration;
+using Newtonsoft.Json;
+using Showdown4.Entities;
+using UnityEngine;
 
 namespace Showdown4.Config;
 
@@ -9,9 +13,22 @@ namespace Showdown4.Config;
 // "XxxConfig" entries and consumed via "MyConfig.XxxConfig.Value".
 public static class MyConfig
 {
+	// How many team slots are exposed in the config. Each slot holds one team encoded as a JSON
+	// string (see TeamJsonEntry). This mirrors the "fixed number of string entries" pattern used by
+	// metalted's ChatUtils for its custom commands: bind a set number of entries and simply ignore
+	// the ones that are left empty.
+	public const int TeamSlotCount = 16;
+
 	public static ConfigEntry<string> CompetitionLevelsPlaylistNameConfig;
 	public static ConfigEntry<string> IntermissionLevelPlaylistNameConfig;
 	public static ConfigEntry<string> TeamFileConfig;
+
+	// The teams are configured directly in the BepInEx config (one JSON-encoded team per slot) so
+	// they can be edited both by hand and through the in-game GUI, without an external Teams.json.
+	public static readonly List<ConfigEntry<string>> TeamConfigEntries = new();
+
+	// Key that toggles the in-game Showdown control panel (level/playlist dropdowns, team overview).
+	public static ConfigEntry<KeyCode> GuiToggleKeyConfig;
 
 	public static ConfigEntry<int> SeasonNumberConfig;
 	public static ConfigEntry<int> TutorialStepDurationConfig;
@@ -26,6 +43,7 @@ public static class MyConfig
 	public static ConfigEntry<int> PreRaceCountdownConfig;
 	public static ConfigEntry<int> LobbyTimeConfig;
 	public static ConfigEntry<int> MatchEndKickCountdownConfig;
+	public static ConfigEntry<int> ServerMessageAutoVanishDurationConfig;
 
 	public static ConfigEntry<float> LeaderboardOverrideResetDelayConfig;
 	public static ConfigEntry<string> LeaderboardGainedArrowConfig;
@@ -43,7 +61,18 @@ public static class MyConfig
 		IntermissionLevelPlaylistNameConfig = configFile.Bind("General", "Intermissionlevel Playlistname",
 			"S4_Live", "");
 
-		TeamFileConfig = configFile.Bind("General", "Teams Json", "Teams", "");
+		TeamFileConfig = configFile.Bind("General", "Teams Json", "Teams",
+			"Fallback only: name of a Teams.json file (loaded via mod storage) used when no teams are " +
+			"configured in the 'Teams' section below.");
+
+		GuiToggleKeyConfig = configFile.Bind("General", "GUI Toggle Key", KeyCode.F4,
+			"Key that opens/closes the in-game Showdown control panel (level/playlist dropdowns and team overview).");
+
+		TeamConfigEntries.Clear();
+		for (int i = 0; i < TeamSlotCount; i++)
+			TeamConfigEntries.Add(configFile.Bind("Teams", "Team " + (i + 1), "",
+				"A single team encoded as JSON: {\"Name\":\"\",\"Tag\":\"\",\"Color\":\"#rrggbb\",\"Players\":" +
+				"[{\"Name\":\"\",\"SteamId\":0,\"QualificationTime\":0.0}]}. Leave empty to disable this slot."));
 
 		// Roman numerals only cover 1-3999; keep the season inside that range.
 		SeasonNumberConfig = configFile.Bind("General", "Showdown Season Number", 6,
@@ -119,6 +148,13 @@ public static class MyConfig
 				"Seconds after the match ends before the teams get kicked.",
 				new AcceptableValueRange<int>(0, 3600)));
 
+		// Robustness net: if a state ever forgets to clear its own server message (e.g. because
+		// of an unexpected transition), it does not stay stuck on screen forever. 0 disables it.
+		ServerMessageAutoVanishDurationConfig = configFile.Bind("General", "Server Message Auto Vanish Duration", 120,
+			new ConfigDescription(
+				"Seconds a server message stays visible after the last update before it automatically disappears. 0 disables this safety net.",
+				new AcceptableValueRange<int>(0, 3600)));
+
 		LeaderboardOverrideResetDelayConfig = configFile.Bind("Leaderboard Overrides", "Reset Delay", 3.5f,
 			new ConfigDescription(
 				"Seconds a gained/lost/equal/new position override stays visible before it reverts back to the normal time display.",
@@ -141,5 +177,54 @@ public static class MyConfig
 
 		LeaderboardEqualColorConfig = configFile.Bind("Leaderboard Overrides", "Equal Position Color", "yellow",
 			"Color used for the equal-position symbol.");
+	}
+
+	/// <summary>
+	///     Reads all non-empty team slots from the config and deserializes them into a <see cref="TeamData" />.
+	///     Invalid/empty slots are skipped so a single broken entry never breaks the whole roster.
+	/// </summary>
+	public static TeamData LoadTeams()
+	{
+		TeamData teamData = new() { Teams = new List<TeamJsonEntry>() };
+
+		foreach (ConfigEntry<string> entry in TeamConfigEntries)
+		{
+			string value = entry?.Value;
+			if (string.IsNullOrWhiteSpace(value))
+			{
+				continue;
+			}
+
+			try
+			{
+				TeamJsonEntry team = JsonConvert.DeserializeObject<TeamJsonEntry>(value);
+				if (team != null && !string.IsNullOrWhiteSpace(team.Name))
+				{
+					team.Players ??= new List<TeamPlayerJsonEntry>();
+					teamData.Teams.Add(team);
+				}
+			}
+			catch (JsonException)
+			{
+				// Ignore malformed slots; the user can fix them via the config or the in-game GUI.
+			}
+		}
+
+		return teamData;
+	}
+
+	/// <summary>
+	///     Writes the given teams back into the team slots (one JSON-encoded team per slot). Slots beyond
+	///     the provided list are cleared. Extra teams that do not fit into <see cref="TeamSlotCount" /> are
+	///     dropped.
+	/// </summary>
+	public static void SaveTeams(TeamData teamData)
+	{
+		List<TeamJsonEntry> teams = teamData?.Teams ?? new List<TeamJsonEntry>();
+
+		for (int i = 0; i < TeamConfigEntries.Count; i++)
+			TeamConfigEntries[i].Value = i < teams.Count
+				? JsonConvert.SerializeObject(teams[i])
+				: string.Empty;
 	}
 }

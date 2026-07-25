@@ -20,7 +20,14 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	public override void Enter()
 	{
-		TeamData teamData = Plugin.Storage.LoadFromJson<TeamData>(MyConfig.TeamFileConfig.Value);
+		// Teams are configured directly in the BepInEx config (Teams section). Only when no team is
+		// configured there do we fall back to the legacy Teams.json file loaded via mod storage.
+		TeamData teamData = MyConfig.LoadTeams();
+		if (teamData.Teams == null || teamData.Teams.Count == 0)
+		{
+			teamData = Plugin.Storage.LoadFromJson<TeamData>(MyConfig.TeamFileConfig.Value);
+		}
+
 		_teams = teamData?.Teams?.Select(Team.FromJson)
 			.OrderBy(team => team.GetAverageQualificationTime())
 			.ToList() ?? new List<Team>();
@@ -179,16 +186,13 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 		{
 			_isCountdownActive = true;
 
-			// Start the countdown using CountdownTimer.Start
-			CoroutineManager.Instance.StartExternalCoroutine(CountdownTimer.Start(
-				CountdownDuration, // Duration of the countdown
+			Countdown.Start(CountdownDuration,
 				remainingSeconds =>
 				{
 					_remainingSeconds = remainingSeconds;
 					SendServerMessage(); // Action to update message during countdown
 				},
-				InvokeFinish // Action when countdown completes
-			));
+				InvokeFinish);
 		}
 	}
 
