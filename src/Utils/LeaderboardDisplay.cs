@@ -6,6 +6,9 @@ namespace Showdown4.Utils;
 
 public class LeaderboardDisplay(Round round)
 {
+	// Tracks the previous team order so we can show position-change arrows
+	private readonly Dictionary<string, int> _previousPositions = new();
+
 	// Generate a server message for team and racer leaderboard
 	public ServerMessage GenerateLeaderboardMessage(Match match, bool racingColors = false)
 	{
@@ -42,6 +45,11 @@ public class LeaderboardDisplay(Round round)
 			//     }
 			// })
 			;
+		// Build new positions map and compute arrows before rendering
+		Dictionary<string, int> newPositions = new();
+		for (int i = 0; i < sortedTeams.Count; i++)
+			newPositions[sortedTeams[i].GetTag()] = i + 1;
+
 		for (int i = 0; i < sortedTeams.Count; i++)
 		{
 			int position = i + 1;
@@ -49,10 +57,17 @@ public class LeaderboardDisplay(Round round)
 			double averageTime = round.GetAvgTimeOfTeam(team);
 			int finishers = round.GetFinishersCount(team);
 
+			string tag = team.GetTag();
+			string arrow = "";
+			if (_previousPositions.TryGetValue(tag, out int prevPos) && prevPos != position)
+			{
+				arrow = prevPos > position ? " ^" : " v";
+			}
+
 			msg.AddLine(line =>
 			{
 				line.Size(25)
-					.AddBlock($"#{position}",
+					.AddBlock($"#{position}{arrow}",
 						f => f.Bold().Color(racingColors ? i == 0 ? "#00ff00" : "#ff0000" :
 							position == 1 ? "#FFD700" : "#C0C0C0"))
 					.AddBlock($"{team.GetTag()}".PadRight(6), f => f.Bold().Color(team.Color));
@@ -126,6 +141,11 @@ public class LeaderboardDisplay(Round round)
 				}
 			});
 		}
+
+		// Update cached positions for next call
+		_previousPositions.Clear();
+		foreach (KeyValuePair<string, int> kv in newPositions)
+			_previousPositions[kv.Key] = kv.Value;
 
 		return msg;
 	}

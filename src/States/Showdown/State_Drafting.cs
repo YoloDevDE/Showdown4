@@ -51,7 +51,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		ChatCommandService.SetTime(86400);
 
 		_draftingLeaderboard = new DraftingLeaderboard(Match.TeamA, Match.TeamB);
-		_draftingLeaderboard.Activate(CurrentTeam);
+		_draftingLeaderboard.Activate(CurrentTeam, MyConfig.DraftTimeConfig.Value);
 
 		Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
 	}
@@ -175,16 +175,17 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 	}
 
-	// Briefly flashes the whole server message yellow when a pick is made (1-0-1-0, 0.25s per
-	// step), then renders the message normally again.
-	private IEnumerator FlashPickAnnouncement()
+	// Briefly flashes the whole server message AND leaderboard white when a draft action is made,
+	// then renders everything normally again.
+	private IEnumerator FlashDraftAction()
 	{
-		for (int i = 0; i < 4; i++)
-		{
-			Render(i % 2 == 0 ? ShowdownColors.Yellow : "white");
-			yield return new WaitForSeconds(0.25f);
-		}
+		// Flash white: server message + leaderboard
+		_draftingLeaderboard?.FlashWhite();
+		Render();
+		yield return new WaitForSeconds(0.25f);
 
+		// Restore leaderboard and render normally
+		_draftingLeaderboard?.UpdateCountdown(CurrentTeam, _draftCountdownTime);
 		Render();
 	}
 
@@ -289,6 +290,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 	private void OnDraftTick(int remainingSeconds)
 	{
 		_draftCountdownTime = remainingSeconds;
+		_draftingLeaderboard?.UpdateCountdown(CurrentTeam, remainingSeconds);
 		Render();
 	}
 
@@ -327,7 +329,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 
 		CurrentDraft.SwitchTeam();
-		_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam);
+		_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam, MyConfig.DraftTimeConfig.Value);
 		Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
 	}
 
@@ -467,20 +469,12 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 			if (!currentDraft.IsDraftComplete())
 			{
-				_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam);
+				_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam, MyConfig.DraftTimeConfig.Value);
 				Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
 			}
 
-			if (isBan)
-			{
-				Render();
-			}
-			else
-			{
-				// Flash the whole message yellow to highlight the pick before rendering normally.
-				// The turn countdown is not a coroutine, so this effect can never cancel it.
-				Showdown.StartCoroutine(FlashPickAnnouncement());
-			}
+			// Flash white on both server message and leaderboard for any draft action (pick or ban).
+			Showdown.StartCoroutine(FlashDraftAction());
 		}
 		catch (InvalidOperationException ex)
 		{

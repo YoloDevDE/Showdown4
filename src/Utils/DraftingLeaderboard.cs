@@ -20,8 +20,7 @@ public class DraftingLeaderboard
 	private const string DraftingColor = "#00cc44";
 	private const string WaitingColor = "#888888";
 
-	// What replaces the position number – max 4 chars, something cool
-	private const string ActivePositionText = "LIVE";
+	// What replaces the position number for the waiting team
 	private const string WaitingPositionText = "WAIT";
 
 	// Cached times per SteamID so we can restore them later
@@ -29,6 +28,9 @@ public class DraftingLeaderboard
 
 	private readonly Team _teamA;
 	private readonly Team _teamB;
+
+	// Countdown shown in the position column for slot 0 of the active team (updated every tick)
+	private int _currentCountdown;
 
 	public DraftingLeaderboard(Team teamA, Team teamB)
 	{
@@ -40,8 +42,9 @@ public class DraftingLeaderboard
 	///     Caches the current leaderboard times for all racers, removes them from the
 	///     board, then populates the four drafting slots for the given active team.
 	/// </summary>
-	public void Activate(Team activeTeam)
+	public void Activate(Team activeTeam, int countdown)
 	{
+		_currentCountdown = countdown;
 		CacheAndClearRacers();
 		PopulateLeaderboard(activeTeam);
 	}
@@ -50,9 +53,33 @@ public class DraftingLeaderboard
 	///     Updates the four leaderboard slots when the active team changes (i.e. after
 	///     a pick/ban/pass moves the turn to the other team).
 	/// </summary>
-	public void UpdateActiveTeam(Team activeTeam)
+	public void UpdateActiveTeam(Team activeTeam, int countdown)
 	{
+		_currentCountdown = countdown;
 		PopulateLeaderboard(activeTeam);
+	}
+
+	/// <summary>
+	///     Updates the countdown shown in the active team's position column without
+	///     changing which team is active.
+	/// </summary>
+	public void UpdateCountdown(Team activeTeam, int countdown)
+	{
+		_currentCountdown = countdown;
+		PopulateLeaderboard(activeTeam);
+	}
+
+	/// <summary>
+	///     Flashes all leaderboard entries white by clearing all overrides for 0.25 s.
+	///     The caller is responsible for restoring normal overrides afterwards via
+	///     <see cref="UpdateCountdown" /> or <see cref="UpdateActiveTeam" />.
+	/// </summary>
+	public void FlashWhite()
+	{
+		IEnumerable<Racer> allRacers = _teamA.Racers.Concat(_teamB.Racers);
+		foreach (Racer racer in allRacers)
+			ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(
+				racer.SteamId, null, null, null, null, null);
 	}
 
 	/// <summary>
@@ -93,13 +120,12 @@ public class DraftingLeaderboard
 
 		// Active team gets times 1.0 / 2.0  → positions 1 & 2
 		// Waiting team gets times 3.0 / 4.0 → positions 3 & 4
-		SetTeamSlots(activeTeam, 1.0f, true);
-		SetTeamSlots(waitingTeam, 3.0f, false);
+		SetTeamSlots(activeTeam, 1.0f, true, _currentCountdown);
+		SetTeamSlots(waitingTeam, 3.0f, false, 0);
 	}
 
-	private static void SetTeamSlots(Team team, float startTime, bool isDrafting)
+	private static void SetTeamSlots(Team team, float startTime, bool isDrafting, int countdown)
 	{
-		string posText = isDrafting ? ActivePositionText : WaitingPositionText;
 		string timeText = isDrafting
 			? $"<{DraftingColor}>Currently drafting</color>"
 			: $"<{WaitingColor}>Waiting...</color>";
@@ -109,6 +135,11 @@ public class DraftingLeaderboard
 			Racer racer = team.Racers[i];
 			float slotTime = startTime + i;
 			string nameText = BuildNameOverride(team, racer);
+
+			// Slot 0 of the active team shows the live draft countdown in the position column
+			string posText = isDrafting && i == 0
+				? TimeFormatter.FormatDuration(countdown)
+				: WaitingPositionText;
 
 			// Place the player on the leaderboard with a synthetic time that
 			// ensures the correct sort order (no player notification).
