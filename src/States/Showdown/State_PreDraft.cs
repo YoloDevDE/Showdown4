@@ -56,15 +56,12 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 		initiationMessage.Send();
 		yield return new WaitForSeconds(1.5f);
 
-		// Clearly call out which team has initiative - a dedicated, oversized line instead of a
-		// short inline mention, so it's unmistakable who drafts first.
-		initiationMessage.AddSeparator()
-			.AddLine(line => line
-				.AddBlock("INITIATIVE", block => block.Color(ShowdownColors.Gold).Bold().AllCaps().Size(30)))
-			.AddLine(line => line
-				.AddBlock(InitiativeTeam.GetNameWithTag(), block => block.Color(InitiativeTeam.Color).Bold().Size(40)));
-		initiationMessage.Send();
-		yield return new WaitForSeconds(MyConfig.InitiativeAnnouncementDurationConfig.Value);
+		int initiativeDuration = Mathf.Max(MyConfig.InitiativeAnnouncementDurationConfig.Value, 1);
+		for (int remaining = initiativeDuration; remaining > 0; remaining--)
+		{
+			SendInitiativeMessage(remaining);
+			yield return new WaitForSeconds(1f);
+		}
 
 		// Draftphase I: the ready check (StateDraftReadyCheck) explains the draft rules itself,
 		// so nothing more needs to happen here.
@@ -72,7 +69,13 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 		if (Match.IsDraftphaseTwo)
 		{
 			ShowInstructions();
-			yield return new WaitForSeconds(MyConfig.PreDraftInstructionDurationConfig.Value);
+
+			int instructionDuration = Mathf.Max(MyConfig.PreDraftInstructionDurationConfig.Value, 1);
+			for (int remaining = instructionDuration - 1; remaining > 0; remaining--)
+			{
+				yield return new WaitForSeconds(1f);
+				SendInstructionsServerMessage(remaining);
+			}
 		}
 
 		InvokeFinish();
@@ -89,6 +92,32 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 			$"<br><{ShowdownColors.Yellow}>4.</color> Type {ShowdownColors.Command("!pass")} to hand your current action over to the other team." +
 			$"<br><{ShowdownColors.Gray}><i>Every selection is FINAL and cannot be undone!</i></color>");
 
+		SendInstructionsServerMessage(Mathf.Max(MyConfig.PreDraftInstructionDurationConfig.Value, 1));
+	}
+
+	private void SendInitiativeMessage(int remaining)
+	{
+		new ServerMessage("center").ShowdownHeader(false, "center", 50)
+			.AddLine(line => line.Size(30).Bold().AddBlock(Match.ScoreWithFullNameColoredAndPadded()).NoBreak())
+			.AddLine(line => line
+				.AddBlock(Match.DraftphaseName, builder => builder
+					.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold().AllCaps()
+					.Size(40)))
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock("INITIATIVE", block => block.Color(ShowdownColors.Gold).Bold().AllCaps().Size(30)))
+			.AddLine(line => line
+				.AddBlock(InitiativeTeam.GetNameWithTag(), block => block.Color(InitiativeTeam.Color).Bold().Size(40)))
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock("Draft starts in", block => block.Size(20).Color(ShowdownColors.Gray))
+				.AddBlock($"{remaining}s", block => block.Size(20)
+					.Color(remaining <= 5 ? ShowdownColors.Red : ShowdownColors.Green)))
+			.Send();
+	}
+
+	private void SendInstructionsServerMessage(int remaining)
+	{
 		new ServerMessage().ShowdownHeader(true)
 			.AddLine(line => line
 				.AddBlock("How to draft", builder => builder
@@ -107,8 +136,9 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 			.AddSeparator()
 			.AddLine(line => line
 				.Italic()
-				.AddBlock("Get ready - the draft is about to start!",
-					block => block.Color(ShowdownColors.Green)))
+				.AddBlock("Draft starts in", block => block.Color(ShowdownColors.Gray))
+				.AddBlock($"{remaining}s",
+					block => block.Color(remaining <= 5 ? ShowdownColors.Red : ShowdownColors.Green)))
 			.Send();
 	}
 }

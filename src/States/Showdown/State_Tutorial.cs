@@ -49,7 +49,8 @@ public class StateTutorial(IStateMachine stateMachine) : ShowdownStateBase(state
 	{
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 
-		foreach (TutorialContent.Page page in TutorialContent.Pages) yield return ShowStep(page);
+		for (int pageIndex = 0; pageIndex < TutorialContent.Pages.Count; pageIndex++)
+			yield return ShowStep(TutorialContent.Pages[pageIndex], pageIndex + 1, TutorialContent.Pages.Count);
 
 		HasPlayedOnce = true;
 
@@ -58,7 +59,17 @@ public class StateTutorial(IStateMachine stateMachine) : ShowdownStateBase(state
 	}
 
 	// Shows a single tutorial topic for a configurable duration before moving on to the next one.
-	private IEnumerator ShowStep(TutorialContent.Page page)
+	private IEnumerator ShowStep(TutorialContent.Page page, int pageNumber, int pageCount)
+	{
+		int duration = Mathf.Max(MyConfig.TutorialStepDurationConfig.Value, 1);
+		for (int remaining = duration; remaining > 0; remaining--)
+		{
+			SendStepMessage(page, pageNumber, pageCount, remaining);
+			yield return new WaitForSeconds(1f);
+		}
+	}
+
+	private static void SendStepMessage(TutorialContent.Page page, int pageNumber, int pageCount, int remaining)
 	{
 		ServerMessage msg = new ServerMessage()
 			.ShowdownHeader()
@@ -67,13 +78,14 @@ public class StateTutorial(IStateMachine stateMachine) : ShowdownStateBase(state
 					.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold().AllCaps()
 					.Size(30)))
 			.AddSeparator()
-			.AddLine(line => line.AddBlock(page.Title, block => block.Color(ShowdownColors.Gold).Bold().Size(30)))
+			.AddLine(line => line
+				.AddBlock(page.Title, block => block.Color(ShowdownColors.Gold).Bold().Size(30))
+				.AddBlock($"({pageNumber}/{pageCount}) next:{remaining}",
+					builder => builder.Color(ShowdownColors.Gray).Size(25)))
 			.AddSeparator();
 
 		foreach (Action<ServerMessage.LineBuilder> line in page.Lines) msg.AddLine(line);
 
 		msg.Send();
-
-		yield return new WaitForSeconds(MyConfig.TutorialStepDurationConfig.Value);
 	}
 }

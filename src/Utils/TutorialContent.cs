@@ -107,7 +107,24 @@ public static class TutorialContent
 			line => line
 				.AddBlock("This only works if the other team")
 				.AddBlock("still has an action left", block => block.Color(ShowdownColors.Yellow))
-				.AddBlock("to use it for."))
+				.AddBlock("to use it for.")),
+
+		new Page("Pick Forces a Pick",
+			line => line
+				.AddBlock("If the other team just")
+				.AddBlock("picked", block => block.Color(ShowdownColors.Green).Bold())
+				.AddBlock("a map, you must"),
+			line => line
+				.AddBlock("pick", block => block.Color(ShowdownColors.Green).Bold())
+				.AddBlock("a map too -")
+				.AddBlock("no ban", block => block.Color(ShowdownColors.Red).Bold())
+				.AddBlock("and")
+				.AddBlock("no pass", block => block.Color(ShowdownColors.Red).Bold())
+				.AddBlock("allowed."),
+			line => line
+				.AddBlock("If time runs out, Showdown will")
+				.AddBlock("still switch teams", block => block.Color(ShowdownColors.Yellow))
+				.AddBlock("for you."))
 	};
 
 	public readonly struct Page(string title, params Action<ServerMessage.LineBuilder>[] lines)

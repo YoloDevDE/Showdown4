@@ -115,6 +115,14 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 
 		Team otherTeam = CurrentDraft.GetOtherTeam();
+
+		if (CurrentDraft.IsPickPhase && !otherTeam.MissedDraft)
+		{
+			ChatMessage.SendCustomMessage(
+				$"{currentTeam.GetColoredTag()} cannot pass - a level has been picked, so you must pick a level too.");
+			return;
+		}
+
 		if (otherTeam.Bans == 0 && otherTeam.Picks == 0)
 		{
 			// Passing only makes sense if the other team still has an action left to use it for -

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using Showdown4.Commands;
+﻿using System.Linq;
 using Showdown4.Entities;
 using Showdown4.Utils;
 using ZeepkistClient;
@@ -11,9 +9,6 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 {
 	private const int CountdownDuration = 3;
 
-	// The (un)link commands are only available while racers are being linked to their teams.
-	private readonly CommandLinkRacer _linkCommand = new();
-	private readonly CommandUnLinkRacer _unlinkCommand = new();
 	private bool _isCountdownRunning;
 
 	private Team TeamA => Match.TeamA;
@@ -21,9 +16,6 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	public override void Enter()
 	{
-		CommandRegistry.RegisterMixed(_linkCommand);
-		CommandRegistry.RegisterMixed(_unlinkCommand);
-
 		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
 
 		AutoLinkPresentRacers();
@@ -32,8 +24,6 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	public override void Exit()
 	{
-		CommandRegistry.Unregister(_linkCommand);
-		CommandRegistry.Unregister(_unlinkCommand);
 	}
 
 	public override IState GetNextState()
@@ -52,68 +42,9 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 		CheckIfRacersAreLinked();
 	}
 
-	public override void OnLinkRacer(ulong steamId, string arguments)
-	{
-		// Once the countdown to the next state is running, no more (un)linking is accepted.
-		if (_isCountdownRunning)
-		{
-			return;
-		}
-
-		Team targetTeam = ResolveTeamFromArgument(arguments);
-		if (targetTeam == null)
-		{
-			ChatMessage.SendCustomMessage(
-				$"Usage: {ShowdownColors.Command("!link <1|2|TAG>")}, e.g. " +
-				$"{ShowdownColors.Command("!link 1")}, " +
-				$"{ShowdownColors.Command("!link #2")} or " +
-				$"{ShowdownColors.Command($"!link {TeamA.Tag}")}.");
-			return;
-		}
-
-		if (targetTeam.Racers.Count >= targetTeam.MaxTeamSize)
-		{
-			ChatMessage.SendCustomMessage($"Team {targetTeam.GetColoredTag()} is already full.");
-			return;
-		}
-
-		// A player can only be part of one team - remove them from the other team first.
-		TeamA.RemoveRacer(steamId);
-		TeamB.RemoveRacer(steamId);
-
-		string steamName = ZeepkistNetworkService.GetSteamNameFromSteamId(steamId);
-		Racer racer = targetTeam.ExpectedRacers.FirstOrDefault(r => r.SteamId == steamId) ??
-		              new Racer(steamId, steamName);
-		targetTeam.AddRacer(racer); // Add racer to the requested team
-
-		CheckIfRacersAreLinked(); // Check again after each link
-	}
-
-	// Handles '!unlink', which removes the calling player from whichever team they were on.
-	// Example: a player types '!unlink' to leave their current team without joining another one.
-	public override void OnUnlinkRacer(ulong steamId)
-	{
-		// Once the countdown to the next state is running, no more (un)linking is accepted.
-		if (_isCountdownRunning)
-		{
-			return;
-		}
-
-		TeamA.RemoveRacer(steamId);
-		TeamB.RemoveRacer(steamId);
-
-
-		CheckIfRacersAreLinked();
-	}
-
-	// Index shown to players in front of each team's name (1-based) so '!link 1'/'!link 2' works.
-	private static int GetTeamNumber(Team team, Team teamA, Team teamB)
-	{
-		return team == teamA ? 1 : 2;
-	}
-
 	// Teams.json already knows which SteamIds belong to a team. As soon as one of these players
-	// is detected in the server, they are linked automatically without needing '!link'.
+	// is detected in the server, they are automatically linked - players have no control over
+	// which team they end up on, since that is entirely determined by the configured roster.
 	private void AutoLinkPresentRacers()
 	{
 		foreach (Team team in new[] { TeamA, TeamB })
@@ -176,49 +107,6 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 		msg.Send();
 	}
 
-	// Resolves the team targeted by '!link'. Accepts a 1-based team number (optionally prefixed
-	// with '#', e.g. '1' / '#1') or the team tag (optionally wrapped in brackets, e.g. 'TAG' / '[TAG]').
-	private Team ResolveTeamFromArgument(string arguments)
-	{
-		string argument = (arguments ?? string.Empty).Trim();
-		if (argument.Length == 0)
-		{
-			return null;
-		}
-
-		if (argument.StartsWith("#"))
-		{
-			argument = argument[1..].Trim();
-		}
-
-		if (argument.StartsWith("[") && argument.EndsWith("]") && argument.Length >= 2)
-		{
-			argument = argument[1..^1].Trim();
-		}
-
-		if (int.TryParse(argument, out int teamNumber))
-		{
-			return teamNumber switch
-			{
-				1 => TeamA,
-				2 => TeamB,
-				_ => null
-			};
-		}
-
-		if (string.Equals(TeamA.Tag, argument, StringComparison.OrdinalIgnoreCase))
-		{
-			return TeamA;
-		}
-
-		if (string.Equals(TeamB.Tag, argument, StringComparison.OrdinalIgnoreCase))
-		{
-			return TeamB;
-		}
-
-		return null;
-	}
-
 	private ServerMessage ServerMessageLinkedRacers()
 	{
 		ServerMessage msg = new ServerMessage()
@@ -230,17 +118,8 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 				)
 				.AddSeparator()
 				.AddLine(line => line
-					.AddBlock("To join a team, type ")
-					.AddBlock("'!link <number|TAG>'", format => format.Command())
-					.AddBlock("in chat, e.g.")
-					.AddBlock("'!link 1'", format => format.Command())
-					.AddBlock("or")
-					.AddBlock("'!link TAG'", format => format.Command())
-				)
-				.AddLine(line => line
-					.AddBlock("To leave your team, type ")
-					.AddBlock("'!unlink'", format => format.Command())
-					.AddBlock("in chat")
+					.AddBlock("Waiting for all racers to join the server. Teams are assigned automatically ")
+					.AddBlock("based on the configured roster.")
 				)
 				.AddSeparator()
 				.AddLine("Members in each team:")

@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using Showdown4.Config;
 using Showdown4.Entities;
 using Showdown4.Managers;
 using Showdown4.Utils;
@@ -20,17 +18,9 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	public override void Enter()
 	{
-		// Teams are configured directly in the BepInEx config (Teams section). Only when no team is
-		// configured there do we fall back to the legacy Teams.json file loaded via mod storage.
-		TeamData teamData = MyConfig.LoadTeams();
-		if (teamData.Teams == null || teamData.Teams.Count == 0)
-		{
-			teamData = Plugin.Storage.LoadFromJson<TeamData>(MyConfig.TeamFileConfig.Value);
-		}
-
-		_teams = teamData?.Teams?.Select(Team.FromJson)
-			.OrderBy(team => team.GetAverageQualificationTime())
-			.ToList() ?? new List<Team>();
+		// Teams are loaded once already by StateCheckIfAllTeamsAreComplete before this state is
+		// entered, so we only need to (re)load them here for the actual selection.
+		_teams = TeamsProvider.LoadTeams();
 
 		_currentSelectionIndex = 0;
 		_selectedTeamA = null;
@@ -94,7 +84,7 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	public override IState GetNextState()
 	{
-		return new StateLinkRacers(StateMachine);
+		return new StateCheckIfAllTeamsAreComplete(StateMachine);
 	}
 
 	private void SendServerMessage()
@@ -182,18 +172,20 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	private void StartCountdown()
 	{
-		if (_selectedTeamA != null && _selectedTeamB != null)
+		if (_selectedTeamA == null || _selectedTeamB == null)
 		{
-			_isCountdownActive = true;
-
-			Countdown.Start(CountdownDuration,
-				remainingSeconds =>
-				{
-					_remainingSeconds = remainingSeconds;
-					SendServerMessage(); // Action to update message during countdown
-				},
-				InvokeFinish);
+			return;
 		}
+
+		_isCountdownActive = true;
+
+		Countdown.Start(CountdownDuration,
+			remainingSeconds =>
+			{
+				_remainingSeconds = remainingSeconds;
+				SendServerMessage(); // Action to update message during countdown
+			},
+			InvokeFinish);
 	}
 
 	private void ConfirmTeams()

@@ -40,6 +40,7 @@ public static class MyConfig
 	public static ConfigEntry<int> AutoPickRevealCountdownConfig;
 	public static ConfigEntry<int> ReadyCheckDurationConfig;
 	public static ConfigEntry<int> ReadyConfirmCountdownConfig;
+	public static ConfigEntry<int> WarmUpSecondsConfig;
 	public static ConfigEntry<int> PreRaceCountdownConfig;
 	public static ConfigEntry<int> LobbyTimeConfig;
 	public static ConfigEntry<int> MatchEndKickCountdownConfig;
@@ -131,6 +132,11 @@ public static class MyConfig
 		ReadyConfirmCountdownConfig = configFile.Bind("Ready Check", "Ready Confirm Countdown", 3,
 			new ConfigDescription(
 				"Seconds to wait after everyone is ready before racing starts.",
+				new AcceptableValueRange<int>(0, 3600)));
+
+		WarmUpSecondsConfig = configFile.Bind("Racing", "Warm Up Seconds", 30,
+			new ConfigDescription(
+				"Seconds the warm up countdown runs before a race starts.",
 				new AcceptableValueRange<int>(0, 3600)));
 
 		PreRaceCountdownConfig = configFile.Bind("Racing", "Pre Race Countdown", 10,

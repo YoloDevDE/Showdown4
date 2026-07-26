@@ -33,9 +33,6 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 	private Team _teamA, _teamB;
 	private TeamLeaderboard _teamLeaderboard;
 
-	// Pending coroutine that re-sends the team leaderboard without arrows after the delay.
-	private Coroutine _teamLeaderboardResetCoroutine;
-
 	// Delay before a gained/lost/equal/new position override is reverted back to the
 	// normal time+name display, and the colors/symbols used for it, are all user-configurable.
 	// Mirrors the "resetDelay"/"gained"/"lost"/"equal" config from the reference implementation.
@@ -59,22 +56,8 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		Showdown.Match.AddRound(new Round(_teamA, _teamB)); // Initialize round
 		_currentRound = Showdown.Match.CurrentRound;
 
-		ChatMessage.SendCustomMessage(
-			new ChatMessage.Builder().ClearChat()
-				.DashedLine().NewLine()
-				.TextLine(
-					$"<b>{(Showdown.Match.RoundCounter() == 3 ? "Tiebreaker" : $"Round {Showdown.Match.RoundCounter()}")}</b> started")
-				.NewLine()
-				.DashedLine().NewLine()
-				.TextLine($"{Showdown.Match.Score()}").NewLine()
-				.DashedLine().NewLine()
-				.TextLine("Good Luck, Have Fun! :smile:").NewLine()
-				.TextLine("<i><#c0c0c0>This message disappears in 15 seconds</color></i>").Build().Message
-		);
-		// Start the cool race intro message for the first 10 seconds
-		Showdown.StartCoroutine(DisplayRaceIntroMessage());
-
 		_teamLeaderboard = new TeamLeaderboard(_currentRound);
+		SendTeamLeaderboard();
 	}
 
 	public override void Exit()
@@ -82,14 +65,6 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		foreach (Coroutine coroutine in _resetCoroutines.Values)
 			Showdown.StopCoroutine(coroutine);
 		_resetCoroutines.Clear();
-
-		if (_teamLeaderboardResetCoroutine == null)
-		{
-			return;
-		}
-
-		Showdown.StopCoroutine(_teamLeaderboardResetCoroutine);
-		_teamLeaderboardResetCoroutine = null;
 	}
 
 	public override IState GetNextState()
@@ -252,28 +227,8 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 
 	public void SendTeamLeaderboard()
 	{
-		// Cancel any pending "clear arrows" reset so we don't overwrite a fresh update too early.
-		if (_teamLeaderboardResetCoroutine != null)
-		{
-			Showdown.StopCoroutine(_teamLeaderboardResetCoroutine);
-			_teamLeaderboardResetCoroutine = null;
-		}
-
-		ServerMessage leaderboardMessage = _teamLeaderboard.GenerateLeaderboardMessage(Showdown.Match, true);
+		ServerMessage leaderboardMessage = _teamLeaderboard.GenerateLeaderboardMessage(Showdown.Match);
 		leaderboardMessage.Send();
-
-		// Schedule a re-send after the delay so the arrows disappear (second call has no position change).
-		_teamLeaderboardResetCoroutine = Showdown.StartCoroutine(TeamLeaderboardResetCoroutine());
-	}
-
-	private IEnumerator TeamLeaderboardResetCoroutine()
-	{
-		yield return new WaitForSeconds(ResetDelay);
-
-		// Re-generate without arrows (positions haven't changed → _previousPositions matches current).
-		ServerMessage resetMessage = _teamLeaderboard.GenerateLeaderboardMessage(Showdown.Match, true);
-		resetMessage.Send();
-		_teamLeaderboardResetCoroutine = null;
 	}
 
 	private static int? FindLeaderboardPosition(List<LeaderboardItem> leaderboard, ulong steamId)
@@ -290,45 +245,6 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 	private static string BuildNameOverride(string color, string name)
 	{
 		return $"<nobr><{color}>{name}</color></nobr>";
-	}
-
-	private string GetTeamPositionColor(ulong steamId)
-	{
-		Team playerTeam = Showdown.Match.GetTeamBySteamId(steamId);
-		if (playerTeam == null || _currentRound.Leaderboard.Count == 0)
-		{
-			return null;
-		}
-
-		Team teamA = _currentRound.TeamA;
-		Team teamB = _currentRound.TeamB;
-		double timeA = teamA.Racers
-			.Where(r => _currentRound.Leaderboard.ContainsKey(r.SteamId))
-			.Sum(r => _currentRound.GetPersonalBest(r));
-		double timeB = teamB.Racers
-			.Where(r => _currentRound.Leaderboard.ContainsKey(r.SteamId))
-			.Sum(r => _currentRound.GetPersonalBest(r));
-
-		if (timeA == 0 && timeB == 0)
-		{
-			return null;
-		}
-
-		Team leadingTeam;
-		if (timeA == 0)
-		{
-			leadingTeam = teamB;
-		}
-		else if (timeB == 0)
-		{
-			leadingTeam = teamA;
-		}
-		else
-		{
-			leadingTeam = timeA < timeB ? teamA : teamB;
-		}
-
-		return playerTeam == leadingTeam ? "#00ff00" : "#ff0000";
 	}
 
 	private string GetJsonNameForPlayer(ulong steamId, Team team)
@@ -377,12 +293,7 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 
 	private void SetNormalLeaderboardOverride(ulong steamId, double time, string color, string name)
 	{
-		string posColor = GetTeamPositionColor(steamId);
-		string posOverride = null;
-		if (posColor != null && _playerPositions.TryGetValue(steamId, out int pos))
-		{
-			posOverride = $"<{posColor}>{pos}</color>";
-		}
+		string posOverride = _playerPositions.TryGetValue(steamId, out int pos) ? pos.ToString() : null;
 
 		SetLeaderboardOverrides(steamId, BuildNormalTimeOverride(time), BuildNameOverride(color, name), posOverride);
 	}
@@ -407,58 +318,5 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		SetNormalLeaderboardOverride(steamId, time, color, name);
 		_lostAccum[steamId] = 0;
 		_resetCoroutines.Remove(steamId);
-	}
-
-	// Coroutine for showing the cool intro message for the first 10 seconds
-// Coroutine for showing the cool intro message for the first 10 seconds
-// Coroutine for showing the cool intro message for the first 10 seconds
-	private IEnumerator DisplayRaceIntroMessage()
-	{
-		ServerMessage introMessage = new ServerMessage("center")
-				.ShowdownHeader(false, "center")
-				.AddLine(line => line
-					.AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
-					.AddBlock("VS")
-					.AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color))
-				)
-			;
-
-		// Determine the number of rows needed based on the maximum number of racers in either team
-		int maxRacers = Mathf.Max(_teamA.Racers.Count, _teamB.Racers.Count);
-
-		for (int i = 0; i < maxRacers; i++)
-		{
-			Racer teamARacer = i < _teamA.Racers.Count ? _teamA.Racers[i] : null;
-			Racer teamBRacer = i < _teamB.Racers.Count ? _teamB.Racers[i] : null;
-
-			introMessage.AddLine(line =>
-			{
-				if (teamARacer != null)
-				{
-					line.AddBlock($"{teamARacer.SteamName}", f => f.Color(_teamA.Color));
-				}
-				else
-				{
-					line.AddBlock(" "); // Empty space for alignment
-				}
-
-
-				if (teamBRacer != null)
-				{
-					line.AddBlock(
-						$"{teamBRacer.SteamName}".PadLeft(1 + _teamA.GetNameWithTag().Length + "VS".Length +
-							_teamB.GetNameWithTag().Length - teamARacer.SteamName.Length), f => f.Color(_teamB.Color));
-				}
-			});
-		}
-
-		introMessage.AddSeparator(_teamA.GetNameWithTag().Length + 4 + _teamB.GetNameWithTag().Length);
-		introMessage.Send();
-
-		yield return new WaitForSeconds(15);
-
-		// After 10 seconds, clear the intro message and proceed to the normal race flow
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
-		SendTeamLeaderboard();
 	}
 }

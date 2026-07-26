@@ -76,7 +76,7 @@ internal class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(s
 
 		if (Match.RoundCounter() < 2)
 		{
-			return new StateRacing(StateMachine);
+			return new StateWarmUp(StateMachine);
 		}
 
 		return new StatePreDraft(StateMachine);
