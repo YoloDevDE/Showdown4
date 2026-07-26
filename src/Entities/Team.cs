@@ -44,11 +44,14 @@ public class Team(string name, string tag, string color)
 		Team team = new(entry.Name, entry.Tag, entry.Color)
 		{
 			ExpectedRacers = (entry.Players ?? new List<TeamPlayerJsonEntry>())
+				.GroupBy(player => player.SteamId)
+				.Select(group => group.First())
 				.Select(player => new Racer(player.SteamId, player.Name)
 					{ QualificationTime = player.QualificationTime })
 				.ToList()
 		};
 
+		team.MaxTeamSize = team.ExpectedRacers.Count;
 		team.QualificationTime = team.GetAverageQualificationTime();
 		return team;
 	}
@@ -85,6 +88,11 @@ public class Team(string name, string tag, string color)
 
 	public void AddRacer(Racer racer)
 	{
+		if (Racers.Any(r => r.SteamId == racer.SteamId))
+		{
+			return;
+		}
+
 		if (Racers.Count < MaxTeamSize)
 		{
 			Racers.Add(racer);

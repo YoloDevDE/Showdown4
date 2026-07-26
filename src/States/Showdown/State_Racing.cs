@@ -208,14 +208,6 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 			ScheduleLeaderboardReset(steamId, result.Time, color, name);
 			_lostAccum[steamId] = 0;
 		}
-		else
-		{
-			string timeOverride = $"<#00ff00>{result.Time.GetFormattedTime()}</color>";
-			string nameOverride = BuildNameOverride(color, name);
-			SetLeaderboardOverrides(steamId, timeOverride, nameOverride);
-			ScheduleLeaderboardReset(steamId, result.Time, color, name);
-			_lostAccum[steamId] = 0;
-		}
 
 		if (newPosition.HasValue)
 		{
@@ -276,17 +268,17 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 
 	private static string BuildGainedPosOverride(int gained)
 	{
-		return $"<{GainedColor}>{GainedArrow}</color>{gained}";
+		return $"<{GainedColor}>{GainedArrow}{gained}</color>";
 	}
 
 	private static string BuildLostPosOverride(int lost)
 	{
-		return $"<{LostColor}>{LostArrow}</color>{lost}";
+		return $"<{LostColor}>{LostArrow}{lost}</color>";
 	}
 
 	private static string BuildSamePosOverride()
 	{
-		return $"<b><color={EqualColor}>{EqualSymbol}</color>0</b>";
+		return $"<b><color={EqualColor}>{EqualSymbol}0</color></b>";
 	}
 
 	private static void SetLeaderboardOverrides(ulong steamId, string time, string name, string pos = null,

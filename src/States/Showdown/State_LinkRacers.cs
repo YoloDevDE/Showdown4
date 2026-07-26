@@ -38,7 +38,7 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 			return;
 		}
 
-		AutoLinkPresentRacers();
+		LinkRacer(player.SteamID);
 		CheckIfRacersAreLinked();
 	}
 
@@ -47,11 +47,19 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 	// which team they end up on, since that is entirely determined by the configured roster.
 	private void AutoLinkPresentRacers()
 	{
-		foreach (Team team in new[] { TeamA, TeamB })
-		foreach (Racer expectedRacer in team.ExpectedRacers)
+		foreach (ZeepkistNetworkPlayer player in ZeepkistNetwork.PlayerList)
 		{
-			bool isPresent = ZeepkistNetwork.PlayerList.Any(player => player.SteamID == expectedRacer.SteamId);
-			if (isPresent)
+			LinkRacer(player.SteamID);
+		}
+	}
+
+	// Links exactly one player (by SteamId) to their configured team, if they are expected there.
+	private void LinkRacer(ulong steamId)
+	{
+		foreach (Team team in new[] { TeamA, TeamB })
+		{
+			Racer expectedRacer = team.ExpectedRacers.FirstOrDefault(racer => racer.SteamId == steamId);
+			if (expectedRacer != null)
 			{
 				team.AddRacer(expectedRacer);
 			}
