@@ -1,42 +1,23 @@
-﻿using System;
-using Showdown4.Config;
+﻿using Showdown4.Config;
 using Showdown4.Utils;
 
 namespace Showdown4.States.Master;
 
-public class StateMasterOff(IStateMachine stateMachine) : IState
+public class StateMasterOff(IStateMachine stateMachine) : MasterStateBase(stateMachine)
 {
-	public IStateMachine StateMachine { get; } = stateMachine;
-	public IState PreviousState { get; set; }
-
-	public event Action Finished;
-
-	public void Enter()
-	{
-	}
-
-	public void Exit()
-	{
-	}
-
-	public IState GetNextState()
+	public override IState GetNextState()
 	{
 		return new StateMasterOn(StateMachine);
 	}
 
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
-	}
-
-	public void OnShowdownStop()
+	public override void OnShowdownStop()
 	{
 		ToastMessenger.LogWarning("already stopped");
 	}
 
-	public void OnShowdownStart()
+	public override void OnShowdownStart()
 	{
-		Finished?.Invoke();
+		InvokeFinish();
 
 		ToastMessenger.LogSuccess($"Season {MyConfig.SeasonNumberConfig.Value} started");
 	}

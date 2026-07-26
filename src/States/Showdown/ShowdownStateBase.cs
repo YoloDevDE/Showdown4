@@ -24,6 +24,7 @@ public abstract class ShowdownStateBase(IStateMachine stateMachine) : IState
 	// from a previous state can never fire again.
 	protected Countdown Countdown { get; } = new();
 	public IStateMachine StateMachine { get; } = stateMachine;
+	public virtual IStateMachine SubStateMachine => null;
 	public IState PreviousState { get; set; }
 
 	public event Action Finished;
@@ -63,6 +64,38 @@ public abstract class ShowdownStateBase(IStateMachine stateMachine) : IState
 	}
 
 	public virtual void OnPlayerJoined(ZeepkistNetworkPlayer player)
+	{
+	}
+
+	public virtual void OnShowdownStart()
+	{
+	}
+
+	public virtual void OnShowdownStop()
+	{
+	}
+
+	public virtual void OnFinishState(string arguments)
+	{
+	}
+
+	public virtual void OnPrev()
+	{
+	}
+
+	public virtual void OnPause()
+	{
+	}
+
+	public virtual void OnResume()
+	{
+	}
+
+	public virtual void OnRestart()
+	{
+	}
+
+	public virtual void OnStateRestart()
 	{
 	}
 

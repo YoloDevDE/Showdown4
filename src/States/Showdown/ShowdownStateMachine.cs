@@ -41,6 +41,41 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 		StateMachineFinished?.Invoke();
 	}
 
+	public void Dispose()
+	{
+		StateMachineOperations.Dispose(this);
+	}
+
+	public void StateMachineFinishedNotify()
+	{
+		StateMachineOperations.StateMachineFinishedNotify(this);
+	}
+
+	public void Start()
+	{
+		StateMachineOperations.Start(this);
+	}
+
+	public void TransitionTo(IState nextState)
+	{
+		StateMachineOperations.TransitionTo(this, nextState);
+	}
+
+	public void TransitionToPreviousState()
+	{
+		StateMachineOperations.TransitionToPreviousState(this);
+	}
+
+	public void RestartCurrentState()
+	{
+		StateMachineOperations.RestartCurrentState(this);
+	}
+
+	public void OnCurrentStateFinished()
+	{
+		StateMachineOperations.OnCurrentStateFinished(this);
+	}
+
 	// Note: IStateMachine.TransitionTo() calls StopAllCoroutines() before every state change.
 	// This class satisfies that with the plain MonoBehaviour.StopAllCoroutines(), so leftover
 	// effect/intro coroutines from the previous state are cleaned up automatically. Countdowns

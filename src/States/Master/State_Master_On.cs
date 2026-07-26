@@ -1,5 +1,4 @@
-﻿using System;
-using Showdown4.Commands;
+﻿using Showdown4.Commands;
 using Showdown4.Config;
 using Showdown4.Managers;
 using Showdown4.States.Showdown;
@@ -9,7 +8,7 @@ using Object = UnityEngine.Object;
 
 namespace Showdown4.States.Master;
 
-public class StateMasterOn(IStateMachine stateMachine) : IState
+public class StateMasterOn(IStateMachine stateMachine) : MasterStateBase(stateMachine)
 {
 	private readonly CommandFinishState _finishStateCommand = new();
 
@@ -17,21 +16,16 @@ public class StateMasterOn(IStateMachine stateMachine) : IState
 
 	// Commands that only make sense while a showdown is actually running. They are registered on
 	// Enter() and removed again on Exit(), so they cannot be used while the plugin is stopped.
-	private readonly CommandShowdownPrev _prevCommand = new();
+	private readonly CommandPrevState _prevStateCommand = new();
 	private readonly CommandShowdownRestart _restartCommand = new();
+	private readonly CommandRestartState _restartStateCommandRestart = new();
 	private readonly CommandShowdownResume _resumeCommand = new();
-	private readonly CommandStateRestart _stateRestartCommand = new();
 
 	private GameObject _showdownObject;
 
 	private ShowdownStateMachine ShowdownStateMachine => SubStateMachine as ShowdownStateMachine;
 
-	public IStateMachine StateMachine { get; } = stateMachine;
-	public IStateMachine SubStateMachine { get; set; }
-	public IState PreviousState { get; set; }
-	public event Action Finished;
-
-	public void Enter()
+	public override void Enter()
 	{
 		RegisterCommands();
 
@@ -43,7 +37,7 @@ public class StateMasterOn(IStateMachine stateMachine) : IState
 		SubStateMachine = _showdownObject.AddComponent<ShowdownStateMachine>();
 	}
 
-	public void Exit()
+	public override void Exit()
 	{
 		UnregisterCommands();
 
@@ -59,78 +53,74 @@ public class StateMasterOn(IStateMachine stateMachine) : IState
 		_showdownObject = null;
 	}
 
-	public IState GetNextState()
+	public override IState GetNextState()
 	{
 		return new StateMasterOff(StateMachine);
 	}
 
-	public void InvokeFinish()
-	{
-		Finished?.Invoke();
-	}
 
-	public void OnFinishState(string arguments)
+	public override void OnFinishState(string arguments)
 	{
 		SubStateMachine.CurrentState?.InvokeFinish();
 	}
 
-	public void OnPrev()
+	public override void OnPrev()
 	{
 		SubStateMachine?.TransitionToPreviousState();
 	}
 
-	public void OnPause()
+	public override void OnPause()
 	{
 		ShowdownStateMachine?.Pause();
 	}
 
-	public void OnResume()
+	public override void OnResume()
 	{
 		ShowdownStateMachine?.Resume();
 	}
 
-	public void OnRestart()
+	public override void OnRestart()
 	{
 		// Full showdown restart: turn it off and immediately on again. Invoking Finished moves the
 		// master machine to StateMasterOff (GetNextState), then OnShowdownStart on that state brings
 		// it right back to a fresh StateMasterOn.
-		Finished?.Invoke();
+		InvokeFinish();
 		StateMachine.CurrentState?.OnShowdownStart();
 	}
 
-	public void OnStateRestart()
+	public override void OnStateRestart()
 	{
 		SubStateMachine?.RestartCurrentState();
 	}
 
-	public void OnShowdownStart()
+	public override void OnShowdownStart()
 	{
 		ToastMessenger.LogWarning("already running");
 	}
 
-	public void OnShowdownStop()
+	public override void OnShowdownStop()
 	{
-		Finished?.Invoke();
+		InvokeFinish();
 		ToastMessenger.LogSuccess($"Season {MyConfig.SeasonNumberConfig.Value} stopped");
 	}
 
 	private void RegisterCommands()
 	{
-		CommandRegistry.RegisterLocal(_prevCommand);
+		CommandRegistry.RegisterLocal(_prevStateCommand);
 		CommandRegistry.RegisterLocal(_pauseCommand);
 		CommandRegistry.RegisterLocal(_resumeCommand);
 		CommandRegistry.RegisterLocal(_restartCommand);
 		CommandRegistry.RegisterLocal(_finishStateCommand);
-		CommandRegistry.RegisterLocal(_stateRestartCommand);
+		CommandRegistry.RegisterLocal(_restartStateCommandRestart);
 	}
 
 	private void UnregisterCommands()
 	{
-		CommandRegistry.Unregister(_prevCommand);
+		CommandRegistry.Unregister(_prevStateCommand);
 		CommandRegistry.Unregister(_pauseCommand);
 		CommandRegistry.Unregister(_resumeCommand);
 		CommandRegistry.Unregister(_restartCommand);
 		CommandRegistry.Unregister(_finishStateCommand);
-		CommandRegistry.Unregister(_stateRestartCommand);
+		CommandRegistry.Unregister(_restartStateCommandRestart);
 	}
 }

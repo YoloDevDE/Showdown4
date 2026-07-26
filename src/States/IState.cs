@@ -7,7 +7,7 @@ public interface IState
 {
 	public IStateMachine StateMachine { get; }
 
-	public IStateMachine SubStateMachine => null;
+	public IStateMachine SubStateMachine { get; }
 
 	// The state this state was entered from. Set by the owning state machine on every
 	// transition, so a state always knows its predecessor (used by the 'sd prev' command).
@@ -20,9 +20,7 @@ public interface IState
 	// Each state decides its own successor(s) instead of a central transition table.
 	IState GetNextState();
 
-	void HandleInput()
-	{
-	}
+	void HandleInput();
 
 	void Exit();
 	void InvokeFinish();
@@ -31,87 +29,49 @@ public interface IState
 	// hooks they care about instead of subscribing/unsubscribing to the events themselves.
 
 	// Racing events
-	void OnRoundStarted()
-	{
-	}
+	void OnRoundStarted();
 
-	void OnRoundEnded()
-	{
-	}
+	void OnRoundEnded();
 
-	void OnLevelLoaded()
-	{
-	}
+	void OnLevelLoaded();
 
 	// Networking events
-	void OnPlayerResultsChanged(ZeepkistNetworkPlayer player)
-	{
-	}
+	void OnPlayerResultsChanged(ZeepkistNetworkPlayer player);
 
-	void OnPlayerJoined(ZeepkistNetworkPlayer player)
-	{
-	}
+	void OnPlayerJoined(ZeepkistNetworkPlayer player);
 
 	// Master command events
-	void OnShowdownStart()
-	{
-	}
+	void OnShowdownStart();
 
-	void OnShowdownStop()
-	{
-	}
+	void OnShowdownStop();
 
-	void OnFinishState(string arguments)
-	{
-	}
+	void OnFinishState(string arguments);
 
 	// Transition back to the previous state ('sd prev').
-	void OnPrev()
-	{
-	}
+	void OnPrev();
 
 	// Pause every running timer ('sd pause').
-	void OnPause()
-	{
-	}
+	void OnPause();
 
 	// Resume every paused timer ('sd resume').
-	void OnResume()
-	{
-	}
+	void OnResume();
 
 	// Restart the whole showdown by turning it off and on again ('sd restart').
-	void OnRestart()
-	{
-	}
+	void OnRestart();
 
 	// Restart only the current state ('sd restartstate').
-	void OnStateRestart()
-	{
-	}
+	void OnStateRestart();
 
 	// Showdown command events
-	void OnBan(ulong steamId, string levelIndex)
-	{
-	}
+	void OnBan(ulong steamId, string levelIndex);
 
-	void OnPick(ulong steamId, string levelIndex)
-	{
-	}
+	void OnPick(ulong steamId, string levelIndex);
 
-	void OnLinkRacer(ulong steamId, string arguments)
-	{
-	}
+	void OnLinkRacer(ulong steamId, string arguments);
 
-	void OnUnlinkRacer(ulong steamId)
-	{
-	}
+	void OnUnlinkRacer(ulong steamId);
 
-	void OnPass(ulong steamId)
-	{
-	}
+	void OnPass(ulong steamId);
 
-	void OnReady(ulong steamId, string arguments)
-	{
-	}
+	void OnReady(ulong steamId, string arguments);
 }

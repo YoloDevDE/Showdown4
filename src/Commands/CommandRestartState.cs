@@ -2,10 +2,10 @@
 
 namespace Showdown4.Commands;
 
-public class CommandStateRestart : BaseLocalCommand
+public class CommandRestartState : BaseLocalCommand
 {
 	public override string Prefix => "/";
-	public override string Command => "sd restartstate";
+	public override string Command => "sd restart";
 	public override string Description => "Restarts the current state";
 	public static event Action<string> CommandInvoked;
 

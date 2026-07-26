@@ -18,16 +18,55 @@ public class MasterStateMachine : IStateMachine
 		StateMachineFinished?.Invoke();
 	}
 
+	public void StopAllCoroutines()
+	{
+	}
+
+	public void Dispose()
+	{
+		StateMachineOperations.Dispose(this);
+	}
+
+	public void StateMachineFinishedNotify()
+	{
+		StateMachineOperations.StateMachineFinishedNotify(this);
+	}
+
+	public void Start()
+	{
+		StateMachineOperations.Start(this);
+	}
+
+	public void TransitionTo(IState nextState)
+	{
+		StateMachineOperations.TransitionTo(this, nextState);
+	}
+
+	public void TransitionToPreviousState()
+	{
+		StateMachineOperations.TransitionToPreviousState(this);
+	}
+
+	public void RestartCurrentState()
+	{
+		StateMachineOperations.RestartCurrentState(this);
+	}
+
+	public void OnCurrentStateFinished()
+	{
+		StateMachineOperations.OnCurrentStateFinished(this);
+	}
+
 	public void SubscribeToEvents()
 	{
 		CommandShowdownStart.CommandInvoked += HandleShowdownStart;
 		CommandShowdownStop.CommandInvoked += HandleShowdownStop;
 		CommandFinishState.CommandInvoked += HandleFinishState;
-		CommandShowdownPrev.CommandInvoked += HandlePrev;
+		CommandPrevState.CommandInvoked += HandlePrev;
 		CommandShowdownPause.CommandInvoked += HandlePause;
 		CommandShowdownResume.CommandInvoked += HandleResume;
 		CommandShowdownRestart.CommandInvoked += HandleRestart;
-		CommandStateRestart.CommandInvoked += HandleStateRestart;
+		CommandRestartState.CommandInvoked += HandleStateRestart;
 	}
 
 	public void UnsubscribeFromEvents()
@@ -35,11 +74,11 @@ public class MasterStateMachine : IStateMachine
 		CommandShowdownStart.CommandInvoked -= HandleShowdownStart;
 		CommandShowdownStop.CommandInvoked -= HandleShowdownStop;
 		CommandFinishState.CommandInvoked -= HandleFinishState;
-		CommandShowdownPrev.CommandInvoked -= HandlePrev;
+		CommandPrevState.CommandInvoked -= HandlePrev;
 		CommandShowdownPause.CommandInvoked -= HandlePause;
 		CommandShowdownResume.CommandInvoked -= HandleResume;
 		CommandShowdownRestart.CommandInvoked -= HandleRestart;
-		CommandStateRestart.CommandInvoked -= HandleStateRestart;
+		CommandRestartState.CommandInvoked -= HandleStateRestart;
 	}
 
 	private void HandleShowdownStart()

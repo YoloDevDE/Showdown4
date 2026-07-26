@@ -5,7 +5,6 @@ using Showdown4.Config;
 using Showdown4.States;
 using Showdown4.States.Master;
 using Showdown4.Utils;
-using ZeepSDK;
 using ZeepSDK.ChatCommands;
 using ZeepSDK.Storage;
 using ZeepSDK.UI;

@@ -2,7 +2,7 @@
 
 namespace Showdown4.Commands;
 
-public class CommandShowdownPrev : BaseLocalCommand
+public class CommandPrevState : BaseLocalCommand
 {
 	public override string Prefix => "/";
 	public override string Command => "sd prev";
