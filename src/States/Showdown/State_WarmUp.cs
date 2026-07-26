@@ -26,7 +26,7 @@ public class StateWarmUp(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 			new ChatMessage.Builder().ClearChat()
 				.DashedLine().NewLine()
 				.TextLine(
-					$"<b>{(Showdown.Match.RoundCounter() == 3 ? "Tiebreaker" : $"Round {Showdown.Match.RoundCounter()}")}</b> started")
+					$"<b>{(Showdown.Match.RoundCounter() + 1 == 3 ? "Tiebreaker" : $"Round {Showdown.Match.RoundCounter() + 1}")}</b> started")
 				.NewLine()
 				.DashedLine().NewLine()
 				.TextLine($"{Showdown.Match.Score()}").NewLine()

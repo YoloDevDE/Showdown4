@@ -98,6 +98,26 @@ public class TeamLeaderboard(Round round)
 						break;
 				}
 			});
+
+			// When the winner was determined solely by the number of finishers, list every racer of
+			// the team with their time underneath. Racers without a time are shown as --:--.---.
+			if (round.WinningMethod == WinningMethod.Finishers)
+			{
+				List<Racer> allRacers = team.Racers
+					.OrderBy(racer => round.GetPersonalBest(racer))
+					.ToList();
+
+				foreach (Racer racer in allRacers)
+				{
+					bool hasTime = round.Leaderboard.ContainsKey(racer.SteamId);
+					string timeText = hasTime ? round.GetPersonalBest(racer).GetFormattedTime() : "--:--.---";
+
+					msg.AddLine(line => line
+						.Size(20)
+						.AddBlock(racer.SteamName, f => f.Color(team.Color))
+						.AddBlock(timeText, f => f.Color("#ffffff")));
+				}
+			}
 		}
 
 		return msg;

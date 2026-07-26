@@ -47,10 +47,7 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 	// which team they end up on, since that is entirely determined by the configured roster.
 	private void AutoLinkPresentRacers()
 	{
-		foreach (ZeepkistNetworkPlayer player in ZeepkistNetwork.PlayerList)
-		{
-			LinkRacer(player.SteamID);
-		}
+		foreach (ZeepkistNetworkPlayer player in ZeepkistNetwork.PlayerList) LinkRacer(player.SteamID);
 	}
 
 	// Links exactly one player (by SteamId) to their configured team, if they are expected there.

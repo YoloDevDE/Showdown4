@@ -38,6 +38,9 @@ public class Draft
 	public List<DraftAction> PickedLevels { get; } = new();
 	public List<DraftAction> BannedLevels { get; } = new();
 
+	// All draft actions (picks, bans and passes) in the order they happened.
+	public List<DraftAction> Actions { get; } = new();
+
 	public bool IsPickPhase { get; set; }
 
 	private Team OtherTeam => CurrentTeam.Equals(_teamA) ? _teamB : _teamA;
@@ -55,7 +58,9 @@ public class Draft
 		}
 
 		IsPickPhase = true;
-		PickedLevels.Add(new DraftAction(level, CurrentTeam, true));
+		DraftAction action = new(level, CurrentTeam, true);
+		PickedLevels.Add(action);
+		Actions.Add(action);
 		AvailableLevels.Remove(level);
 		CurrentTeam.Picks -= 1;
 		SwitchTeam();
@@ -80,7 +85,9 @@ public class Draft
 			throw new InvalidOperationException("Level is not available anymore");
 		}
 
-		BannedLevels.Add(new DraftAction(level, CurrentTeam, false));
+		DraftAction action = new(level, CurrentTeam, false);
+		BannedLevels.Add(action);
+		Actions.Add(action);
 		AvailableLevels.Remove(level);
 		CurrentTeam.Bans -= 1;
 		SwitchTeam();
@@ -92,6 +99,12 @@ public class Draft
 		bool noPicksLeft = _teamA.Picks + _teamB.Picks == 0 && IsPickPhase;
 
 		return noPicksLeft || noMoreInventoryLeft;
+	}
+
+	// Records that the current team voluntarily handed its turn over to the other team.
+	public void Pass()
+	{
+		Actions.Add(DraftAction.CreatePass(CurrentTeam));
 	}
 
 	public void SwitchTeam()

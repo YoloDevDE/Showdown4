@@ -43,6 +43,7 @@ public static class MyConfig
 	public static ConfigEntry<int> WarmUpSecondsConfig;
 	public static ConfigEntry<int> PreRaceCountdownConfig;
 	public static ConfigEntry<int> LobbyTimeConfig;
+	public static ConfigEntry<int> PostRacingPodiumDurationConfig;
 	public static ConfigEntry<int> MatchEndKickCountdownConfig;
 	public static ConfigEntry<int> ServerMessageAutoVanishDurationConfig;
 
@@ -148,6 +149,15 @@ public static class MyConfig
 			new ConfigDescription(
 				"Lobby time in seconds set while racing (used with /settime).",
 				new AcceptableValueRange<int>(1, 86400)));
+
+		// Podium phase after a round ends: the leaderboard overrides are stopped and the game
+		// shows its podium, then we fetch the final leaderboard and announce the winner. Zero is
+		// fine (instant), negatives are not.
+		PostRacingPodiumDurationConfig = configFile.Bind("Racing", "Post Racing Podium Duration", 3,
+			new ConfigDescription(
+				"Seconds to wait during the podium phase after a round ends before the final leaderboard is " +
+				"fetched and the winner is announced.",
+				new AcceptableValueRange<int>(0, 3600)));
 
 		MatchEndKickCountdownConfig = configFile.Bind("Match End", "Kick Countdown", 60,
 			new ConfigDescription(

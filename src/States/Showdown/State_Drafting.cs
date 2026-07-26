@@ -135,6 +135,9 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		ChatMessage.SendCustomMessage(
 			$"{currentTeam.GetColoredTag()} <{ShowdownColors.Yellow}>passed</color> their action to {otherTeam.GetColoredTag()}");
 
+		// Record the pass so it shows up in the draft history.
+		CurrentDraft.Pass();
+
 		// A pass behaves exactly like letting the turn time out.
 		OnDraftTimeout();
 	}
@@ -257,13 +260,29 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 	private string BuildDraftHistory()
 	{
 		StringBuilder historyMessage = new();
-		foreach (DraftAction draftAction in CurrentDraft.BannedLevels.Concat(CurrentDraft.PickedLevels))
+		foreach (DraftAction draftAction in CurrentDraft.Actions)
 		{
-			string actionType = draftAction.IsPick ? "picked" : "banned";
-			string actionColor = draftAction.IsPick ? ShowdownColors.Green : ShowdownColors.Red;
-			historyMessage.AppendLine($"<{draftAction.Team.Color}>{draftAction.Team.GetTag()}</color> " +
-			                          $"<{actionColor}>{actionType}</color> " +
-			                          $"<{ShowdownColors.Cyan}>{draftAction.Level.Name}</color>");
+			string actionType = draftAction.GetActionType();
+			string actionColor;
+			if (draftAction.IsPass)
+			{
+				actionColor = ShowdownColors.Yellow;
+			}
+			else
+			{
+				actionColor = draftAction.IsPick ? ShowdownColors.Green : ShowdownColors.Red;
+			}
+
+			string line = $"<{draftAction.Team.Color}>{draftAction.Team.GetTag()}</color> " +
+			              $"<{actionColor}>{actionType}</color>";
+
+			// A pass has no level associated with it.
+			if (!draftAction.IsPass)
+			{
+				line += $" <{ShowdownColors.Cyan}>{draftAction.Level.Name}</color>";
+			}
+
+			historyMessage.AppendLine(line);
 		}
 
 		return historyMessage.ToString();

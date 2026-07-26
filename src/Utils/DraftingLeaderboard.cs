@@ -136,10 +136,18 @@ public class DraftingLeaderboard
 			float slotTime = startTime + i;
 			string nameText = BuildNameOverride(team, racer);
 
-			// Slot 0 of the active team shows the live draft countdown in the position column
-			string posText = isDrafting && i == 0
-				? TimeFormatter.FormatDuration(countdown)
-				: WaitingPositionText;
+			// Slot 0 of the active team shows the live draft countdown in the position column.
+			// The active team's second slot is left blank (that player is drafting too, not waiting).
+			// Only the waiting team's slots show the "WAIT" marker.
+			string posText;
+			if (isDrafting)
+			{
+				posText = i == 0 ? TimeFormatter.FormatDuration(countdown) : string.Empty;
+			}
+			else
+			{
+				posText = WaitingPositionText;
+			}
 
 			// Place the player on the leaderboard with a synthetic time that
 			// ensures the correct sort order (no player notification).

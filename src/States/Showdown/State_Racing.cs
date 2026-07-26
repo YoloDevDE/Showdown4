@@ -69,6 +69,19 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		foreach (Coroutine coroutine in _resetCoroutines.Values)
 			Showdown.StopCoroutine(coroutine);
 		_resetCoroutines.Clear();
+
+		// The round is over: immediately stop every pending gained/lost/equal override and revert
+		// the whole leaderboard back to its clean time+name+position display. Without this a change
+		// that happened in the last second would leave a "+2"/"-2" override frozen on screen for the
+		// entire podium phase. Mirrors the reference implementation, which finalizes all pending
+		// resets at time == 1 (the last second) instead of letting them run their delayed course.
+		foreach (KeyValuePair<ulong, (string Color, string Name)> tracked in _playerInfo)
+			if (_playerTimes.TryGetValue(tracked.Key, out double time))
+			{
+				SetNormalLeaderboardOverride(tracked.Key, time, tracked.Value.Color, tracked.Value.Name);
+			}
+
+		_lostAccum.Clear();
 	}
 
 	public override IState GetNextState()
