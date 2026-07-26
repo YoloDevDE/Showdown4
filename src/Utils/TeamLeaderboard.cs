@@ -4,7 +4,7 @@ using Showdown4.Entities;
 
 namespace Showdown4.Utils;
 
-public class LeaderboardDisplay(Round round)
+public class TeamLeaderboard(Round round)
 {
 	// Tracks the previous team order so we can show position-change arrows
 	private readonly Dictionary<string, int> _previousPositions = new();
@@ -16,35 +16,8 @@ public class LeaderboardDisplay(Round round)
 		List<Team> sortedTeams = round.GetTeamsSortedByWinnerAsc();
 
 		ServerMessage msg = new ServerMessage()
-				.ShowdownHeader(true)
-				.AddLine(l => l.Size(30).Bold().AddBlock(match.ScoreColored()).Indent("585%"))
-			// .AddLine(line =>
-			// {
-			//     line.Color("#999999")
-			//         .Size(20)
-			//         .AddBlock("Winner decided by:", f => f.Color("#ffffff"));
-			//     int i = 0;
-			//     foreach (WinningMethod winningMethod in Enum.GetValues(typeof(WinningMethod)))
-			//     {
-			//         line
-			//             .AddBlock($"{winningMethod}", f =>
-			//             {
-			//                 if (winningMethod == _round.WinningMethod)
-			//                 {
-			//                     f.Bold();
-			//                     f.Color("#ffff00");
-			//                 }
-			//             });
-			//         if (i < Enum.GetValues(typeof(WinningMethod)).Length - 1)
-			//         {
-			//             line
-			//                 .AddBlock(">");
-			//         }
-			//
-			//         i++;
-			//     }
-			// })
-			;
+			.ShowdownHeader(true)
+			.AddLine(l => l.Size(30).Bold().AddBlock(match.ScoreColored()).Indent("585%"));
 		// Build new positions map and compute arrows before rendering
 		Dictionary<string, int> newPositions = new();
 		for (int i = 0; i < sortedTeams.Count; i++)

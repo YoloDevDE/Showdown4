@@ -29,9 +29,12 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 	private readonly Dictionary<ulong, Coroutine> _resetCoroutines = new();
 
 	private Round _currentRound;
-	private LeaderboardDisplay _leaderboardDisplay;
 
 	private Team _teamA, _teamB;
+	private TeamLeaderboard _teamLeaderboard;
+
+	// Pending coroutine that re-sends the team leaderboard without arrows after the delay.
+	private Coroutine _teamLeaderboardResetCoroutine;
 
 	// Delay before a gained/lost/equal/new position override is reverted back to the
 	// normal time+name display, and the colors/symbols used for it, are all user-configurable.
@@ -71,7 +74,7 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		// Start the cool race intro message for the first 10 seconds
 		Showdown.StartCoroutine(DisplayRaceIntroMessage());
 
-		_leaderboardDisplay = new LeaderboardDisplay(_currentRound);
+		_teamLeaderboard = new TeamLeaderboard(_currentRound);
 	}
 
 	public override void Exit()
@@ -79,6 +82,14 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		foreach (Coroutine coroutine in _resetCoroutines.Values)
 			Showdown.StopCoroutine(coroutine);
 		_resetCoroutines.Clear();
+
+		if (_teamLeaderboardResetCoroutine == null)
+		{
+			return;
+		}
+
+		Showdown.StopCoroutine(_teamLeaderboardResetCoroutine);
+		_teamLeaderboardResetCoroutine = null;
 	}
 
 	public override IState GetNextState()
@@ -241,8 +252,28 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 
 	public void SendTeamLeaderboard()
 	{
-		ServerMessage leaderboardMessage = _leaderboardDisplay.GenerateLeaderboardMessage(Showdown.Match, true);
+		// Cancel any pending "clear arrows" reset so we don't overwrite a fresh update too early.
+		if (_teamLeaderboardResetCoroutine != null)
+		{
+			Showdown.StopCoroutine(_teamLeaderboardResetCoroutine);
+			_teamLeaderboardResetCoroutine = null;
+		}
+
+		ServerMessage leaderboardMessage = _teamLeaderboard.GenerateLeaderboardMessage(Showdown.Match, true);
 		leaderboardMessage.Send();
+
+		// Schedule a re-send after the delay so the arrows disappear (second call has no position change).
+		_teamLeaderboardResetCoroutine = Showdown.StartCoroutine(TeamLeaderboardResetCoroutine());
+	}
+
+	private IEnumerator TeamLeaderboardResetCoroutine()
+	{
+		yield return new WaitForSeconds(ResetDelay);
+
+		// Re-generate without arrows (positions haven't changed → _previousPositions matches current).
+		ServerMessage resetMessage = _teamLeaderboard.GenerateLeaderboardMessage(Showdown.Match, true);
+		resetMessage.Send();
+		_teamLeaderboardResetCoroutine = null;
 	}
 
 	private static int? FindLeaderboardPosition(List<LeaderboardItem> leaderboard, ulong steamId)
