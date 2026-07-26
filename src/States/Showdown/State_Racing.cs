@@ -53,11 +53,15 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 			         !_teamA.Racers.Exists(r => r.SteamId == a.SteamID) &&
 			         !_teamB.Racers.Exists(r => r.SteamId == a.SteamID)))
 			ZeepkistNetwork.CustomLeaderBoard_BlockPlayerFromSettingTime(zeepkistNetworkPlayer.SteamID, true);
+
 		Showdown.Match.AddRound(new Round(_teamA, _teamB)); // Initialize round
 		_currentRound = Showdown.Match.CurrentRound;
 
 		_teamLeaderboard = new TeamLeaderboard(_currentRound);
 		SendTeamLeaderboard();
+
+		ChatMessage.SendCustomMessage(
+			new ChatMessage.Builder().ClearChat().TextLine("Race started, glhf").Build().Message);
 	}
 
 	public override void Exit()

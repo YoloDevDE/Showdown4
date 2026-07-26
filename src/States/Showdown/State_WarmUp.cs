@@ -54,7 +54,8 @@ public class StateWarmUp(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		ServerMessage introMessage = BuildRaceIntroMessage();
 		introMessage.AddSeparator()
 			.AddLine(line => line
-				.AddBlock("Race begins in", block => block.Size(20).Color(ShowdownColors.Gray))
+				.AddBlock("<#f00>!!WARMUP!!!</color> Syncing Everyone - Race begins in",
+					block => block.Size(20).Color(ShowdownColors.Gray))
 				.AddBlock($"{secondsRemaining}s", block => block.Size(20)
 					.Color(secondsRemaining <= 5 ? ShowdownColors.Red : ShowdownColors.Green)));
 		introMessage.Send();
