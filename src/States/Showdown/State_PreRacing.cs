@@ -27,7 +27,12 @@ public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stat
 
 	public override void OnRoundEnded()
 	{
-		DraftAction nextLevel = Match.CurrentDraft.PickedLevels[0];
+		DraftAction nextLevel = Match.GetUpcomingLevel();
+		if (nextLevel == null)
+		{
+			return;
+		}
+
 		ChatMessage.SendCustomMessage(
 			new ChatMessage.Builder().ClearChat()
 				.DashedLine().NewLine()
@@ -62,8 +67,12 @@ public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stat
 			.Send();
 	}
 
+	// Loads the level of the upcoming round. StateDraftCompleted locked the drafted levels into the
+	// server playlist in exactly the order they were picked, so the draft index is the playlist index
+	// - a hardcoded 0 here would replay the first drafted map in every following round.
 	private void SkipToNextLevel()
 	{
-		ChatCommandService.SkipToLevel(0); // Move to the next level
+		int levelIndex = Match.GetUpcomingLevelIndex();
+		ChatCommandService.SkipToLevel(levelIndex < 0 ? 0 : levelIndex);
 	}
 }

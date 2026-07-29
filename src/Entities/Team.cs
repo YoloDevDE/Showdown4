@@ -12,8 +12,16 @@ public class Team(string name, string tag, string color)
 	public string Name { get; set; } = name;
 	public string Tag { get; set; } = tag;
 	public string Color { get; set; } = color;
-	public int Picks { get; set; } = 1;
-	public int Bans { get; set; } = 2;
+
+	/// <summary>
+	///     The team's remaining draft actions. This is a budget for the whole match, not per draft
+	///     phase: it is filled from the configured format when the <see cref="Match" /> is created and
+	///     only ever spent from there on, so unused actions are still available in the tiebreaker draft.
+	/// </summary>
+	public int Picks { get; set; }
+
+	public int Bans { get; set; }
+
 	public bool MissedDraft { get; set; } = false;
 	public List<Racer> Racers { get; set; } = new();
 

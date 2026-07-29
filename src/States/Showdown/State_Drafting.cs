@@ -432,7 +432,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		ServerMessage message = new();
 
 		message.AddLine(line =>
-			line.AddBlock(Match.DraftphaseName,
+			line.AddBlock(Match.CurrentDraftPhaseName,
 				builder => builder.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold()
 					.AllCaps().Size(40))
 		).AddSeparator(0).AddLine(line =>

@@ -16,7 +16,7 @@ public static class DraftDisplay
 		ServerMessage tmp = new();
 
 		tmp.AddLine(line => line
-			.AddBlock(match.DraftphaseName,
+			.AddBlock(match.CurrentDraftPhaseName,
 				builder => builder.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold))
 			.AddBlock("-")
 			.AddBlock("complete!", builder => builder.Color(ShowdownColors.Green))

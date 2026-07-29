@@ -26,6 +26,16 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 		// The match is over, so give the lobby its freedom back.
 		RacerResetService.UnblockEveryoneFromSettingTime();
 
+		// Bring the lobby back to the Hall of Fame, exactly like StateShowdownStarting does. The
+		// "+24h" race timer never runs out on its own, so without this the lobby would stay parked on
+		// the last raced map and StateWaitingForHoF - which only waits - would never see its
+		// RoundStarted event.
+		PlaylistManager.SetServerPlaylist(MyConfig.IntermissionLevelPlaylistNameConfig.Value);
+		if (!PlaylistManager.IsOnIntermissionLevel())
+		{
+			ChatCommandService.SkipToLevel(0);
+		}
+
 		Countdown.Start(_countdownTime, UpdateCountdownMessage, InvokeFinish);
 	}
 
@@ -37,7 +47,10 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 	// Sent once per countdown second by UpdateCountdownMessage.
 	private void SendServerMessage()
 	{
-		Team winnerTeam = Match?.CurrentRound.GetWinnerTeam;
+		// Match.Winner instead of the winner of the last round: this state is also the final state of
+		// the machine, so it is entered when the showdown is stopped at any point - including before a
+		// single round exists, where Match.CurrentRound would throw.
+		Team winnerTeam = Match?.Winner;
 		if (winnerTeam == null)
 		{
 			// The showdown was stopped before a match was finished, so there is no winner to show.

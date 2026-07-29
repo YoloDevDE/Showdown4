@@ -32,6 +32,9 @@ public static class MyConfig
 
 	public static ConfigEntry<int> SeasonNumberConfig;
 	public static ConfigEntry<int> TutorialStepDurationConfig;
+	public static ConfigEntry<int> MatchBestOfConfig;
+	public static ConfigEntry<int> DraftPicksPerTeamConfig;
+	public static ConfigEntry<int> DraftBansPerTeamConfig;
 	public static ConfigEntry<int> DraftTimeConfig;
 	public static ConfigEntry<int> DraftCompleteCountdownConfig;
 	public static ConfigEntry<int> RandomSelectionSpinLoopsConfig;
@@ -91,6 +94,42 @@ public static class MyConfig
 			new ConfigDescription(
 				"Seconds each tutorial step is displayed before moving on to the next.",
 				new AcceptableValueRange<int>(0, 3600)));
+
+		// The whole match format lives in these three values. A match is a best-of-X of rounds; each
+		// round is raced on one drafted level (and is itself a best-of-X of sub-rounds, see
+		// "Racing Sub Rounds"). The draft inventory is a budget for the *entire* match, not per draft
+		// phase: whatever a team does not spend in the first draft is still available to it when the
+		// series ends in a tie and the tiebreaker has to be drafted.
+		// Two relationships make a format work out exactly, both independent of the order in which the
+		// teams spend their actions:
+		//   Draft Picks Per Team = (Best Of - 1) / 2   -> the first draft yields one level per
+		//                                                 non-decider round (Bo3 -> 1, Bo5 -> 2)
+		//   level pool size      = 2 * (picks + bans) + 1
+		//                                              -> every action removes one level, so exactly
+		//                                                 one is left over for the tiebreaker draft to
+		//                                                 auto-pick (Bo3 with 1/2 -> a pool of 7)
+		// Neither is enforced, because the flow degrades gracefully instead: a draft that runs out of
+		// levels for the next round triggers another draft phase, a phase with no inventory left falls
+		// back to auto-picking the last remaining level, and with more than one left the random
+		// selection decides.
+		MatchBestOfConfig = configFile.Bind("Match", "Best Of", 3,
+			new ConfigDescription(
+				"Amount of rounds a match is played over. The match is decided as soon as a team won " +
+				"more than half of them; if the series is tied after the regular rounds, the last round " +
+				"is the tiebreaker.",
+				new AcceptableValueRange<int>(1, 15)));
+
+		DraftPicksPerTeamConfig = configFile.Bind("Match", "Draft Picks Per Team", 1,
+			new ConfigDescription(
+				"Picks each team gets for the whole match (not per draft phase). Unspent picks carry " +
+				"over into the tiebreaker draft.",
+				new AcceptableValueRange<int>(0, 15)));
+
+		DraftBansPerTeamConfig = configFile.Bind("Match", "Draft Bans Per Team", 2,
+			new ConfigDescription(
+				"Bans each team gets for the whole match (not per draft phase). Unspent bans carry " +
+				"over into the tiebreaker draft.",
+				new AcceptableValueRange<int>(0, 15)));
 
 		// A draft turn needs at least one second to be usable.
 		DraftTimeConfig = configFile.Bind("Draft", "Draft Time", 90,

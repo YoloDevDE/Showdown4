@@ -125,7 +125,8 @@ public static class CastBroadcast
 		sb.Append("\"phase\":").Append(Str(phase)).Append(',');
 
 		sb.Append("\"match\":{");
-		sb.Append("\"bestOf\":3,");
+		sb.Append("\"bestOf\":").Append(match.MaxRounds).Append(',');
+		sb.Append("\"winsNeeded\":").Append(match.RoundWinsNeeded).Append(',');
 		sb.Append("\"scoreA\":").Append(match.TeamA.Wins).Append(',');
 		sb.Append("\"scoreB\":").Append(match.TeamB.Wins).Append(',');
 		sb.Append("\"roundWinners\":").Append(RoundWinners(match));

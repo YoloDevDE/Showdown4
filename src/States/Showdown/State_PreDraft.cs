@@ -37,7 +37,7 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 	{
 		ChatMessage.ClearChat();
 		ChatMessage.SendCustomMessage(
-			$"<{ShowdownColors.Orange}><b>*** <{ShowdownColors.Gold}>{Match.DraftphaseName}</color> loading - Please pay attention to the upcoming messages! ***</b></color>");
+			$"<{ShowdownColors.Orange}><b>*** <{ShowdownColors.Gold}>{Match.UpcomingDraftPhaseName}</color> loading - Please pay attention to the upcoming messages! ***</b></color>");
 		ChatCommandService.RemoveServerMessage();
 		yield return new WaitForSeconds(IntroStepSeconds);
 
@@ -51,7 +51,7 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 		yield return new WaitForSeconds(IntroStepSeconds);
 
 		initiationMessage.AddLine(line =>
-			line.AddBlock(Match.DraftphaseName,
+			line.AddBlock(Match.UpcomingDraftPhaseName,
 				builder => builder.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold()
 					.AllCaps().Size(40)));
 		initiationMessage.Send();
@@ -64,10 +64,10 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 			yield return new WaitForSeconds(1f);
 		}
 
-		// Draftphase I: the ready check (StateDraftReadyCheck) explains the draft rules itself,
-		// so nothing more needs to happen here.
-		// Draftphase II: there is no ready check anymore, so a short instruction reminder is shown here.
-		if (Match.IsDraftphaseTwo)
+		// The first draft phase is preceded by the ready check (StateDraftReadyCheck), which explains
+		// the draft rules itself - nothing more needs to happen here. Every later phase has no ready
+		// check anymore, so a short instruction reminder is shown here instead.
+		if (Match.UpcomingDraftPhaseNumber > 1)
 		{
 			ShowInstructions();
 
@@ -101,7 +101,7 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 		new ServerMessage("center").ShowdownHeader(false, "center", 50)
 			.AddLine(line => line.Size(30).Bold().AddBlock(Match.ScoreWithFullNameColoredAndPadded()).NoBreak())
 			.AddLine(line => line
-				.AddBlock(Match.DraftphaseName, builder => builder
+				.AddBlock(Match.UpcomingDraftPhaseName, builder => builder
 					.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold().AllCaps()
 					.Size(40)))
 			.AddSeparator()

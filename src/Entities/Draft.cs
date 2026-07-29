@@ -99,6 +99,14 @@ public class Draft
 
 	public bool IsDraftComplete()
 	{
+		// An empty pool ends the draft no matter how much inventory is left: no pick or ban could
+		// succeed anymore, and the random/auto-pick fallbacks would index into an empty list. Only
+		// reachable when the configured inventory does not fit the level pool.
+		if (AvailableLevels.Count == 0)
+		{
+			return true;
+		}
+
 		bool noMoreInventoryLeft = _teamA.Bans + _teamB.Bans == 0 && _teamA.Picks + _teamB.Picks == 0;
 		bool noPicksLeft = _teamA.Picks + _teamB.Picks == 0 && IsPickPhase;
 

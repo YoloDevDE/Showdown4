@@ -29,6 +29,17 @@ public class StateDraftIncomplete(IStateMachine stateMachine) : ShowdownStateBas
 
 	public override void Enter()
 	{
+		// Nothing left to choose from - only reachable when the configured draft inventory does not fit
+		// the level pool. There is no map to raffle off, so hand over instead of spinning an empty wheel.
+		if (AvailableMaps.Count == 0)
+		{
+			ChatMessage.SendCustomMessage(
+				$"<{ShowdownColors.Red}>No levels left to select from</color> - check the level pool and the " +
+				"configured picks/bans per team.");
+			InvokeFinish();
+			return;
+		}
+
 		ChatMessage.SendCustomMessage(
 			$"Draft incomplete - <{ShowdownColors.Red}>Showdown</color> will now pick a map at random!");
 

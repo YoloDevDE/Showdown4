@@ -10,9 +10,9 @@ namespace Showdown4.States.Showdown;
 /// </summary>
 public class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
-	// Guards the winner evaluation so it happens exactly once, even if the next round starts
-	// before the podium countdown has finished (in which case we still announce first).
-	private bool _resultAnnounced;
+	// Guards closing the round so it happens exactly once: the podium countdown and the RoundStarted
+	// safety net below both lead here, and AddWin() is not idempotent.
+	private bool _roundClosed;
 
 	public override void Enter()
 	{
@@ -30,15 +30,14 @@ public class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(sta
 				.DashedLine()
 				.Build().Message);
 
-		Countdown.Start(MyConfig.PostRacingPodiumDurationConfig.Value, onComplete: AnnounceRoundResult);
+		Countdown.Start(MyConfig.PostRacingPodiumDurationConfig.Value, onComplete: CloseRound);
 	}
 
 	public override void OnRoundStarted()
 	{
 		// Safety net: if the game moves on before the podium countdown elapsed, make sure the
 		// winner is still evaluated and announced before we leave this state.
-		AnnounceRoundResult();
-		InvokeFinish();
+		CloseRound();
 	}
 
 	public override IState GetNextState()
@@ -55,19 +54,35 @@ public class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	// Runs after the podium phase has elapsed: only now do we read the final leaderboard, award the
 	// win and announce who won, so the result is never determined while overrides are still active.
-	private void AnnounceRoundResult()
+	// Closing the round is what advances the flow - the podium countdown is the regular path, the
+	// RoundStarted event only a safety net.
+	private void CloseRound()
 	{
-		if (_resultAnnounced)
+		if (_roundClosed)
 		{
 			return;
 		}
 
-		_resultAnnounced = true;
+		_roundClosed = true;
 		Countdown.Stop();
 
 		Team winnerTeam = Match.CurrentRound.GetWinnerTeam;
 		winnerTeam.AddWin();
 
+		// A tiebreaker draft is due (same condition as GetNextState), and that hands the initiative
+		// over to the team that did not have it in Draftphase I. Match.AddDraft() reads it, so it has
+		// to be switched before StatePreDraft/StateDrafting run.
+		if (!Match.HasWinner && Match.NeedsNewDraftPhase)
+		{
+			Match.Initiative = Match.NonInitiative;
+		}
+
+		AnnounceRoundResult(winnerTeam);
+		InvokeFinish();
+	}
+
+	private void AnnounceRoundResult(Team winnerTeam)
+	{
 		int currentRoundCounter = Match.RoundCounter();
 
 		ChatMessage.SendCustomMessage(
@@ -84,12 +99,13 @@ public class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(sta
 	}
 
 	// Describes what happens next: the level of the round that is already drafted, the intermission
-	// after a decided match, or the second draft phase (which hands the initiative over).
+	// after a decided match, or the second draft phase. Pure formatting - the initiative handover
+	// itself happens in CloseRound().
 	private string BuildUpcomingMessage(Team winnerTeam)
 	{
-		if (Match.RoundCounter() < Match.CurrentDraft.PickedLevels.Count)
+		DraftAction nextLevel = Match.GetUpcomingLevel();
+		if (nextLevel != null)
 		{
-			DraftAction nextLevel = Match.CurrentDraft.PickedLevels[Match.RoundCounter()];
 			return new ChatMessage.Builder()
 				.TextLine($"Starting {Match.UpcomingRoundName()}")
 				.NewLine()
@@ -104,7 +120,6 @@ public class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(sta
 			return "Upcoming -> Intermission";
 		}
 
-		Match.Initiative = Match.NonInitiative;
 		return new ChatMessage.Builder()
 			.TextLine("Upcoming -> Draftphase II").NewLine()
 			.DashedLine().NewLine()
