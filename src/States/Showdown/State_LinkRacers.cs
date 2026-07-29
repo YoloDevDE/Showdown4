@@ -11,19 +11,12 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	private bool _isCountdownRunning;
 
-	private Team TeamA => Match.TeamA;
-	private Team TeamB => Match.TeamB;
-
 	public override void Enter()
 	{
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+		ChatMessage.ClearChat();
 
 		AutoLinkPresentRacers();
 		CheckIfRacersAreLinked();
-	}
-
-	public override void Exit()
-	{
 	}
 
 	public override IState GetNextState()
@@ -91,7 +84,6 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 		// Create a consistent server message with appended countdown at the end
 		ServerMessage msg = ServerMessageLinkedRacers();
 
-
 		// Append the countdown timer if it's running
 		if (_isCountdownRunning)
 		{
@@ -102,7 +94,7 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 				.AddSeparator()
 				.AddLine(line => line
 					.AddBlock("Continue to")
-					.AddBlock("'Select Initiative'", block => block.Color(ShowdownColors.Yellow))
+					.AddBlock("'Tutorial'", block => block.Color(ShowdownColors.Yellow))
 					.AddBlock("in")
 					.AddBlock($"{countdownTime}", block => block.Color(ShowdownColors.Green))
 					.AddBlock("seconds...")
@@ -114,31 +106,29 @@ public class StateLinkRacers(IStateMachine stateMachine) : ShowdownStateBase(sta
 
 	private ServerMessage ServerMessageLinkedRacers()
 	{
-		ServerMessage msg = new ServerMessage()
-				.ShowdownHeader()
-				.AddLine(line => line
-					.AddBlock($"{TeamA.GetNameWithTag()}", b => b.Color(TeamA.Color))
-					.AddBlock("VS")
-					.AddBlock($"{TeamB.GetNameWithTag()}", b => b.Color(TeamB.Color))
-				)
-				.AddSeparator()
-				.AddLine(line => line
-					.AddBlock("Waiting for all racers to join the server. Teams are assigned automatically ")
-					.AddBlock("based on the configured roster.")
-				)
-				.AddSeparator()
-				.AddLine("Members in each team:")
-				.AddLine(line => line
-					.AddBlock("1: ", format => format.Bold())
-					.AddBlock($"{TeamA.GetColoredTag()} ", format => format.Color(TeamA.Color))
-					.AddBlock($"{TeamA.GetLinkedRacersToString()}")
-				)
-				.AddLine(line => line
-					.AddBlock("2: ", format => format.Bold())
-					.AddBlock($"{TeamB.GetColoredTag()} ", format => format.Color(TeamB.Color))
-					.AddBlock($"{TeamB.GetLinkedRacersToString()}")
-				)
-			;
-		return msg;
+		return new ServerMessage()
+			.ShowdownHeader()
+			.AddLine(line => line
+				.AddBlock($"{TeamA.GetNameWithTag()}", b => b.Color(TeamA.Color))
+				.AddBlock("VS")
+				.AddBlock($"{TeamB.GetNameWithTag()}", b => b.Color(TeamB.Color))
+			)
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock("Waiting for all racers to join the server. Teams are assigned automatically ")
+				.AddBlock("based on the configured roster.")
+			)
+			.AddSeparator()
+			.AddLine("Members in each team:")
+			.AddLine(line => line
+				.AddBlock("1: ", format => format.Bold())
+				.AddBlock($"{TeamA.GetColoredTag()} ", format => format.Color(TeamA.Color))
+				.AddBlock($"{TeamA.GetLinkedRacersToString()}")
+			)
+			.AddLine(line => line
+				.AddBlock("2: ", format => format.Bold())
+				.AddBlock($"{TeamB.GetColoredTag()} ", format => format.Color(TeamB.Color))
+				.AddBlock($"{TeamB.GetLinkedRacersToString()}")
+			);
 	}
 }

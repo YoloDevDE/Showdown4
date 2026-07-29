@@ -9,28 +9,32 @@ using Random = System.Random;
 
 namespace Showdown4.States.Showdown;
 
+/// <summary>
+///     Runs when the draft ended without a single pick and more than one map is still open. Showdown
+///     then spins through the remaining maps and picks one of them at random.
+/// </summary>
 public class StateDraftIncomplete(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
-	private readonly Random _random = new();
+	// The spin starts at this delay between two maps and slows down by the step below on every
+	// iteration, so the selection visibly comes to a halt.
+	private const float InitialSpinDelay = 0.10f;
+	private const float SpinDelayStep = 0.05f;
 
-	private bool _isSelectionDone;
+	// Chance (1 in n) for the spin to reverse its direction, purely for the show.
+	private const int ReverseDirectionChance = 10;
+
+	private readonly Random _random = new();
 
 	private List<OnlineZeeplevel> AvailableMaps => CurrentDraft.AvailableLevels;
 
 	public override void Enter()
 	{
-		_isSelectionDone = false;
-
 		ChatMessage.SendCustomMessage(
 			$"Draft incomplete - <{ShowdownColors.Red}>Showdown</color> will now pick a map at random!");
 
 		// The random selection used to be triggered manually via '/sd random'. It now runs
 		// automatically whenever the draft ends incomplete with more than one map still open.
 		Showdown.StartCoroutine(RandomSelectionAnimation());
-	}
-
-	public override void Exit()
-	{
 	}
 
 	public override IState GetNextState()
@@ -40,13 +44,13 @@ public class StateDraftIncomplete(IStateMachine stateMachine) : ShowdownStateBas
 
 	private IEnumerator RandomSelectionAnimation()
 	{
-		float delay = 0.10f;
+		float delay = InitialSpinDelay;
 		int selectedIndex = 0;
 
 		int spinLoops = MyConfig.RandomSelectionSpinLoopsConfig.Value;
 		for (int i = 0; i < spinLoops; i++)
 		{
-			if (_random.Next(10) == 0) // 10% chance to reverse direction
+			if (_random.Next(ReverseDirectionChance) == 0)
 			{
 				selectedIndex = (selectedIndex - 1 + AvailableMaps.Count) % AvailableMaps.Count;
 			}
@@ -56,19 +60,12 @@ public class StateDraftIncomplete(IStateMachine stateMachine) : ShowdownStateBas
 			}
 
 			UpdateRandomSelectionMessage(selectedIndex);
-			delay += 0.05f;
+			delay += SpinDelayStep;
 
 			yield return new WaitForSeconds(delay);
 		}
 
 		SelectRandomMap(AvailableMaps[selectedIndex]);
-
-		if (_isSelectionDone)
-		{
-			yield break;
-		}
-
-		_isSelectionDone = true;
 		InvokeFinish();
 	}
 

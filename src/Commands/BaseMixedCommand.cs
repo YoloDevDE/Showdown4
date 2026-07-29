@@ -23,7 +23,7 @@ public abstract class BaseMixedCommand : IMixedChatCommand
 	{
 		ChatApi.SendMessage(Prefix + Command + " " + arguments);
 		Handle(ZeepkistNetwork.LocalPlayer.SteamID, arguments);
-	}	
+	}
 
 	protected abstract void OnCommandInvoked(ulong playerId, string arguments);
 }

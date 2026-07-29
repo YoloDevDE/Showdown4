@@ -8,23 +8,24 @@ using UnityEngine;
 namespace Showdown4.States.Showdown;
 
 /// <summary>
-///     Runs right before <see cref="StateDrafting" /> (Draftphase II) or <see cref="StateDraftReadyCheck" />
-///     (Draftphase I). It plays the draft-phase intro animation, then clearly announces which team has
-///     initiative. For Draftphase I the ready check (which itself explains pick/ban/pass) takes over
-///     right after that; for Draftphase II - which has no ready check - a short instruction reminder is
-///     shown here instead.
+///     The last state before <see cref="StateDrafting" />. It plays the draft-phase intro animation and
+///     then clearly announces which team has initiative. In Draftphase I the rules were already
+///     explained by <see cref="StateDraftReadyCheck" />, which runs right before this state; Draftphase
+///     II has no ready check, so a short instruction reminder is shown here instead.
 /// </summary>
 public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
+	// Pause between two steps of the intro animation.
+	private const float IntroStepSeconds = 1.5f;
+
+	// From this many seconds left the countdowns are coloured red.
+	private const int LowTimeThresholdSeconds = 5;
+
 	private Team InitiativeTeam => Match.Initiative;
 
 	public override void Enter()
 	{
 		Showdown.StartCoroutine(IntroSequence());
-	}
-
-	public override void Exit()
-	{
 	}
 
 	public override IState GetNextState()
@@ -34,27 +35,27 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	private IEnumerator IntroSequence()
 	{
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+		ChatMessage.ClearChat();
 		ChatMessage.SendCustomMessage(
 			$"<{ShowdownColors.Orange}><b>*** <{ShowdownColors.Gold}>{Match.DraftphaseName}</color> loading - Please pay attention to the upcoming messages! ***</b></color>");
 		ChatCommandService.RemoveServerMessage();
-		yield return new WaitForSeconds(1.5f);
+		yield return new WaitForSeconds(IntroStepSeconds);
 
 		ServerMessage initiationMessage = new ServerMessage("center").ShowdownHeader(false, "center", 50);
 		initiationMessage.Send();
-		yield return new WaitForSeconds(1.5f);
+		yield return new WaitForSeconds(IntroStepSeconds);
 
 		initiationMessage.AddLine(l =>
 			l.Size(30).Bold().AddBlock(Match.ScoreWithFullNameColoredAndPadded()).NoBreak());
 		initiationMessage.Send();
-		yield return new WaitForSeconds(1.5f);
+		yield return new WaitForSeconds(IntroStepSeconds);
 
 		initiationMessage.AddLine(line =>
 			line.AddBlock(Match.DraftphaseName,
 				builder => builder.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold()
 					.AllCaps().Size(40)));
 		initiationMessage.Send();
-		yield return new WaitForSeconds(1.5f);
+		yield return new WaitForSeconds(IntroStepSeconds);
 
 		int initiativeDuration = Mathf.Max(MyConfig.InitiativeAnnouncementDurationConfig.Value, 1);
 		for (int remaining = initiativeDuration; remaining > 0; remaining--)
@@ -83,7 +84,7 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	private void ShowInstructions()
 	{
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+		ChatMessage.ClearChat();
 		ChatMessage.SendCustomMessage(
 			$"<{ShowdownColors.Gold}><b>*** How the draft works ***</b></color>" +
 			$"<br><{ShowdownColors.Yellow}>1.</color> When it's your turn you either <{ShowdownColors.Red}>ban</color> or <{ShowdownColors.Green}>pick</color> a map." +
@@ -112,7 +113,7 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 			.AddLine(line => line
 				.AddBlock("Draft starts in", block => block.Size(20).Color(ShowdownColors.Gray))
 				.AddBlock($"{remaining}s", block => block.Size(20)
-					.Color(remaining <= 5 ? ShowdownColors.Red : ShowdownColors.Green)))
+					.Color(remaining <= LowTimeThresholdSeconds ? ShowdownColors.Red : ShowdownColors.Green)))
 			.Send();
 	}
 
@@ -138,7 +139,9 @@ public class StatePreDraft(IStateMachine stateMachine) : ShowdownStateBase(state
 				.Italic()
 				.AddBlock("Draft starts in", block => block.Color(ShowdownColors.Gray))
 				.AddBlock($"{remaining}s",
-					block => block.Color(remaining <= 5 ? ShowdownColors.Red : ShowdownColors.Green)))
+					block => block.Color(remaining <= LowTimeThresholdSeconds
+						? ShowdownColors.Red
+						: ShowdownColors.Green)))
 			.Send();
 	}
 }

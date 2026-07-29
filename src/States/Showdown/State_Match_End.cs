@@ -5,25 +5,28 @@ using Showdown4.Utils;
 
 namespace Showdown4.States.Showdown;
 
+/// <summary>
+///     Closes the match: the lobby timer is suspended, everyone may drive again and a countdown
+///     shows how long it takes until the teams are kicked. This state is also the final state of the
+///     showdown machine, so it can be entered without a match ever having been played.
+/// </summary>
 public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
-	private bool _countdownStarted;
+	// From this many seconds left the kick countdown is coloured red.
+	private const int LowTimeThresholdSeconds = 10;
+
 	private int _countdownTime = MyConfig.MatchEndKickCountdownConfig.Value; // Countdown duration in seconds
 
 	public override void Enter()
 	{
-		ChatCommandService.SetTime(86400);
-		if (!_countdownStarted)
-		{
-			_countdownStarted = true;
+		// Nothing is raced anymore, so the lobby timer must not run out.
+		ChatCommandService.SuspendTimer();
 
-			Countdown.Start(_countdownTime, UpdateCountdownMessage, InvokeFinish);
-		}
-	}
+		// The racing states leave everyone blocked from setting a time after the last sub-round.
+		// The match is over, so give the lobby its freedom back.
+		RacerResetService.UnblockEveryoneFromSettingTime();
 
-	public override void Exit()
-	{
-		// No extra cleanup required here
+		Countdown.Start(_countdownTime, UpdateCountdownMessage, InvokeFinish);
 	}
 
 	public override IState GetNextState()
@@ -31,10 +34,15 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 		return new StateWaitingForHoF(StateMachine);
 	}
 
+	// Sent once per countdown second by UpdateCountdownMessage.
 	private void SendServerMessage()
 	{
-		// We don't need to send this message every second manually now, since it's handled in `UpdateCountdownMessage`
-		Team winnerTeam = Match.CurrentRound.GetWinnerTeam;
+		Team winnerTeam = Match?.CurrentRound.GetWinnerTeam;
+		if (winnerTeam == null)
+		{
+			// The showdown was stopped before a match was finished, so there is no winner to show.
+			return;
+		}
 
 		// Decorated ServerMessage without emotes
 		ServerMessage msg = new ServerMessage()
@@ -48,8 +56,8 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 				.AddBlock("won the Match! :party:", block => block.Color(ShowdownColors.WinnerGold))
 			)
 			.AddLine(line => line
-					.AddBlock("Final Score: ", block => block.Bold().Color(ShowdownColors.White))
-					.AddBlock(Match.ScoreColored()) // Green for the final score
+				.AddBlock("Final Score: ", block => block.Bold().Color(ShowdownColors.White))
+				.AddBlock(Match.ScoreColored())
 			)
 			.AddSeparator()
 			.AddLine(line => line
@@ -58,7 +66,9 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 			.AddLine(line => line
 				.AddBlock("Teams will get kicked after")
 				.AddBlock($"{_countdownTime}",
-					block => block.Bold().Color(_countdownTime <= 10 ? ShowdownColors.Red : ShowdownColors.Green))
+					block => block.Bold().Color(_countdownTime <= LowTimeThresholdSeconds
+						? ShowdownColors.Red
+						: ShowdownColors.Green))
 				.AddBlock("seconds.")
 			)
 			.AddSeparator();
@@ -69,6 +79,6 @@ public class StateMatchEnd(IStateMachine stateMachine) : ShowdownStateBase(state
 	private void UpdateCountdownMessage(int remainingTime)
 	{
 		_countdownTime = remainingTime;
-		SendServerMessage(); // This will send the updated message with the countdown
+		SendServerMessage();
 	}
 }

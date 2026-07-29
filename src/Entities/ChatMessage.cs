@@ -17,6 +17,13 @@ public class ChatMessage
 			"--------SHOWDOWN--------");
 	}
 
+	// Pushes everything that was said before out of the chat window. Used by the states that render
+	// a fresh chat block, so the messages of the previous phase don't linger above the new ones.
+	public static void ClearChat()
+	{
+		SendCustomMessage(new Builder().ClearChat().Build().Message);
+	}
+
 	public static void SendCustomMessage(string message, params ulong[] steamIds)
 	{
 		foreach (ulong steamId in steamIds.Distinct())

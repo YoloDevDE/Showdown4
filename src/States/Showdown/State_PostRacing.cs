@@ -4,7 +4,11 @@ using Showdown4.Utils;
 
 namespace Showdown4.States.Showdown;
 
-internal class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
+/// <summary>
+///     The podium phase after the last sub-round of a map. The game gets a moment to settle before
+///     the final leaderboard is read, the round point is awarded and the result is announced.
+/// </summary>
+public class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	// Guards the winner evaluation so it happens exactly once, even if the next round starts
 	// before the podium countdown has finished (in which case we still announce first).
@@ -29,10 +33,6 @@ internal class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(s
 		Countdown.Start(MyConfig.PostRacingPodiumDurationConfig.Value, onComplete: AnnounceRoundResult);
 	}
 
-	public override void Exit()
-	{
-	}
-
 	public override void OnRoundStarted()
 	{
 		// Safety net: if the game moves on before the podium countdown elapsed, make sure the
@@ -43,17 +43,14 @@ internal class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(s
 
 	public override IState GetNextState()
 	{
-		if (Match.TeamA.Wins >= 2 || Match.TeamB.Wins >= 2)
+		if (Match.HasWinner)
 		{
 			return new StateMatchEnd(StateMachine);
 		}
 
-		if (Match.RoundCounter() < 2)
-		{
-			return new StateWarmUp(StateMachine);
-		}
-
-		return new StatePreDraft(StateMachine);
+		return Match.NeedsNewDraftPhase
+			? new StatePreDraft(StateMachine)
+			: new StatePreRacing(StateMachine);
 	}
 
 	// Runs after the podium phase has elapsed: only now do we read the final leaderboard, award the
@@ -71,51 +68,48 @@ internal class StatePostRacing(IStateMachine stateMachine) : ShowdownStateBase(s
 		Team winnerTeam = Match.CurrentRound.GetWinnerTeam;
 		winnerTeam.AddWin();
 
-		// Get the current round index
 		int currentRoundCounter = Match.RoundCounter();
 
-		// Default message in case of an error
-		string nextLevelMessage = "";
-		// Check if the current round index is within the range of picked levels
-		if (currentRoundCounter < Match.CurrentDraft.PickedLevels.Count)
+		ChatMessage.SendCustomMessage(
+			new ChatMessage.Builder()
+				.ClearChat()
+				.DashedLine().NewLine()
+				.TextLine($"<b>Round {currentRoundCounter}</b> over!").NewLine()
+				.TextLine($"{winnerTeam.GetColoredTag()} scored").NewLine()
+				.DashedLine().NewLine()
+				.TextLine(BuildUpcomingMessage(winnerTeam)).NewLine()
+				.DashedLine().NewLine()
+				.TextLine($"{Match.Score()}")
+				.Build().Message);
+	}
+
+	// Describes what happens next: the level of the round that is already drafted, the intermission
+	// after a decided match, or the second draft phase (which hands the initiative over).
+	private string BuildUpcomingMessage(Team winnerTeam)
+	{
+		if (Match.RoundCounter() < Match.CurrentDraft.PickedLevels.Count)
 		{
 			DraftAction nextLevel = Match.CurrentDraft.PickedLevels[Match.RoundCounter()];
-			// If valid, show the next level's name
-			nextLevelMessage += new ChatMessage.Builder()
-				.TextLine($"Starting Round {Match.RoundCounter() + 1}")
+			return new ChatMessage.Builder()
+				.TextLine($"Starting {Match.UpcomingRoundName()}")
 				.NewLine()
 				.DashedLine().NewLine()
 				.TextLine($"Level <{ShowdownColors.Cyan}>'{nextLevel.Level.Name}'</color>").NewLine()
 				.TextLine($"picked by {nextLevel.Team.GetColoredTag()}")
 				.Build().Message;
 		}
-		else if (winnerTeam.Wins > 1)
+
+		if (Match.IsWonBy(winnerTeam))
 		{
-			nextLevelMessage += "Upcoming -> Intermission";
-		}
-		else
-		{
-			Match.Initiative = Match.NonInitiative;
-			nextLevelMessage +=
-				new ChatMessage.Builder().TextLine("Upcoming -> Draftphase II").NewLine()
-					.DashedLine().NewLine()
-					.TextLine($"Initiative: {Match.Initiative.GetColoredTag()}").NewLine()
-					.TextLine("Prepare yourself! It will start almost immediately!")
-					.Build().Message;
+			return "Upcoming -> Intermission";
 		}
 
-
-		// Create a cool and separated chat message using your original ChatMessage class
-		ChatMessage.SendCustomMessage(
-			new ChatMessage.Builder()
-				.ClearChat()
-				.DashedLine().NewLine() // Dashed separator
-				.TextLine($"<b>Round {currentRoundCounter}</b> over!").NewLine() // Centered round completion message
-				.TextLine($"{winnerTeam.GetColoredTag()} scored").NewLine() // Display the winning team
-				.DashedLine().NewLine() // Dashed line separating content
-				.TextLine(nextLevelMessage).NewLine() // Show the next level or intermission
-				.DashedLine().NewLine() // Dashed line to separate next section
-				.TextLine($"{Match.Score()}") // Display the score
-				.Build().Message); // Final dashed line for closure
+		Match.Initiative = Match.NonInitiative;
+		return new ChatMessage.Builder()
+			.TextLine("Upcoming -> Draftphase II").NewLine()
+			.DashedLine().NewLine()
+			.TextLine($"Initiative: {Match.Initiative.GetColoredTag()}").NewLine()
+			.TextLine("Prepare yourself! It will start almost immediately!")
+			.Build().Message;
 	}
 }

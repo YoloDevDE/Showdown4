@@ -43,6 +43,10 @@ public class Draft
 
 	public bool IsPickPhase { get; set; }
 
+	// Amount of rounds that had already been played when this draft was created. Needed to map a
+	// round onto the level it is raced on: the n-th round of this draft races PickedLevels[n].
+	public int PlayedRoundsBeforeDraft { get; set; }
+
 	private Team OtherTeam => CurrentTeam.Equals(_teamA) ? _teamB : _teamA;
 
 	public void PickLevel(OnlineZeeplevel level)

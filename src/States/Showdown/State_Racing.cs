@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Showdown4.Config;
 using Showdown4.Entities;
+using Showdown4.Managers;
 using Showdown4.Utils;
 using UnityEngine;
 using ZeepkistClient;
@@ -12,8 +13,19 @@ using ZeepSDK.Chat;
 
 namespace Showdown4.States.Showdown;
 
-public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
+/// <summary>
+///     Runs exactly one racing sub-round of the current map. The lobby timer is armed with the
+///     "+24h" trick so the lobby can never end the round (and switch the map) on its own - our own
+///     countdown is what decides when the sub-round is over. Everything that happens afterwards
+///     (saving the result, resetting and respawning the racers) is done by
+///     <see cref="StateSubRoundEvaluation" />, which then either starts the next sub-round or closes
+///     the map.
+/// </summary>
+public class StateRacing(IStateMachine stateMachine, bool isFirstSubRound = true) : ShowdownStateBase(stateMachine)
 {
+	// From this many seconds left the remaining race time is coloured red.
+	private const int LowTimeThresholdSeconds = 10;
+
 	// Accumulates how many positions a racer has lost since their override was last reset,
 	// so multiple losses in quick succession are shown as a single combined number.
 	private readonly Dictionary<ulong, int> _lostAccum = new();
@@ -29,9 +41,10 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 	private readonly Dictionary<ulong, Coroutine> _resetCoroutines = new();
 
 	private Round _currentRound;
-
-	private Team _teamA, _teamB;
 	private TeamLeaderboard _teamLeaderboard;
+
+	private static int SubRoundCount => MyConfig.RacingSubRoundsConfig.Value;
+	private static int SubRoundDuration => MyConfig.RacingDurationConfig.Value;
 
 	// Delay before a gained/lost/equal/new position override is reverted back to the
 	// normal time+name display, and the colors/symbols used for it, are all user-configurable.
@@ -46,26 +59,39 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 
 	public override void Enter()
 	{
-		_teamA = Showdown.Match.TeamA;
-		_teamB = Showdown.Match.TeamB;
+		if (isFirstSubRound)
+		{
+			// A round is a whole map - it is created once, together with the team that picked the
+			// level (needed to resolve a sub-round in which nobody finished).
+			Match.AddRound(new Round(TeamA, TeamB, Match.GetPickerOfUpcomingLevel()));
+		}
 
-		foreach (ZeepkistNetworkPlayer zeepkistNetworkPlayer in ZeepkistNetwork.PlayerList.Where(a =>
-			         !_teamA.Racers.Exists(r => r.SteamId == a.SteamID) &&
-			         !_teamB.Racers.Exists(r => r.SteamId == a.SteamID)))
-			ZeepkistNetwork.CustomLeaderBoard_BlockPlayerFromSettingTime(zeepkistNetworkPlayer.SteamID, true);
-
-		Showdown.Match.AddRound(new Round(_teamA, _teamB)); // Initialize round
-		_currentRound = Showdown.Match.CurrentRound;
-
+		_currentRound = Match.CurrentRound;
 		_teamLeaderboard = new TeamLeaderboard(_currentRound);
+
+		// Spectators and late joiners may never pollute the leaderboard of a sub-round.
+		RacerResetService.BlockNonRacers(TeamA, TeamB);
+
+		// Re-arm the "+24h" lobby timer for this sub-round: the HUD shows the intended duration
+		// while the lobby itself never reaches zero and therefore never switches the map.
+		ChatCommandService.SetRaceTime(SubRoundDuration);
+
+		Countdown.Start(SubRoundDuration, UpdateCountdownMessage, InvokeFinish);
 		SendTeamLeaderboard();
 
 		ChatMessage.SendCustomMessage(
-			new ChatMessage.Builder().ClearChat().TextLine("Race started, glhf").Build().Message);
+			new ChatMessage.Builder().ClearChat()
+				.DashedLine().NewLine()
+				.TextLine($"<b>Race {_currentRound.SubRoundNumber}/{SubRoundCount}</b> started, glhf").NewLine()
+				.TextLine(_currentRound.GetSubRoundScore()).NewLine()
+				.DashedLine()
+				.Build().Message);
 	}
 
 	public override void Exit()
 	{
+		Countdown.Stop();
+
 		foreach (Coroutine coroutine in _resetCoroutines.Values)
 			Showdown.StopCoroutine(coroutine);
 		_resetCoroutines.Clear();
@@ -86,7 +112,7 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 
 	public override IState GetNextState()
 	{
-		return new StatePostRacing(StateMachine);
+		return new StateSubRoundEvaluation(StateMachine);
 	}
 
 	public override void OnPlayerJoined(ZeepkistNetworkPlayer player)
@@ -106,7 +132,7 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		}
 
 		ZeepkistNetwork.CustomLeaderBoard_SetPlayerTimeOnLeaderboard(player.SteamID, (float)personalBest, true);
-		Team joinedTeam = Showdown.Match.GetTeamBySteamId(player.SteamID);
+		Team joinedTeam = Match.GetTeamBySteamId(player.SteamID);
 		string joinedName = GetJsonNameForPlayer(player.SteamID, joinedTeam);
 		ZeepkistNetwork.CustomLeaderBoard_SetPlayerLeaderboardOverrides(player.SteamID, "",
 			$"<nobr><{joinedTeam.Color}>{joinedName}</color></nobr>", null, null, null);
@@ -114,6 +140,10 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 
 	public override void OnRoundEnded()
 	{
+		// Thanks to the +24h timer trick the lobby timer never runs out on its own, so this is only
+		// a safety net (e.g. the host skipped the level manually). The sub-round is over either way,
+		// so hand the result over to the evaluation state instead of losing it.
+		Countdown.Stop();
 		InvokeFinish();
 	}
 
@@ -125,8 +155,8 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 			return;
 		}
 
-		if (!_teamA.Racers.Exists(r => r.SteamId == player.SteamID)
-		    && !_teamB.Racers.Exists(r => r.SteamId == player.SteamID))
+		if (!TeamA.Racers.Exists(r => r.SteamId == player.SteamID)
+		    && !TeamB.Racers.Exists(r => r.SteamId == player.SteamID))
 		{
 			return;
 		}
@@ -141,7 +171,7 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		}
 
 		ulong steamId = player.SteamID;
-		Team playerTeam = Showdown.Match.GetTeamBySteamId(steamId);
+		Team playerTeam = Match.GetTeamBySteamId(steamId);
 		string color = playerTeam.Color;
 		string name = GetJsonNameForPlayer(steamId, playerTeam);
 
@@ -234,10 +264,29 @@ public class StateRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMa
 		SendTeamLeaderboard();
 	}
 
-	public void SendTeamLeaderboard()
+	private void UpdateCountdownMessage(int secondsRemaining)
 	{
-		ServerMessage leaderboardMessage = _teamLeaderboard.GenerateLeaderboardMessage(Showdown.Match);
-		leaderboardMessage.Send();
+		if (secondsRemaining < 0)
+		{
+			return;
+		}
+
+		_teamLeaderboard.GenerateLeaderboardMessage(Match)
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock($"Race {_currentRound.SubRoundNumber}/{SubRoundCount}",
+					b => b.Bold().Color(ShowdownColors.Gray))
+				.AddBlock($"{secondsRemaining}s remaining",
+					b => b.Color(secondsRemaining <= LowTimeThresholdSeconds
+						? ShowdownColors.Red
+						: ShowdownColors.Green)))
+			.AddLine(line => line.AddBlock(_currentRound.GetSubRoundScore()))
+			.Send();
+	}
+
+	private void SendTeamLeaderboard()
+	{
+		UpdateCountdownMessage(Countdown.RemainingSeconds);
 	}
 
 	private static int? FindLeaderboardPosition(List<LeaderboardItem> leaderboard, ulong steamId)

@@ -9,11 +9,12 @@ using ZeepkistClient;
 
 namespace Showdown4.States.Showdown;
 
-// Ready check that runs before the very first draft (Draftphase I) only, right after
-// StatePreDraft announced initiative. It shows how the draft works (pick/ban/pass) and who has
-// initiative, so players know what to expect before the draft actually starts. Once everyone is
-// ready, a short countdown plays and StateDrafting begins. Draftphase II skips this state
-// entirely (see StatePreDraft / StatePostRacing).
+/// <summary>
+///     Ready check that runs before the very first draft (Draftphase I) only, right after
+///     <see cref="StateSelectInitiative" /> determined who drafts first. It shows how the draft works
+///     (pick/ban/pass) and who has initiative, so players know what to expect before the draft intro
+///     of <see cref="StatePreDraft" /> plays. Draftphase II skips this state entirely.
+/// </summary>
 public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	// The ready command is only available during the ready check.
@@ -23,8 +24,6 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 	private int _remainingTime;
 	private bool _stopped;
 
-	private Team TeamA => Match.TeamA;
-	private Team TeamB => Match.TeamB;
 	private Team InitiativeTeam => Match.Initiative;
 
 	public override void Enter()
@@ -33,7 +32,7 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 
 		_readyPlayers = new HashSet<ulong>();
 		_stopped = false;
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+		ChatMessage.ClearChat();
 
 		Countdown.Start(MyConfig.ReadyCheckDurationConfig.Value, OnTick, OnTimeout);
 	}
@@ -197,7 +196,7 @@ public class StateDraftReadyCheck(IStateMachine stateMachine) : ShowdownStateBas
 		// Restarting the countdown implicitly replaces the ready-check timer above.
 		Countdown.Start(MyConfig.ReadyConfirmCountdownConfig.Value, onComplete: () =>
 		{
-			ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+			ChatMessage.ClearChat();
 			InvokeFinish();
 		});
 	}

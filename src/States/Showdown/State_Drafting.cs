@@ -18,6 +18,10 @@ namespace Showdown4.States.Showdown;
 public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private const int MaxLevelIndex = 7;
+
+	// From this many seconds left on a turn the countdown is highlighted as "running low".
+	private const int LowTimeThresholdSeconds = 10;
+
 	private readonly CommandBan _banCommand = new();
 	private readonly CommandPass _passCommand = new();
 
@@ -26,7 +30,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	private readonly Random _random = new();
 
-	private int _draftCountdownTime = MyConfig.DraftTimeConfig.Value;
+	private int _draftCountdownTime = DraftTime;
 
 	private DraftingLeaderboard _draftingLeaderboard;
 	private bool _isAutoPickInProgress;
@@ -37,6 +41,8 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	private List<OnlineZeeplevel> AvailableMaps => CurrentDraft.AvailableLevels;
 
+	private static int DraftTime => MyConfig.DraftTimeConfig.Value;
+
 	public override void Enter()
 	{
 		CommandRegistry.RegisterMixed(_pickCommand);
@@ -45,15 +51,17 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 		_isDraftCompleteCountdownStarted = false;
 		_isAutoPickInProgress = false;
-		_draftCountdownTime = MyConfig.DraftTimeConfig.Value;
+		_draftCountdownTime = DraftTime;
 
 		Match.AddDraft();
-		ChatCommandService.SetTime(86400);
 
-		_draftingLeaderboard = new DraftingLeaderboard(Match.TeamA, Match.TeamB);
-		_draftingLeaderboard.Activate(CurrentTeam, MyConfig.DraftTimeConfig.Value);
+		// Nothing is raced while the teams draft, so the lobby timer must not run out.
+		ChatCommandService.SuspendTimer();
 
-		Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
+		_draftingLeaderboard = new DraftingLeaderboard(TeamA, TeamB);
+		_draftingLeaderboard.Activate(CurrentTeam, DraftTime);
+
+		Countdown.Start(DraftTime, OnDraftTick, OnDraftTimeout);
 	}
 
 	public override void Exit()
@@ -180,7 +188,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 					.AddBlock("'!pass'", block => block.Command()))
 			.Send();
 
-		if (_draftCountdownTime >= MyConfig.DraftTimeConfig.Value && !CurrentDraft.IsDraftComplete())
+		if (_draftCountdownTime >= DraftTime && !CurrentDraft.IsDraftComplete())
 		{
 			SendTurnAnnouncements();
 		}
@@ -222,7 +230,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	private void SendTurnAnnouncements()
 	{
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+		ChatMessage.ClearChat();
 
 		string history = BuildDraftHistory();
 		string actionDescription = BuildActionDescription();
@@ -330,7 +338,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 			return;
 		}
 
-		_draftCountdownTime = MyConfig.DraftTimeConfig.Value;
+		_draftCountdownTime = DraftTime;
 		CurrentTeam.MissedDraft = true;
 
 		if (OtherTeam.Bans == 0 && OtherTeam.Picks == 0)
@@ -356,8 +364,8 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 		}
 
 		CurrentDraft.SwitchTeam();
-		_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam, MyConfig.DraftTimeConfig.Value);
-		Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
+		_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam, DraftTime);
+		Countdown.Start(DraftTime, OnDraftTick, OnDraftTimeout);
 	}
 
 	// Only one map remains after the last possible action, so Showdown picks it automatically.
@@ -368,7 +376,7 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 		OnlineZeeplevel lastLevel = AvailableMaps[0];
 
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+		ChatMessage.ClearChat();
 		ChatMessage.SendCustomMessage(
 			$"Only one map remains - <{ShowdownColors.Red}>Showdown</color> will automatically pick <{ShowdownColors.Cyan}>{lastLevel.Name}</color>!");
 
@@ -419,11 +427,11 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 	private ServerMessage DraftingStateMessage()
 	{
 		Team current = CurrentTeam;
-		bool isTimeRunningLow = _draftCountdownTime <= 10;
+		bool isTimeRunningLow = _draftCountdownTime <= LowTimeThresholdSeconds;
 
-		ServerMessage tmp = new();
+		ServerMessage message = new();
 
-		tmp.AddLine(line =>
+		message.AddLine(line =>
 			line.AddBlock(Match.DraftphaseName,
 				builder => builder.Gradients(ShowdownColors.Gold, ShowdownColors.White, ShowdownColors.Gold).Bold()
 					.AllCaps().Size(40))
@@ -440,13 +448,13 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 			}
 		});
 
-		tmp.AddLine(line => line
+		message.AddLine(line => line
 			.AddBlock("Picks left:")
 			.AddBlock($"{current.Picks}", block => block.Color(ShowdownColors.Green))
 			.AddBlock("| Bans left:")
 			.AddBlock($"{current.Bans}", block => block.Color(ShowdownColors.Red)));
 
-		return tmp;
+		return message;
 	}
 
 	// The draft no longer accepts input once it is finished or the auto-pick reveal is running.
@@ -496,8 +504,8 @@ public class StateDrafting(IStateMachine stateMachine) : ShowdownStateBase(state
 
 			if (!currentDraft.IsDraftComplete())
 			{
-				_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam, MyConfig.DraftTimeConfig.Value);
-				Countdown.Start(MyConfig.DraftTimeConfig.Value, OnDraftTick, OnDraftTimeout);
+				_draftingLeaderboard?.UpdateActiveTeam(CurrentTeam, DraftTime);
+				Countdown.Start(DraftTime, OnDraftTick, OnDraftTimeout);
 			}
 
 			// Flash white on both server message and leaderboard for any draft action (pick or ban).

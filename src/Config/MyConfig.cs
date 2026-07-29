@@ -40,7 +40,11 @@ public static class MyConfig
 	public static ConfigEntry<int> AutoPickRevealCountdownConfig;
 	public static ConfigEntry<int> ReadyCheckDurationConfig;
 	public static ConfigEntry<int> ReadyConfirmCountdownConfig;
+	public static ConfigEntry<int> SynchroSecondsConfig;
 	public static ConfigEntry<int> WarmUpSecondsConfig;
+	public static ConfigEntry<int> RacingDurationConfig;
+	public static ConfigEntry<int> RacingSubRoundsConfig;
+	public static ConfigEntry<int> SubRoundEvaluationSecondsConfig;
 	public static ConfigEntry<int> PreRaceCountdownConfig;
 	public static ConfigEntry<int> LobbyTimeConfig;
 	public static ConfigEntry<int> PostRacingPodiumDurationConfig;
@@ -135,10 +139,32 @@ public static class MyConfig
 				"Seconds to wait after everyone is ready before racing starts.",
 				new AcceptableValueRange<int>(0, 3600)));
 
-		WarmUpSecondsConfig = configFile.Bind("Racing", "Warm Up Seconds", 30,
+		SynchroSecondsConfig = configFile.Bind("Racing", "Synchro Seconds", 15,
+			new ConfigDescription(
+				"Seconds the synchro countdown runs before warm up starts.",
+				new AcceptableValueRange<int>(0, 3600)));
+
+		WarmUpSecondsConfig = configFile.Bind("Racing", "Warm Up Seconds", 60,
 			new ConfigDescription(
 				"Seconds the warm up countdown runs before a race starts.",
 				new AcceptableValueRange<int>(0, 3600)));
+
+		RacingDurationConfig = configFile.Bind("Racing", "Racing Duration", 62,
+			new ConfigDescription(
+				"Seconds each racing sub-round lasts.",
+				new AcceptableValueRange<int>(1, 3600)));
+
+		RacingSubRoundsConfig = configFile.Bind("Racing", "Racing Sub Rounds", 5,
+			new ConfigDescription(
+				"Amount of sub-rounds raced on one map ('best of X'). The map is decided as soon as a team " +
+				"won more than half of them.",
+				new AcceptableValueRange<int>(1, 15)));
+
+		SubRoundEvaluationSecondsConfig = configFile.Bind("Racing", "Sub Round Evaluation Seconds", 2,
+			new ConfigDescription(
+				"Seconds the short phase after a racing sub-round lasts. The result is saved right at the " +
+				"start of it, then everyone is reset and respawned for the next sub-round.",
+				new AcceptableValueRange<int>(1, 60)));
 
 		PreRaceCountdownConfig = configFile.Bind("Racing", "Pre Race Countdown", 10,
 			new ConfigDescription(

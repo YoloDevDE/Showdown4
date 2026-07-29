@@ -27,7 +27,9 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 		_selectedTeamB = null;
 		_isCountdownActive = false;
 
-		ChatCommandService.SetTime(86400);
+		// Nothing is raced while the host picks the teams, so the lobby timer must not run out.
+		ChatCommandService.SuspendTimer();
+
 		if (_teams.Count == 0)
 		{
 			ChatMessage.SendCustomMessage("No teams found in the JSON file.");
@@ -36,12 +38,14 @@ public class StateSetupMatch(IStateMachine stateMachine) : ShowdownStateBase(sta
 		SendServerMessage();
 	}
 
-	public override void Exit()
-	{
-	}
-
 	public override void HandleInput()
 	{
+		// Without teams there is nothing to select - and the wrap-around below would divide by zero.
+		if (_teams.Count == 0)
+		{
+			return;
+		}
+
 		bool inputDetected = false;
 
 		if (!_isCountdownActive)

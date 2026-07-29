@@ -12,9 +12,13 @@ namespace Showdown4.States.Showdown;
 
 public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 {
-	// While the run is paused with 'sd pause', we set the in-game lobby timer to 24h and remember
+	// Small head start the racers get when the run is resumed, so nobody is surprised by a timer
+	// that continues the very same frame.
+	private const int ResumeGraceSeconds = 5;
+
+	// While the run is paused with 'sd pause', we suspend the in-game lobby timer and remember
 	// the round time that was still remaining (only when we are actually racing). 'sd resume'
-	// then restores it (plus a small 5s grace period). We will also want to persist this for the
+	// then restores it (plus the grace period above). We will also want to persist this for the
 	// full match log in the future.
 	private int? _pausedRoundTime;
 
@@ -113,8 +117,8 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 		CommandReady.CommandInvoked -= HandleReady;
 	}
 
-	// Pauses every timer: the active state's own countdown is frozen and the in-game lobby timer
-	// is set to 24h. While racing we remember the remaining round time so Resume() can restore it.
+	// Pauses every timer: the active state's own countdown is frozen and the in-game lobby timer is
+	// suspended. While racing we remember the remaining round time so Resume() can restore it.
 	public void Pause()
 	{
 		(CurrentState as ShowdownStateBase)?.PauseCountdown();
@@ -124,18 +128,18 @@ public class ShowdownStateMachine : MonoBehaviour, IStateMachine
 			_pausedRoundTime = GetRemainingRoundTimeSeconds();
 		}
 
-		ChatCommandService.SetTime(86400);
+		ChatCommandService.SuspendTimer();
 	}
 
 	// Resumes every timer: the active state's countdown continues and, if a round time was saved
-	// on Pause(), the lobby timer is restored to that value plus a 5 second grace period.
+	// on Pause(), the lobby timer is restored to that value plus a short grace period.
 	public void Resume()
 	{
 		(CurrentState as ShowdownStateBase)?.ResumeCountdown();
 
 		if (_pausedRoundTime.HasValue)
 		{
-			ChatCommandService.SetTime(_pausedRoundTime.Value + 5);
+			ChatCommandService.SetTime(_pausedRoundTime.Value + ResumeGraceSeconds);
 			_pausedRoundTime = null;
 		}
 	}

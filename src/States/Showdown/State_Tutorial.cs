@@ -36,10 +36,6 @@ public class StateTutorial(IStateMachine stateMachine) : ShowdownStateBase(state
 		Showdown.StartCoroutine(TutorialSequence());
 	}
 
-	public override void Exit()
-	{
-	}
-
 	public override IState GetNextState()
 	{
 		return new StateSelectInitiative(StateMachine);
@@ -47,14 +43,14 @@ public class StateTutorial(IStateMachine stateMachine) : ShowdownStateBase(state
 
 	private IEnumerator TutorialSequence()
 	{
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+		ChatMessage.ClearChat();
 
 		for (int pageIndex = 0; pageIndex < TutorialContent.Pages.Count; pageIndex++)
 			yield return ShowStep(TutorialContent.Pages[pageIndex], pageIndex + 1, TutorialContent.Pages.Count);
 
 		HasPlayedOnce = true;
 
-		ChatMessage.SendCustomMessage(new ChatMessage.Builder().ClearChat().Build().Message);
+		ChatMessage.ClearChat();
 		InvokeFinish();
 	}
 

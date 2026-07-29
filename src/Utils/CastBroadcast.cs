@@ -78,7 +78,7 @@ public static class CastBroadcast
 			// No matter which type is used, it is delivered the same way: receivers can either listen on
 			// ChatApi.ChatMessageReceived, or read it afterwards from
 			// ZeepkistNetwork.ChatMessages (List<ZeepkistChatMessage>).
-			ZeepkistNetwork.SendCustomChatMessage(true, 0, "<size=0%>" + payload + "</size>", "");
+			// ZeepkistNetwork.SendCustomChatMessage(true, 0, "<size=0%>" + payload + "</size>", "");
 		}
 		catch
 		{

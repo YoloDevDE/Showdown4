@@ -4,28 +4,23 @@ using Showdown4.Utils;
 
 namespace Showdown4.States.Showdown;
 
-// Initiative is now determined automatically from the qualification times stored in Teams.json:
-// the team with the better (lower) average qualification time gets initiative - no manual selection.
+/// <summary>
+///     Initiative is determined automatically from the qualification times stored in Teams.json: the
+///     team with the better (lower) average qualification time gets it - there is no manual selection.
+/// </summary>
 public class StateSelectInitiative(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
 	private Team _selectedTeam; // The team with initiative
-
-	private Team TeamA => Match.TeamA;
-	private Team TeamB => Match.TeamB;
 
 	public override void Enter()
 	{
 		// The team with the lower (faster) average qualification time automatically gets initiative.
 		_selectedTeam = TeamA.QualificationTime <= TeamB.QualificationTime ? TeamA : TeamB;
-		Showdown.Match.Initiative = _selectedTeam;
+		Match.Initiative = _selectedTeam;
 
-		ServerMessageThing().Send();
+		BuildQualificationMessage().Send();
 
 		Countdown.Start(MyConfig.InitiativeAnnouncementDurationConfig.Value, UpdateCountdownMessage, InvokeFinish);
-	}
-
-	public override void Exit()
-	{
 	}
 
 	public override IState GetNextState()
@@ -33,7 +28,8 @@ public class StateSelectInitiative(IStateMachine stateMachine) : ShowdownStateBa
 		return new StateDraftReadyCheck(StateMachine);
 	}
 
-	private ServerMessage ServerMessageThing()
+	// The qualification time comparison both teams see, with or without the initiative result below.
+	private ServerMessage BuildQualificationMessage()
 	{
 		return new ServerMessage()
 			.ShowdownHeader()
@@ -57,15 +53,13 @@ public class StateSelectInitiative(IStateMachine stateMachine) : ShowdownStateBa
 
 	private void UpdateCountdownMessage(int countdownTime)
 	{
-		// Send or append the countdown message to the server
-		ServerMessage msg =
-			ServerMessageThing()
-				.AddSeparator()
-				.AddLine(line => line
-					.AddBlock("Initiative has been given to")
-				)
-				.AddLine(line => line
-					.AddBlock(_selectedTeam.GetNameWithTag(), f => f.Color(_selectedTeam.Color).Bold()));
-		msg.Send();
+		BuildQualificationMessage()
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock("Initiative has been given to")
+			)
+			.AddLine(line => line
+				.AddBlock(_selectedTeam.GetNameWithTag(), f => f.Color(_selectedTeam.Color).Bold()))
+			.Send();
 	}
 }

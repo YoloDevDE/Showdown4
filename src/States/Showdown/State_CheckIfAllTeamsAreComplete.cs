@@ -16,9 +16,6 @@ public class StateCheckIfAllTeamsAreComplete(IStateMachine stateMachine) : Showd
 {
 	private const int RecheckIntervalSeconds = 5;
 
-	private Team TeamA => Match.TeamA;
-	private Team TeamB => Match.TeamB;
-
 	public override void Enter()
 	{
 		CheckTeams();
@@ -43,26 +40,23 @@ public class StateCheckIfAllTeamsAreComplete(IStateMachine stateMachine) : Showd
 
 	private void UpdateCountdownMessage(int secondsRemaining)
 	{
-		ServerMessage msg = new ServerMessage()
-				.ShowdownHeader()
-				.AddLine(line => line
-					.AddBlock("Waiting for teams")
-				)
-				.AddSeparator()
-				.AddLine(line => line
-					.AddBlock($"{TeamA.GetColoredTag()}")
-					.AddBlock("and")
-					.AddBlock($"{TeamB.GetColoredTag()}")
-					.AddBlock("to be fully configured")
-				)
-				.AddSeparator()
-				.AddLine(line => line
-					.AddBlock("Checking again in:")
-					.AddBlock($"{secondsRemaining} seconds",
-						f => f.Bold().Color(ShowdownColors.Red))
-				)
-			;
-
-		msg.Send();
+		new ServerMessage()
+			.ShowdownHeader()
+			.AddLine(line => line
+				.AddBlock("Waiting for teams")
+			)
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock($"{TeamA.GetColoredTag()}")
+				.AddBlock("and")
+				.AddBlock($"{TeamB.GetColoredTag()}")
+				.AddBlock("to be fully configured")
+			)
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock("Checking again in:")
+				.AddBlock($"{secondsRemaining} seconds", f => f.Bold().Color(ShowdownColors.Red))
+			)
+			.Send();
 	}
 }

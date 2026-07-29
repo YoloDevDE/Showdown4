@@ -5,20 +5,27 @@ using Debug = UnityEngine.Debug;
 
 namespace Showdown4.States;
 
+/// <summary>
+///     The actual transition logic of every state machine. Both <c>MasterStateMachine</c> and
+///     <c>ShowdownStateMachine</c> only forward their <see cref="IStateMachine" /> members to the
+///     methods here, so the behaviour stays identical for both of them.
+/// </summary>
 internal static class StateMachineOperations
 {
 	public static void Dispose(IStateMachine stateMachine)
 	{
+		// The final state gets the chance to clean the lobby up (unblock racers, stop timers, ...)
+		// before it is left again right away.
 		try
 		{
 			stateMachine.TransitionTo(stateMachine.FinalState);
 		}
 		catch (Exception e)
 		{
-			Console.WriteLine(e);
+			Debug.LogException(e);
 		}
 
-		stateMachine.CurrentState.Exit();
+		stateMachine.CurrentState?.Exit();
 		stateMachine.UnsubscribeFromEvents();
 	}
 
@@ -35,28 +42,29 @@ internal static class StateMachineOperations
 
 	public static void TransitionTo(IStateMachine stateMachine, [NotNull] IState nextState)
 	{
-		if (stateMachine.CurrentState != null)
+		IState previousState = stateMachine.CurrentState;
+		if (previousState != null)
 		{
-			stateMachine.CurrentState.SubStateMachine?.Dispose();
-			stateMachine.CurrentState.Finished -= stateMachine.OnCurrentStateFinished;
+			previousState.SubStateMachine?.Dispose();
+			previousState.Finished -= stateMachine.OnCurrentStateFinished;
 			try
 			{
 				stateMachine.StopAllCoroutines();
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine(e);
+				Debug.LogException(e);
 			}
 
-			stateMachine.CurrentState.Exit();
-			nextState.PreviousState = stateMachine.CurrentState;
+			previousState.Exit();
+			nextState.PreviousState = previousState;
 		}
 
 		stateMachine.CurrentState = nextState;
-		stateMachine.CurrentState.Finished += stateMachine.OnCurrentStateFinished;
-		stateMachine.CurrentState.Enter();
+		nextState.Finished += stateMachine.OnCurrentStateFinished;
+		nextState.Enter();
 		CastBroadcast.OnStateEntered(stateMachine);
-		stateMachine.CurrentState.SubStateMachine?.Start();
+		nextState.SubStateMachine?.Start();
 	}
 
 	public static void TransitionToPreviousState(IStateMachine stateMachine)
@@ -89,15 +97,21 @@ internal static class StateMachineOperations
 
 	public static void OnCurrentStateFinished(IStateMachine stateMachine)
 	{
-		IState nextState = stateMachine.CurrentState.GetNextState();
-		if (nextState == null)
+		IState currentState = stateMachine.CurrentState;
+		if (currentState == null)
 		{
-			Debug.LogError($"No next state defined for the current state: {stateMachine.CurrentState.GetType().Name}");
+			Debug.LogWarning("A state finished although the state machine has no current state.");
 			return;
 		}
 
-		Debug.Log(
-			$"Current State: {stateMachine.CurrentState.GetType().Name}, Transitioning to: {nextState.GetType().Name}");
+		IState nextState = currentState.GetNextState();
+		if (nextState == null)
+		{
+			Debug.LogError($"No next state defined for the current state: {currentState.GetType().Name}");
+			return;
+		}
+
+		Debug.Log($"Current State: {currentState.GetType().Name}, Transitioning to: {nextState.GetType().Name}");
 		stateMachine.TransitionTo(nextState);
 	}
 }

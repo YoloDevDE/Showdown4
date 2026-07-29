@@ -7,26 +7,17 @@ namespace Showdown4.States.Showdown;
 
 public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stateMachine)
 {
-	private Team _teamA, _teamB;
-
 	public override void Enter()
 	{
-		_teamA = Match.TeamA;
-		_teamB = Match.TeamB;
-
 		Countdown.Start(MyConfig.PreRaceCountdownConfig.Value, UpdateCountdownMessage, SkipToNextLevel);
 
 		// Set the lobby time (in seconds)
 		ChatCommandService.SetTime(MyConfig.LobbyTimeConfig.Value);
 	}
 
-	public override void Exit()
-	{
-	}
-
 	public override IState GetNextState()
 	{
-		return new StateWarmUp(StateMachine);
+		return new StateSynchro(StateMachine);
 	}
 
 	public override void OnLevelLoaded()
@@ -40,8 +31,7 @@ public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stat
 		ChatMessage.SendCustomMessage(
 			new ChatMessage.Builder().ClearChat()
 				.DashedLine().NewLine()
-				.TextLine(
-					$"Starting <b>{(Match.RoundCounter() + 1 == 3 ? "Tiebreaker" : $"Round {Match.RoundCounter() + 1}")}</b>")
+				.TextLine($"Starting <b>{Match.UpcomingRoundName()}</b>")
 				.NewLine()
 				.DashedLine().NewLine()
 				.TextLine($"Level <{ShowdownColors.Cyan}>'{nextLevel.Level.Name}'</color>").NewLine()
@@ -55,24 +45,21 @@ public class StatePreRacing(IStateMachine stateMachine) : ShowdownStateBase(stat
 	// Update the server message with the countdown time
 	private void UpdateCountdownMessage(int secondsRemaining)
 	{
-		ServerMessage msg = new ServerMessage()
-				.ShowdownHeader()
-				.AddLine(line => line
-					.AddBlock($"{_teamA.GetNameWithTag()}", b => b.Color(_teamA.Color))
-					.AddBlock("VS")
-					.AddBlock($"{_teamB.GetNameWithTag()}", b => b.Color(_teamB.Color))
-				)
-				.AddSeparator()
-				.AddMessage(new ServerMessage().AppendPickedMaps(Match))
-				.AddSeparator()
-				.AddLine(line => line
-						.AddBlock("Race starts in:")
-						.AddBlock($"{secondsRemaining} seconds",
-							f => f.Bold().Color(ShowdownColors.Red)) // Red countdown
-				)
-			;
-
-		msg.Send();
+		new ServerMessage()
+			.ShowdownHeader()
+			.AddLine(line => line
+				.AddBlock($"{TeamA.GetNameWithTag()}", b => b.Color(TeamA.Color))
+				.AddBlock("VS")
+				.AddBlock($"{TeamB.GetNameWithTag()}", b => b.Color(TeamB.Color))
+			)
+			.AddSeparator()
+			.AddMessage(new ServerMessage().AppendPickedMaps(Match))
+			.AddSeparator()
+			.AddLine(line => line
+				.AddBlock("Race starts in:")
+				.AddBlock($"{secondsRemaining} seconds", f => f.Bold().Color(ShowdownColors.Red))
+			)
+			.Send();
 	}
 
 	private void SkipToNextLevel()

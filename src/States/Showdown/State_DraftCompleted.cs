@@ -28,10 +28,6 @@ public class StateDraftCompleted(IStateMachine stateMachine) : ShowdownStateBase
 		Countdown.Start(MyConfig.DraftCompleteCountdownConfig.Value, _ => Render(), InvokeFinish);
 	}
 
-	public override void Exit()
-	{
-	}
-
 	public override IState GetNextState()
 	{
 		return new StatePreRacing(StateMachine);
